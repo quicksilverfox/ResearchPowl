@@ -344,5 +344,25 @@ namespace ResearchPal
         public virtual void Draw( Rect visibleRect, bool forceDetailedMode = false )
         {
         }
+
+        public int assignedPriority = int.MinValue;
+
+        public virtual int DefaultPriority() {
+            return int.MaxValue;
+        }
+
+        public int LayoutPriority() {
+            if (assignedPriority != int.MinValue) {
+                return assignedPriority;
+            }
+            return DefaultPriority();
+        }
+
+        public virtual int LayoutUpperPriority() {
+            return int.MaxValue;
+        }
+        public virtual int LayoutLowerPriority() {
+            return int.MaxValue;
+        }
     }
 }

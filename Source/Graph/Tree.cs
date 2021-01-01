@@ -27,6 +27,9 @@ namespace ResearchPal
 
         public static bool OrderDirty;
 
+        private static List<List<Node>> _layers;
+        private static List<Node> _singletons;
+
         public static Dictionary<TechLevel, IntRange> TechLevelBounds
         {
             get
@@ -65,6 +68,8 @@ namespace ResearchPal
             }
         }
 
+        public static IEnumerable<Node> NonSingletons => Nodes.Where(n => _singletons.IndexOf(n) == -1);
+
         public static List<Edge<Node, Node>> Edges
         {
             get
@@ -76,37 +81,629 @@ namespace ResearchPal
             }
         }
 
+        private static void Layering() {
+            _layers = new List<List<Node>>();
+            foreach (var node in Nodes)
+            {
+                if (node.X > _layers.Count()) {
+                    for (int i = _layers.Count(); i < node.X; ++i) {
+                        _layers.Add(new List<Node>());
+                    }
+                }
+                _layers[node.X - 1].Add(node);
+            }
+            foreach (var layer in _layers) {
+                UpdateYInLayer(layer);
+            }
+        }
+
+        private static bool UpdateYInLayer(List<Node> layer) {
+            bool changed = false;
+            for (int i = 0; i < layer.Count(); ++i) {
+                if (layer[i] == null) {
+                    continue;
+                }
+                changed = changed || (layer[i].Y != i + 1);
+                layer[i].Y = i + 1;
+            }
+            return changed;
+        }
+
+        // the number of crossings in i_th matrix
+        private static int CountCrossings(int n) {
+            var layer = _layers[n];
+            int sum = 0;
+            for (int i = 0; i < layer.Count() - 1; ++i) {
+                for (int j = i + 1; j < layer.Count(); ++j) {
+                    foreach (var e1 in layer[i].OutEdges) {
+                        foreach(var e2 in layer[j].OutEdges) {
+                            if (e2.Out.Yf < e1.Out.Yf) {
+                                ++sum;
+                            }
+                        }
+                    }
+                }
+            }
+            return sum;
+        }
+
+        private static bool SignDiff(float f1, float f2) {
+            return f1 < 0 && f2 > 0 || f1 > 0 && f2 < 0;
+        }
+
+        private static int NodeLowerCrossings(Node n, List<Node> layer) {
+            int sum = 0;
+            foreach (Node n2 in layer) {
+                if (n2 == n) continue;
+                foreach (var e2 in n2.OutEdges) {
+                    foreach (var e in n.OutEdges) {
+                        if (SignDiff(e2.Out.Yf - e.Out.Yf, n2.Yf - n.Yf)) ++sum;
+                    }
+                }
+            }
+            return sum;
+        }
+        private static int NodeUpperCrossings(Node n, List<Node> layer) {
+            int sum = 0;
+            foreach (Node n2 in layer) {
+                if (n2 == n) continue;
+                foreach (var e2 in n2.InEdges) {
+                    foreach (var e in n.InEdges) {
+                        if (SignDiff(e2.In.Yf - e.In.Yf, n2.Yf - n.Yf)) ++sum;
+                    }
+                }
+            }
+            return sum;
+        }
+
+        private static int NodeCrossings(Node n, List<Node> layer) {
+            return NodeUpperCrossings(n, layer) + NodeLowerCrossings(n, layer);
+        }
+
+        private static int UpperConnectivity(int i, int j) {
+            return _layers[i][j].InEdges.Count();
+        }
+
+        private static int LowerConnectivity(int i, int j) {
+            return _layers[i][j].OutEdges.Count();
+        }
+
+        // Barycenter of row which node n resides
+        private static float RowBarycenter(Node n) {
+            var outs = n.OutEdges;
+            if (outs.Count() == 0) {
+                return n.Yf - 1;
+            }
+
+            return outs.Sum(e => e.Out.Yf - 1) / outs.Count();
+        }
+
+        // Barycenter of the column which n resides
+        private static float ColBarycenter(Node n) {
+            // because the column of a matrix resides in the next layer
+            var ins = n.InEdges;
+
+            if (ins.Count() == 0) {
+                return n.Yf - 1;
+            }
+
+            return ins.Sum(e => e.In.Yf - 1) / ins.Count();
+        }
+
+        private static float ColRealBarycenter(Node n) { 
+            var ins = n.InEdges;
+
+            if (ins.Count() == 0) {
+                return n.Yf;
+            }
+
+            return ins.Sum(e => e.In.Yf) / ins.Count();
+        }
+
+        private static float RowRealBarycenter(Node n) {
+            var outs = n.OutEdges;
+            if (outs.Count() == 0) {
+                return n.Yf;
+            }
+
+            return outs.Sum(e => e.Out.Yf) / outs.Count();
+        }
+
+        private static bool FloatEquals(float m, float n) {
+            return Math.Abs(m - n) <= 0.0001f;
+        }
+
+        // return value indicates whether the sort changes the order
+        private static bool SortWithRowBarycenter(List<Node> layer) {
+            layer.SortStable((n1, n2) => {
+                float c1 = RowBarycenter(n1), c2 = RowBarycenter(n2);
+                if (FloatEquals(c1, c2)) return 0;
+                if (c1 < c2) return -1;
+                return 1;
+            });
+            return UpdateYInLayer(layer);
+        }
+
+        // return value indicates whether the sort change the order
+        private static bool SortWithColBarycenter(List<Node> layer) {
+            layer.SortStable((n1, n2) => {
+                float c1 = ColBarycenter(n1), c2 = ColBarycenter(n2);
+                if (FloatEquals(c1, c2)) return 0;
+                if (c1 < c2) return -1;
+                return 1;
+            });
+            return UpdateYInLayer(layer);
+        }
+
+        private static void ReverseSegment(List<Node> layer, int start, int end) {
+            for (int i = start, j = end - 1; i < j; ++i, --j) {
+                Node temp = layer[i];
+                layer[i] = layer[j];
+                layer[j] = temp;
+            }
+        }
+
+        private static bool ReverseRowTies(List<Node> layer) {
+            for (int i = 0; i < layer.Count() - 1;) {
+                float bi = RowBarycenter(layer[i]);
+                int j = i + 1;
+                for (; j < layer.Count()
+                    && FloatEquals(bi, RowBarycenter(layer[j])); ++j) {
+                    continue;
+                }
+                ReverseSegment(layer, i, j);
+                i = j;
+            }
+            return UpdateYInLayer(layer);
+        }
+
+        private static bool ReverseColTies(List<Node> layer) {
+            for (int i = 0; i < layer.Count() - 1;) {
+                float bi = ColBarycenter(layer[i]);
+                int j = i + 1;
+                for (; j < layer.Count()
+                    && FloatEquals(bi, ColBarycenter(layer[j])); ++j) {
+                    continue;
+                }
+                ReverseSegment(layer, i, j);
+                i = j;
+            }
+            return UpdateYInLayer(layer);
+        }
+
+        private static bool IsOrdered(IEnumerable<float> xs) {
+            return xs.Zip(xs.Skip(1), (a, b) => new {a, b})
+                     .All(p => p.a < p.b);
+        }
+
+        private static int GlobalCrossings() {
+            int sum = 0;
+            for (int i = 0; i < _layers.Count() - 1; ++i) {
+                sum += CountCrossings(i);
+            }
+            return sum;
+        }
+
+        // run Barycenter Method with specified maximum interation
+        private static void NLevelBCPhase1(int maxIter = 5) {
+            for (int k = 0; k < maxIter; ++k) {
+                for (int i = 0; i < _layers.Count() - 1; ++i) {
+                    SortWithColBarycenter(_layers[i + 1]);
+                }
+                for (int i = _layers.Count() - 1; i > 0; --i) {
+                    SortWithRowBarycenter(_layers[i - 1]);
+                }
+            }
+        }
+
+        private static void NLevelBCMethod(int maxIter1, int maxIter2) {
+            // SortWithRowBarycenter(_layers[0]);
+            Log.Message("crossings: {0}", GlobalCrossings());
+            NLevelBCPhase1(maxIter1);
+            Log.Message("crossings: {0}", GlobalCrossings());
+            for (int n = 0; n < maxIter2; ++n) {
+                for (int i = _layers.Count() - 2; i >= 0; --i) {
+                    if (ReverseRowTies(_layers[i]) && !IsOrdered(_layers[i + 1].Select(node => ColBarycenter(node)))) {
+                        NLevelBCPhase1(maxIter1);
+                        Log.Message("crossings: {0}", GlobalCrossings());
+                    }
+                }
+                for (int i = 1; i < _layers.Count(); ++i) {
+                    if (ReverseColTies(_layers[i]) && !IsOrdered(_layers[i - 1].Select(node => RowBarycenter(node)))) {
+                        NLevelBCPhase1(maxIter1);
+                        Log.Message("crossings: {0}", GlobalCrossings());
+                    }
+                }
+            }
+        }
+
+        private static int LayerUpperLimit(List<Node> layer, int n) {
+            int i = n - 1;
+            for (; i >= 0
+                && layer[i].LayoutPriority() < layer[n].LayoutPriority();
+                --i) {
+                continue;
+            }
+            return i;
+        }
+
+        private static int LayerLowerLimit(List<Node> layer, int n) {
+            int i = n + 1;
+            for (; i < layer.Count()
+                && layer[i].LayoutPriority() < layer[n].LayoutPriority();
+                ++i) {
+                continue;
+            }
+            return i;
+        }
+
+        private static void PushUp(List<Node> layer, int n, float target) {
+            int n2 = LayerUpperLimit(layer, n);
+            // if (n2 >= 0)
+            //     Log.Message("Blocked by {0} ({1}) at {2}", layer[n2].Label, layer[n2].LayoutPriority(), layer[n2].Yf);
+            float upperY = n2 < 0 ? 0 : layer[n2].Yf;
+            layer[n].Yf = Math.Max(upperY + (n - n2), target);
+            for (int i = n - 1; i > n2 && layer[i].Yf > layer[i + 1].Yf - 1; --i) {
+                layer[i].Yf = layer[i + 1].Yf - 1;
+            }
+            // Log.Message("Pushing {0} ({1}) up to {2} ended up at {3}", layer[n].Label, layer[n].LayoutPriority(), target, layer[n].Yf);
+        }
+
+        private static void PushDown(List<Node> layer, int n, float target) {
+            int n2 = LayerLowerLimit(layer, n);
+            // if (n2 < layer.Count())
+            //     Log.Message("Blocked by {0} ({1}) at {2}", layer[n2].Label, layer[n2].LayoutPriority(), layer[n2].Yf);
+            float lowerY = n2 >= layer.Count() ? 999999 : layer[n2].Yf;
+            layer[n].Yf = Math.Min(lowerY - (n2 - n), target);
+            for (int i = n + 1; i < n2 && layer[i].Yf < layer[i - 1].Yf + 1; ++i) {
+                layer[i].Yf = layer[i - 1].Yf + 1;
+            }
+            // Log.Message("Pushing {0} ({1}) down to {2} ended up at {3}", layer[n].Label, layer[n].LayoutPriority(), target, layer[n].Yf);
+        }
+
+        private static int ImproveColVerticalPosition(List<Node> layer) {
+            int count = 0;
+            foreach (var n in layer.OrderByDescending(n => n.LayoutPriority())) {
+                ++count;
+                float c = (float) Math.Round(ColRealBarycenter(n));
+                // float c = ColRealBarycenter(n);
+                if (FloatEquals(c, n.Yf)) {
+                    // Log.Message("Skipping {0} at {1}", n.Label, n.Yf);
+                    continue;
+                }
+                if (c < n.Yf) {
+                    PushUp(layer, layer.IndexOf(n), c);
+                } else {
+                    PushDown(layer, layer.IndexOf(n), c);
+                }
+            }
+            return count;
+        }
+        private static int ImproveRowVerticalPosition(List<Node> layer) {
+            int count = 0;
+            foreach (var n in layer.OrderByDescending(n => n.LayoutPriority())) {
+                ++count;
+                float c = (float) Math.Round(RowRealBarycenter(n));
+                // float c = RowRealBarycenter(n);
+                if (FloatEquals(c, n.Yf)) {
+                    // Log.Message("Skipping {0} at {1}", n.Label, n.Yf);
+                    continue;
+                }
+                if (c < n.Yf) {
+                    PushUp(layer, layer.IndexOf(n), c);
+                } else {
+                    PushDown(layer, layer.IndexOf(n), c);
+                }
+            }
+            return count;
+        }
+
+        private static float mainGraphUpperbound = 1;
+
+        private static void MakeTopSpaces(float space) {
+            foreach (var n in NonSingletons) {
+                n.Yf = n.Yf + space;
+            }
+        }
+
+        private static void CloseSpacesMade() {
+            float topCoordinate = NonSingletons.Min(n => n.Yf);
+            Log.Message("Top node at {0}", topCoordinate);
+            foreach (var n in NonSingletons)
+            {
+                n.Yf = n.Yf - (topCoordinate - mainGraphUpperbound);
+            }
+        }
+
+        private static void AssignPriorities() {
+            for (int i = 0; i < _layers.Count(); ++i) {
+                List<Node> ordering = _layers[i].OrderBy(n => n.DefaultPriority()).ToList();
+                for (int j = 0; j < ordering.Count(); ++j) {
+                    ordering[j].assignedPriority = j;
+                }
+            }
+        }
+
+        private static void ImproveVerticalPosition() {
+            MakeTopSpaces(200);
+            AssignPriorities();
+            for (int i = 1; i < _layers.Count(); ++i) {
+                int n = ImproveColVerticalPosition(_layers[i]);
+            }
+            for (int i = _layers.Count() - 2; i >= 0; --i) {
+                int n = ImproveRowVerticalPosition(_layers[i]);
+            }
+            for (int i = 1; i < _layers.Count(); ++i) {
+                int n = ImproveColVerticalPosition(_layers[i]);
+            }
+            // for (int i = _layers.Count() - 2; i >= 0; --i) {
+            //     int n = ImproveRowVerticalPosition(_layers[i]);
+            // }
+            CloseSpacesMade();
+        }
+
+        private static void ProcessSingletons() {
+            _singletons = _layers[0]
+                .Where(n => n is ResearchNode && n.OutEdges.Count() == 0)
+                .OrderBy(n => (n as ResearchNode).Research.techLevel)
+                .ToList();
+            _layers[0] = _layers[0].Where(n => n.OutEdges.Count() > 0).ToList();
+            UpdateYInLayer(_layers[0]);
+            int x = 0, y = 0;
+            foreach (var n in _singletons) {
+                n.X = x + 1; n.Y = y + 1;
+                y += (x + 1) / _layers.Count();
+                x = (x + 1) % _layers.Count();
+            }
+            mainGraphUpperbound = x == 0 ? y + 1 : y + 2;
+        }
+
+        public static void BruteforceFinalization() {
+            for (int x = 0; x < 5; ++x) {
+
+                for (int i = 1; i < _layers.Count(); ++i) {
+                    var layer = _layers[i];
+                    for (int j = 0; j < layer.Count() - 1; ++j) {
+                        for (int k = j + 1; k < layer.Count(); ++k) {
+                            int c = NodeCrossings(layer[j], layer) + NodeCrossings(layer[k], layer);
+                            Swap(layer[j], layer[k]);
+                            int c2 = NodeCrossings(layer[j], layer) + NodeCrossings(layer[k], layer);
+                            if (c2 > c) {
+                                Swap(layer[j], layer[k]);
+                            }
+                        }
+                    }
+                }
+                Log.Message("finalization crossings: {0}", GlobalCrossings());
+                for (int i = _layers.Count() - 2; i >= 0; --i) {
+                    var layer = _layers[i];
+                    for (int j = 0; j < layer.Count() - 1; ++j) {
+                        for (int k = j + 1; k < layer.Count(); ++k) {
+                            int c = NodeCrossings(layer[j], layer) + NodeCrossings(layer[k], layer);
+                            Swap(layer[j], layer[k]);
+                            int c2 = NodeCrossings(layer[j], layer) + NodeCrossings(layer[k], layer);
+                            if (c2 >= c) {
+                                Swap(layer[j], layer[k]);
+                            }
+                        }
+                    }
+                }
+                Log.Message("finalization crossings: {0}", GlobalCrossings());
+            }
+            foreach (var layer in _layers) {
+                layer.SortBy(node => node.Yf);
+            }
+        }
+
+        private static void TryMinimizeCrossings() {
+            NLevelBCMethod(5, 3);
+            BruteforceFinalization();
+        }
+
+        private static List<int> FindSegmentBackward(int l, int n) {
+            var layer = _layers[l];
+            var node = layer[n];
+            List<int> result = new List<int>();
+            Node cur = node;
+            do {
+                result.Add(_layers[l--].IndexOf(cur));
+                if (cur.InEdges.Count() == 1) {
+                    cur = cur.InNodes[0];
+                } else {
+                    break;
+                }
+            } while (l >= 0 && FloatEquals(node.Yf, cur.Yf));
+            return result;
+        } 
+        private static List<int> FindSegmentForward(int l, int n) {
+            var layer = _layers[l];
+            var node = layer[n];
+            List<int> result = new List<int>();
+            Node cur = node;
+            do {
+                result.Add(_layers[l++].IndexOf(cur));
+                if (cur.OutEdges.Count() == 1) {
+                    cur = cur.OutNodes[0];
+                } else {
+                    break;
+                }
+            } while (l <= _layers.Count() && FloatEquals(node.Yf, cur.Yf));
+            result.Reverse();
+            return result;
+        } 
+
+        private static float SegmentMinUpperSpace(List<int> seg, int startLayer) {
+            float result = float.PositiveInfinity;
+            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
+                var layer = _layers[startLayer];
+                if (seg[i] == 0) continue;
+                result = Math.Min(result, layer[seg[i]].Yf - layer[seg[i] - 1].Yf - 1);
+            } 
+            return result;
+        }
+
+        private static float SegmentMinLowerSpace(List<int> seg, int startLayer) {
+            float result = float.PositiveInfinity;
+            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
+                var layer = _layers[startLayer];
+                if (seg[i] == layer.Count() - 1) continue;
+                result = Math.Min(result, layer[seg[i] + 1].Yf - layer[seg[i]].Yf - 1);
+            } 
+            return result;
+        }
+        private static void ApplyVerticalAdjustment(List<int> seg, int startLayer, float dy) {
+            if (FloatEquals(dy, 0)) return;
+            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
+                var node = _layers[startLayer][seg[i]];
+                node.Yf = node.Yf + dy;
+            }
+        }
+
+        private static float MoveTowardFrom(List<Node> ns, float p) {
+            if (ns.All(n => n.Yf > p)) {
+                return ns.Min(n => n.Yf - p);
+            }
+            if (ns.All(n => n.Yf < p)) {
+                return ns.Max(n => n.Yf - p);
+            }
+            return 0;
+        }
+
+        private static float AbsMin(float x, float y) {
+            if (FloatEquals(x, 0) || FloatEquals(y, 0)) return 0;
+            if (x < 0) {
+                return Math.Max(x, y);
+            }
+            return Math.Min(x, y);
+        }
+
+        private static bool TryMoveSegment(List<int> ns, int startLayer) {
+            int endLayer = startLayer - ns.Count() + 1;
+            var startNode = _layers[startLayer][ns[0]];
+            var endNode = _layers[endLayer][ns[ns.Count() - 1]];
+            float moveUpperLayer =
+                startLayer == _layers.Count() - 1 || startNode.OutEdges.Count() == 0 ?
+                float.NaN : MoveTowardFrom(startNode.OutNodes, startNode.Yf);
+            float moveLowerLayer = endLayer == 0 || endNode.InNodes.Count() == 0 ?
+                float.NaN : MoveTowardFrom(endNode.InNodes, endNode.Yf);
+            float attemptMovement = float.IsNaN(moveUpperLayer)
+                ? float.IsNaN(moveLowerLayer) ? 0 : moveLowerLayer
+                : float.IsNaN(moveLowerLayer)
+                    ? moveUpperLayer
+                    : SignDiff(moveUpperLayer, moveLowerLayer) ? 0 : AbsMin(moveUpperLayer, moveLowerLayer);
+            if (FloatEquals(attemptMovement, 0)) return false;
+            float restriction =
+                attemptMovement > 0 ? SegmentMinLowerSpace(ns, startLayer) : - SegmentMinUpperSpace(ns, startLayer);
+            float movement = AbsMin(restriction, attemptMovement);
+            ApplyVerticalAdjustment(ns, startLayer, movement);
+            return FloatEquals(movement, attemptMovement);
+        }
+
+        private static void MoveSegmentBackward(int l, int n) {
+            var layer = _layers[l];
+            var node = layer[n];
+            List<int> segment = null;
+            do {
+                segment = FindSegmentBackward(l, n);
+            } while (TryMoveSegment(segment, l));
+        }
+
+        public static void TryBackwardAdjustNodeSegments() {
+            for (int i = _layers.Count() - 1; i >= 0; --i) {
+                var layer = _layers[i];
+                for (int n = 0; n < layer.Count(); ++n) {
+                    for (int j = 0; j < layer.Count(); ++j) {
+                        MoveSegmentBackward(i, j);
+                    }
+                }
+            }
+        }
+
+        private static void MoveSegmentForward(int l, int n) {
+            var layer = _layers[l];
+            var node = layer[n];
+            List<int> segment = null;
+            do {
+                segment = FindSegmentForward(l, n);
+            } while (TryMoveSegment(segment, l + segment.Count() - 1));
+        }
+
+        public static void TryForwardAdjustNodeSegments() {
+            for (int i = 0; i <= _layers.Count(); ++i) {
+                var layer = _layers[i];
+                for (int n = 0; n < layer.Count(); ++n) {
+                    for (int j = 0; j < layer.Count(); ++j) {
+                        MoveSegmentForward(i, j);
+                    }
+                }
+            }
+        }
+
+        private static void GroupDummiesByParents(List<DummyNode> dummies) {
+            for (int i = 0; i < dummies.Count() - 1; ) {
+                DummyNode node = dummies[i];
+                Node parent = node.InNodes[0];
+                for (int j = i + 1; j < dummies.Count() && dummies[j].InNodes[0] == parent; ++j) {
+                    // todo
+                }
+            }
+        }
+
+        private static void CollapseDummyNodes() {
+            for (int i = 0; i < _layers.Count(); ++i) {
+                var dummies = _layers[i].OfType<DummyNode>().ToList();
+                for (int j = 0; j < dummies.Count(); ) { 
+
+                }
+            }
+        }
+
+
         public static void Initialize()
         {
             shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
 
             // setup
-            Log.Message(ResourceBank.String.PreparingTree_Setup);
+            // Log.Message(ResourceBank.String.PreparingTree_Setup);
             CheckPrerequisites();
             CreateEdges();
             HorizontalPositions();
             NormalizeEdges();
-#if DEBUG
-            DebugStatus();
-#endif
-            // crossing reduction
-            Log.Message(ResourceBank.String.PreparingTree_CrossingReduction);
-            Collapse();
-            MinimizeCrossings();
-#if DEBUG
-            DebugStatus();
-#endif
-            // layout
-            Log.Message(ResourceBank.String.PreparingTree_Layout);
-            MinimizeEdgeLength();
-            SquashOrphans();
+// Legacy Logic Above
+
+            Layering();
+            ProcessSingletons();
+            TryMinimizeCrossings();
+
+            ImproveVerticalPosition();
+            for (int i = 0; i < 3; ++i) {
+                TryForwardAdjustNodeSegments();
+            }
             RemoveEmptyRows();
-#if DEBUG
-            DebugStatus();
-#endif
-            // done!
-            // we're ready
-            Log.Message(ResourceBank.String.PreparingTree_RestoreQueue);
+
+// Legacy Logic Below
+
+// #if DEBUG
+//             DebugStatus();
+// #endif
+//             // crossing reduction
+//             Log.Message(ResourceBank.String.PreparingTree_CrossingReduction);
+//             Collapse();
+//             MinimizeCrossings();
+// #if DEBUG
+//             DebugStatus();
+// #endif
+//             // layout
+//             Log.Message(ResourceBank.String.PreparingTree_Layout);
+//             MinimizeEdgeLength();
+//             SquashOrphans();
+            // RemoveEmptyRows();
+// #if DEBUG
+//             DebugStatus();
+// #endif
+//             // done!
+//             // we're ready
+//             Log.Message(ResourceBank.String.PreparingTree_RestoreQueue);
         }
 
         private static void RemoveEmptyRows()
@@ -516,7 +1113,7 @@ namespace ResearchPal
         {
             Log.Debug( "Normalizing edges." );
             Profiler.Start();
-            foreach ( var edge in new List<Edge<Node, Node>>( Edges.Where( e => e.Span > 1 ) ) )
+            foreach (var edge in new List<Edge<Node, Node>>(Edges.Where(e => e.Span > 1)))
             {
                 Log.Trace( "\tCreating dummy chain for {0}", edge );
 
@@ -551,7 +1148,6 @@ namespace ResearchPal
 
             Profiler.End();
         }
-
         private static void CreateEdges()
         {
             Log.Debug( "Creating edges." );

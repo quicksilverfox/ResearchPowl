@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ModMetaData>
-  <packageId>notfood.ResearchPal</packageId>
-  <name>ResearchPal</name>
-  <author>notfood</author>
+  <packageId>vinalx.ResearchPalForked</packageId>
+  <name>ResearchPal - Forked</name>
+  <author>vinalx</author>
   <url>https://github.com/notfood/RimWorld-ResearchPal</url>
   <supportedVersions>
     <li>1.1</li>

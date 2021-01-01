@@ -188,6 +188,19 @@ namespace ResearchPal
             return TechprintAvailable( Research );
         }
 
+        public override int DefaultPriority()
+        {
+            return InEdges.Count() + OutEdges.Count();
+        }
+        public override int LayoutUpperPriority()
+        {
+            return InEdges.Count();
+        }
+        public override int LayoutLowerPriority()
+        {
+            return OutEdges.Count();
+        }
+
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
