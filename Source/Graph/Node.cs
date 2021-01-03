@@ -364,5 +364,13 @@ namespace ResearchPal
         public virtual int LayoutLowerPriority() {
             return int.MaxValue;
         }
+
+        public int lx;
+        public int ly;
+
+        public NodeLayer layer;
+
+        public double sortingWeight;
     }
+
 }

@@ -3,6 +3,7 @@
 
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace ResearchPal
 {
@@ -10,7 +11,7 @@ namespace ResearchPal
     {
         #region Overrides of Node
 
-        public override string Label => "DUMMY: " + ( Parent?.Label ?? "??" ) + " -> " + ( Child?.Label ?? "??" );
+        public override string Label => "DUMMY";
 
         #endregion
 
@@ -37,31 +38,23 @@ namespace ResearchPal
 
         #endregion
 
-        public ResearchNode Parent
+        public List<ResearchNode> Parent
         {
             get
             {
-                var parent = InNodes.FirstOrDefault() as ResearchNode;
-                if ( parent != null )
-                    return parent;
-
-                var dummyParent = InNodes.FirstOrDefault() as DummyNode;
-
-                return dummyParent?.Parent;
+                return InNodes.OfType<ResearchNode>()
+                    .Concat(InNodes.OfType<DummyNode>()
+                        .SelectMany(n => n.Parent))
+                    .ToList();
             }
         }
 
-        public ResearchNode Child
+        public List<ResearchNode> Child
         {
             get
             {
-                var child = OutNodes.FirstOrDefault() as ResearchNode;
-                if ( child != null )
-                    return child;
-
-                var dummyChild = OutNodes.FirstOrDefault() as DummyNode;
-
-                return dummyChild?.Child;
+                return OutNodes.OfType<ResearchNode>()
+                    .Concat(OutNodes.OfType<DummyNode>().SelectMany(n => n.Child)).ToList();
             }
         }
 
@@ -70,5 +63,19 @@ namespace ResearchPal
         public override bool  Highlighted => OutNodes.FirstOrDefault()?.Highlighted ?? false;
         public override Color Color       => OutNodes.FirstOrDefault()?.Color       ?? Color.white;
         public override Color EdgeColor   => OutNodes.FirstOrDefault()?.EdgeColor   ?? Color.white;
+
+        public void Merge(DummyNode that) {
+            foreach (var n in that.OutNodes) {
+                if (! OutNodes.Contains(n)) {
+                    _outEdges.Add(new Edge<Node, Node>(this, n));
+                }
+            }
+            foreach (var n in that.InNodes) {
+                if (! InNodes.Contains(n)) {
+                    _inEdges.Add(new Edge<Node, Node>(n, this));
+                }
+            }
+        }
+
     }
 }

@@ -35,7 +35,7 @@ namespace ResearchPal
             get
             {
                 var parents = InNodes.OfType<ResearchNode>();
-                parents.Concat( InNodes.OfType<DummyNode>().Select( dn => dn.Parent ) );
+                parents.Concat( InNodes.OfType<DummyNode>().SelectMany( dn => dn.Parent ) );
                 return parents.ToList();
             }
         }
@@ -73,7 +73,7 @@ namespace ResearchPal
             get
             {
                 var children = OutNodes.OfType<ResearchNode>();
-                children.Concat( OutNodes.OfType<DummyNode>().Select( dn => dn.Child ) );
+                children.Concat( OutNodes.OfType<DummyNode>().SelectMany( dn => dn.Child ) );
                 return children.ToList();
             }
         }
