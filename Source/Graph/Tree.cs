@@ -107,16 +107,22 @@ namespace ResearchPal
                 .OrderBy(n => (n as ResearchNode).Research.techLevel)
                 .ToList();
             layers[0] = layers[0].Where(n => n.OutEdges.Count() > 0).ToList();
-            int x = 0, y = 0;
 
-            foreach (var n in singletons) {
-                n.X = x + 1; n.Y = y + 1;
-                y += (x + 1) / (layers.Count() - 1);
-                x = (x + 1) % (layers.Count() - 1);
+            foreach (var g in singletons.GroupBy(n => (n as ResearchNode).Research.techLevel)) {
+                PlaceSingletons(g, layers.Count() - 1);
             }
-            mainGraphUpperbound = x == 0 ? y + 1 : y + 2;
 
             return singletons;
+        }
+
+        private static void PlaceSingletons(IEnumerable<Node> singletons, int colNum) {
+            int x = 0, y = (int) mainGraphUpperbound;
+            foreach (var n in singletons) {
+                n.X = x + 1; n.Y = y;
+                y += (x + 1) / colNum;
+                x = (x + 1) % colNum;
+            }
+            mainGraphUpperbound = x == 0 ? y : y + 1;
         }
 
 
@@ -312,13 +318,31 @@ namespace ResearchPal
             _singletons = singletons;
         }
 
-        public static void TryMinimizeCrossings(List<List<Node>> data) {
+        public static void MainAlgorithm(List<List<Node>> data) {
+            Log.Message("Truely start with {0} techs", data.Sum(l => l.Count()));
             NodeLayers layers = new NodeLayers(data);
+            Log.Message("Start with {0} techs", layers.NodeCount());
+            // var layerss = new List<NodeLayers>();
+            // layerss.Add(layers);
+            var layerss = layers.SplitConnectiveComponents();
+            Log.Message("Split layers: {0}", layerss.Count());
+            Log.Message("End with {0} techs", layerss.Sum(l => l.NodeCount()));
+            layerss.ForEach(l => OrgainzeLayers(l));
+            PositionAllLayers(layerss.OrderBy(l => l.NodeCount()));
+            // layers.SplitConnectiveComponents();
+        }
+
+        public static void OrgainzeLayers(NodeLayers layers) {
             layers.MinimizeCrossings();
             layers.ApplyGridCoordinates();
-            Log.Message("final crossings: {0}", layers.Crossings());
             layers.ImproveNodePositionsInLayers();
-            layers.AlignTopAt(mainGraphUpperbound);
+        }
+
+        public static void PositionAllLayers(IEnumerable<NodeLayers> layerss) {
+            foreach (var layers in layerss) {
+                layers.AlignTopAt(mainGraphUpperbound);
+                mainGraphUpperbound = layers.BottomPosition() + 1;
+            }
         }
 
 
@@ -335,13 +359,13 @@ namespace ResearchPal
 // Legacy Logic Above
 
             LegacyPreprocessing();
-            TryMinimizeCrossings(_layers);
+            MainAlgorithm(_layers);
 
             // CollapseAdjacentDummyNodes();
 
-            for (int i = 0; i < 3; ++i) {
-                TryForwardAdjustNodeSegments();
-            }
+            // for (int i = 0; i < 3; ++i) {
+            //     TryForwardAdjustNodeSegments();
+            // }
             RemoveEmptyRows();
 
 // Legacy Logic Below

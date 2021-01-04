@@ -370,7 +370,13 @@ namespace ResearchPal
 
         public NodeLayer layer;
 
-        public double sortingWeight;
+        public double doubleCache;
+        public int intCache1;
+        public int intCache2;
+
+        public virtual int CompareTieBreaker(Node that) {
+            return 0;
+        }
     }
 
 }

@@ -201,6 +201,17 @@ namespace ResearchPal
             return OutEdges.Count();
         }
 
+        public override int CompareTieBreaker(Node that)
+        {
+            if (that is DummyNode) {
+                return -1;
+            }
+            var n = that as ResearchNode;
+            var c1 = Research.techLevel.CompareTo(n.Research.techLevel);
+            if (c1 != 0) return c1;
+            return (Research.modContentPack?.Name ?? "").CompareTo(n.Research.modContentPack?.Name ?? "");
+        }
+
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>

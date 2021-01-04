@@ -77,5 +77,13 @@ namespace ResearchPal
             }
         }
 
+        public override int CompareTieBreaker(Node that)
+        {
+            if (that is DummyNode) {
+                return 0;
+            }
+            return 1;
+        }
+
     }
 }
