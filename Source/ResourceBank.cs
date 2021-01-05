@@ -23,6 +23,15 @@ namespace ResearchPal
             public static readonly string ShouldResetOnOpen = TL("ShouldResetOnOpen");
             public static readonly string ShouldResetOnOpenTip = TL("ShouldResetOnOpenTip");
 
+            public static readonly string PlaceModTechSeparately = TL("GroupModTechs");
+            public static readonly string PlaceModTechSeparatelyTip = TL("GroupModTechsTip");
+
+            public static readonly string AlignCloserToAncestors = TL("AlignCloserToAncestors");
+            public static readonly string AlignCloserToAncestorsTip = TL("AlignCloserToAncestorsTip");
+
+            public static readonly string MinimumSeparateModTech = TL("MinimumSeparateModTech");
+            public static readonly string MinimumSeparateModTechTip = TL("MinimumSeparateModTechTip");
+
             public static readonly string DebugResearch = TL("DebugResearch");
             public static readonly string DebugResearchTip = TL("DebugResearchTip");
             #endregion

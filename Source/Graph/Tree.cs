@@ -102,6 +102,9 @@ namespace ResearchPal
         private static float mainGraphUpperbound = 1;
 
         private static List<Node> ProcessSingletons(List<List<Node>> layers) {
+            if (shouldSeparateByTechLevels) {
+                return new List<Node>();
+            }
             var singletons = layers[0]
                 .Where(n => n is ResearchNode && n.OutEdges.Count() == 0)
                 .OrderBy(n => (n as ResearchNode).Research.techLevel)
@@ -123,84 +126,6 @@ namespace ResearchPal
                 x = (x + 1) % colNum;
             }
             mainGraphUpperbound = x == 0 ? y : y + 1;
-        }
-
-
-        private static List<int> FindSegmentBackward(int l, int n) {
-            var layer = _layers[l];
-            var node = layer[n];
-            List<int> result = new List<int>();
-            Node cur = node;
-            do {
-                result.Add(_layers[l--].IndexOf(cur));
-                if (cur.InEdges.Count() == 1) {
-                    cur = cur.InNodes[0];
-                } else {
-                    break;
-                }
-            } while (l >= 0 && MathUtil.FloatEqual(node.Yf, cur.Yf));
-            return result;
-        } 
-        private static List<int> FindSegmentForward(int l, int n) {
-            var layer = _layers[l];
-            var node = layer[n];
-            List<int> result = new List<int>();
-            Node cur = node;
-            do {
-                result.Add(_layers[l++].IndexOf(cur));
-                if (cur.OutEdges.Count() == 1) {
-                    cur = cur.OutNodes[0];
-                } else {
-                    break;
-                }
-            } while (l <= _layers.Count() && MathUtil.FloatEqual(node.Yf, cur.Yf));
-            result.Reverse();
-            return result;
-        } 
-
-        private static float SegmentMinUpperSpace(List<int> seg, int startLayer) {
-            float result = float.PositiveInfinity;
-            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
-                var layer = _layers[startLayer];
-                if (seg[i] == 0) continue;
-                result = Math.Min(result, layer[seg[i]].Yf - layer[seg[i] - 1].Yf - 1);
-            } 
-            return result;
-        }
-
-        private static float SegmentMinLowerSpace(List<int> seg, int startLayer) {
-            float result = float.PositiveInfinity;
-            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
-                var layer = _layers[startLayer];
-                if (seg[i] == layer.Count() - 1) continue;
-                result = Math.Min(result, layer[seg[i] + 1].Yf - layer[seg[i]].Yf - 1);
-            } 
-            return result;
-        }
-        private static void ApplyVerticalAdjustment(List<int> seg, int startLayer, float dy) {
-            if (MathUtil.FloatEqual(dy, 0)) return;
-            for (int i = 0; i < seg.Count(); ++i, --startLayer) {
-                var node = _layers[startLayer][seg[i]];
-                node.Yf = node.Yf + dy;
-            }
-        }
-
-        private static float MoveTowardFrom(List<Node> ns, float p) {
-            if (ns.All(n => n.Yf > p)) {
-                return ns.Min(n => n.Yf - p);
-            }
-            if (ns.All(n => n.Yf < p)) {
-                return ns.Max(n => n.Yf - p);
-            }
-            return 0;
-        }
-
-        private static float AbsMin(float x, float y) {
-            if (MathUtil.FloatEqual(x, 0) || MathUtil.FloatEqual(y, 0)) return 0;
-            if (x < 0) {
-                return Math.Max(x, y);
-            }
-            return Math.Min(x, y);
         }
 
         private static void MergeDummiesByParents(List<Node> layer, List<DummyNode> dummies) {
@@ -260,7 +185,13 @@ namespace ResearchPal
             NodeLayers layers = new NodeLayers(data);
             // var layerss = new List<NodeLayers>();
             // layerss.Add(layers);
-            var modsSplit = layers.SplitLargeMods();
+            List<NodeLayers> modsSplit = null;
+            if (Settings.placeModTechSeparately) {
+                modsSplit = layers.SplitLargeMods();
+            } else {
+                modsSplit = new List<NodeLayers>();
+                modsSplit.Add(layers);
+            }
 
             var layerss = modsSplit
                 .OrderBy(l => l.NodeCount())
