@@ -18,18 +18,17 @@
   </modDependencies>
   <description>Forked smooth painless research
 # Features
- - Automatically generated to maximize readability*. 
+ - Dynamically generated to maximize readability. 
  - Shows research projects, buildings, plants and recipes unlocked by each research project.
  - Projects can be queued, and colonists will automatically start the next project when the current research project completes.
  - Search functionality to quickly find research projects.
 
 # Credits:
- All the work by Fluffy
- Some optimizations by NotFood
- Previous updates by NotFood and Skyarkangel
- Templarr, Russian translation 
- Suh, Junmin: Korean translation
- rw-chaos, German translation
- 53N4, Spanish translation
+  Graph layout algorithm by VinaLx
+  Everything else (UI, compatibilities) by Fluffy, NotFood and Skyarkangel
+  Templarr, Russian translation 
+  Suh, Junmin: Korean translation
+  rw-chaos, German translation
+  53N4, Spanish translation
   </description>
 </ModMetaData>
