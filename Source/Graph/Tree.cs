@@ -203,68 +203,6 @@ namespace ResearchPal
             return Math.Min(x, y);
         }
 
-        private static bool TryMoveSegment(List<int> ns, int startLayer) {
-            int endLayer = startLayer - ns.Count() + 1;
-            var startNode = _layers[startLayer][ns[0]];
-            var endNode = _layers[endLayer][ns[ns.Count() - 1]];
-            float moveUpperLayer =
-                startLayer == _layers.Count() - 1 || startNode.OutEdges.Count() == 0 ?
-                float.NaN : MoveTowardFrom(startNode.OutNodes, startNode.Yf);
-            float moveLowerLayer = endLayer == 0 || endNode.InNodes.Count() == 0 ?
-                float.NaN : MoveTowardFrom(endNode.InNodes, endNode.Yf);
-            float attemptMovement = float.IsNaN(moveUpperLayer)
-                ? float.IsNaN(moveLowerLayer) ? 0 : moveLowerLayer
-                : float.IsNaN(moveLowerLayer)
-                    ? moveUpperLayer
-                    : SignDiff(moveUpperLayer, moveLowerLayer) ? 0 : AbsMin(moveUpperLayer, moveLowerLayer);
-            if (MathUtil.FloatEqual(attemptMovement, 0)) return false;
-            float restriction =
-                attemptMovement > 0 ? SegmentMinLowerSpace(ns, startLayer) : - SegmentMinUpperSpace(ns, startLayer);
-            float movement = AbsMin(restriction, attemptMovement);
-            ApplyVerticalAdjustment(ns, startLayer, movement);
-            return MathUtil.FloatEqual(movement, attemptMovement);
-        }
-
-        private static void MoveSegmentBackward(int l, int n) {
-            var layer = _layers[l];
-            var node = layer[n];
-            List<int> segment = null;
-            do {
-                segment = FindSegmentBackward(l, n);
-            } while (TryMoveSegment(segment, l));
-        }
-
-        public static void TryBackwardAdjustNodeSegments() {
-            for (int i = _layers.Count() - 1; i >= 0; --i) {
-                var layer = _layers[i];
-                for (int n = 0; n < layer.Count(); ++n) {
-                    for (int j = 0; j < layer.Count(); ++j) {
-                        MoveSegmentBackward(i, j);
-                    }
-                }
-            }
-        }
-
-        private static void MoveSegmentForward(int l, int n) {
-            var layer = _layers[l];
-            var node = layer[n];
-            List<int> segment = null;
-            do {
-                segment = FindSegmentForward(l, n);
-            } while (TryMoveSegment(segment, l + segment.Count() - 1));
-        }
-
-        public static void TryForwardAdjustNodeSegments() {
-            for (int i = 0; i < _layers.Count(); ++i) {
-                var layer = _layers[i];
-                for (int n = 0; n < layer.Count(); ++n) {
-                    for (int j = 0; j < layer.Count(); ++j) {
-                        MoveSegmentForward(i, j);
-                    }
-                }
-            }
-        }
-
         private static void MergeDummiesByParents(List<Node> layer, List<DummyNode> dummies) {
             for (int i = 0; i < dummies.Count() - 1; ) {
                 DummyNode node = dummies[i];

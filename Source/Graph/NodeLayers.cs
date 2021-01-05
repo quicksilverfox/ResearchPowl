@@ -128,6 +128,12 @@ namespace ResearchPal
             for (int i = 1; i < LayerCount(); ++i) {
                 Layer(i).ImprovePositionAccordingToUpper();
             }
+            if (! Settings.alignToAncestors) {
+                for (int i = LayerCount() - 2; i >= 0; --i) {
+                    Layer(i).ImprovePositionAccordingToLower();
+                }
+            }
+            AlignSegments(3);
         }
 
         public void MoveVertically(float f) {
@@ -206,6 +212,28 @@ namespace ResearchPal
                 }
             }
             return result;
+        }
+
+        private static void AlignNode(Node node) {
+            bool aligned = false;
+            do {
+                var segment = node.LocalSegment();
+                aligned = segment.Align();
+            } while (aligned);
+        }
+
+        public void AlignSegments(int maxIter) {
+            for (int n = 0; n < maxIter; ++n) {
+                if (Settings.alignToAncestors) {
+                    for (int i = 0; i < LayerCount(); ++i) {
+                        Layer(i).Nodes().ForEach(AlignNode);
+                    }
+                } else {
+                    for (int i = LayerCount() - 1; i >= 0; --i) {
+                        Layer(i).Nodes().ForEach(AlignNode);
+                    }
+                }
+            }
         }
 
         private static string GroupingByMods(Node node) {
@@ -485,6 +513,9 @@ namespace ResearchPal
         public static bool SignDiff(int x, int y) {
             return x < 0 && y > 0 || x > 0 && y < 0;
         }
+        public static bool SignDiff(float x, float y) {
+            return x < 0 && y > 0 || x > 0 && y < 0;
+        }
 
         public static bool FloatEqual(double x, double y) {
             return Math.Abs(x - y) < 0.00001;
@@ -635,6 +666,136 @@ namespace ResearchPal
         }
         public static IEnumerable<Edge<Node, Node>> LocalInEdges(this Node node) {
             return node.InEdges.Where(e => e.In.layer == node.layer.LowerLayer());
+        }
+        public static NodeSegment LocalSegment(this Node node) {
+            List<Node> segment = new List<Node>();
+            segment.Add(node);
+            for ( var outs = node.LocalOutNodes()
+                ; outs.Count() == 1 && MathUtil.FloatEqual(outs.First().Yf, node.Yf)
+                ; outs = outs.First().LocalOutNodes()) {
+                segment.Add(outs.First());
+            }
+            for ( var ins = node.LocalInNodes()
+                ; ins.Count() == 1 && MathUtil.FloatEqual(ins.First().Yf, node.Yf)
+                ; ins = ins.First().LocalOutNodes()) {
+                segment.Insert(0, ins.First());
+            }
+            return new NodeSegment(segment);
+        }
+    }
+
+    public class NodeSegment {
+        private List<Node> _nodes;
+
+        public NodeSegment(List<Node> nodes) {
+            _nodes = nodes;
+        }
+
+        public float UpperMaximumEmptySpace() {
+            float result = 99999;
+            foreach (var n in _nodes) {
+                if (n.ly <= 0) {
+                    continue;
+                }
+                var layer = n.layer;
+                result = Math.Min(result, n.Yf - layer[n.ly - 1].Yf - 1);
+            }
+            return result;
+        }
+
+        public float LowerMaximumEmptySpace() {
+            float result = 99999;
+            foreach (var n in _nodes) {
+                var layer = n.layer;
+                if (n.ly >= layer.Count() - 1) {
+                    continue;
+                }
+                result = Math.Min(result, layer[n.ly + 1].Yf - n.Yf - 1);
+            }
+            return result;
+        }
+
+        public void MoveVertically(float dy) {
+            _nodes.ForEach(n => n.Yf = n.Yf + dy);
+        }
+
+        public float Position() {
+            return _nodes.First().Yf;
+        }
+
+        private float SelectAppropriateMovement(IEnumerable<Node> alignTo, float pos) {
+            var dys = alignTo.Select(n => n.Yf - pos).ToArray();
+            float dymax = dys.Max(), dymin = dys.Min();
+            if (MathUtil.SignDiff(dymax, dymin)) {
+                return (float) Math.Round(dys.Average());
+            }
+            return dymin;
+        }
+
+        public float? ForwardAlignTarget() {
+            var outs = _nodes.Last().LocalOutNodes().ToList();
+            if (outs.Count() == 0) {
+                return null;
+            }
+            return SelectAppropriateMovement(outs, Position());
+        }
+        
+        public float? BackwardAlignTarget() {
+            var ins = _nodes.First().LocalInNodes().ToList();
+            if (ins.Count() == 0) {
+                return null;
+            }
+            return SelectAppropriateMovement(ins, Position());
+        }
+
+        public float DetermineMovement(float? attempt, out bool aligned) {
+            aligned = false;
+            if (attempt == null) {
+                return 0;
+            }
+            if (attempt > 0) {
+                var lm = LowerMaximumEmptySpace();
+                if (lm >= attempt.Value) {
+                    aligned = true;
+                    return attempt.Value;
+                }
+                return lm;
+            }
+            if (attempt < 0) {
+                var um = -UpperMaximumEmptySpace();
+                if (um <= attempt.Value) {
+                    aligned = true;
+                    return attempt.Value;
+                }
+            }
+            return 0;
+        }
+
+        public float DetermineMovement(float? left, float? right, out bool aligned) {
+            if (left == null) {
+                return DetermineMovement(right, out aligned);
+            }
+            if (right == null) {
+                return DetermineMovement(left, out aligned);
+            }
+            if (MathUtil.SignDiff(left.Value, right.Value)) {
+                var res = DetermineMovement(
+                    (float) Math.Round((left.Value - right.Value) / 2), out aligned);
+                aligned = false;
+                return res;
+            }
+            if (Math.Abs(left.Value) < Math.Abs(right.Value)) {
+                return DetermineMovement(left.Value, out aligned);
+            }
+            return DetermineMovement(right.Value, out aligned);
+        }
+
+        public bool Align() {
+            bool aligned;
+            float? left = BackwardAlignTarget(), right = ForwardAlignTarget();
+            float movement = DetermineMovement(left, right, out aligned);
+            MoveVertically(movement);
+            return aligned;
         }
     }
 }
