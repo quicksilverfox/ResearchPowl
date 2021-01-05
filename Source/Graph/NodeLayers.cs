@@ -264,7 +264,6 @@ namespace ResearchPal
             foreach (var group in AllNodes().GroupBy(n => GroupingByMods(n))) {
                 var ns = group.ToList();
                 var techCount = ns.OfType<ResearchNode>().Count();
-                Log.Message("Mod {0} has {1} techs", group.Key, techCount);
                 if (  group.Key == "__Vanilla"
                    || techCount < Settings.largeModTechCount) {
                     MergeDataFromTo(ns, vanilla);

@@ -1,4 +1,4 @@
-# RimWorld-ResearchPal Forked
+# RimWorld ResearchPal - Forked
 
 [![Version](https://img.shields.io/badge/Rimworld-1.2-green.svg)](http://rimworldgame.com/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-blue.svg)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
@@ -16,7 +16,7 @@ Smooth painless research
 
 ### Settings
 
-- Group Research by Tech-Level: Whether or not explicitly separate techs by their tech-levels (neolithic, medival, industrial etc.) (Will result in a MUCH larger and sparser graph, and persumably slower generation).
+- **Group Research by Tech-Level**: Whether or not explicitly separate techs by their tech-levels (neolithic, medival, industrial etc.) (Will result in a MUCH larger and sparser graph, and persumably slower generation).
 
 ## ResearchPal - Forked
 
@@ -24,23 +24,23 @@ This mod complete rewrites the ResearchPal's graph layout algorithm. The new alg
 
 > The final step is the hardest, but also the most important to create a visually pleasing tree. Sadly, I've been unable to implement two of the most well known algorithms for this purpose ... *[referring to two work of Sugiyama's algorithm]*
 
-I thought the resulting layout would be much more pleasant than the original with the magical algorithm, but unfortunately it was not necessarily true, which I realized after I implemented the core algorithm. So I added a features and a few other planned. The forked version:
+I thought the resulting layout would be much more pleasant than the original with the magical algorithm, but unfortunately it is not true, which I realized after I implemented the core algorithm. So I added a few features and a few other planned. The forked version:
 
-- Eliminates most of the strange behaviors of original ResearchPal. (e.g. Some arrows turn when there's literally nothing blocking its way, arrows sometimes go through other nodes etc.). And hopefully it's better looking in general.
+- Eliminates most of the strange behaviors of original ResearchPal. (e.g. Some arrows make U-turns when there's literally nothing blocking its way, arrows sometimes go through other nodes etc.). And hopefully it's better-looking in general.
 - Guarantees that separate trees are placed separately, instead of relying on heuristics.
-- Guarantees that techs of different mods could be placed together.
+- Guarantees that techs of different mods could be placed together (See below).
 
-### New Settings
+### Settings
 
-- Align Nodes Closer to Prerequites: The heuristic will place nodes closer to their prerequisites instead of children (This affects the layout heuristic which unfortunately does not guarantee anything, could result in some drastic change). Default is false.
-- Group Techs from the Same Mod: Put techs from mods separately from the vanilla techs. Currently group all vanilla expanded mods together. Default is true.
+- **Align Nodes Closer to Prerequites**: The heuristic will place nodes closer to their prerequisites instead of children (This affects the layout heuristic which does not guarantee anything, could result in some drastic change). Default is `false`.
+- **Group Techs from the Same Mod**: Put techs from mods separately from the vanilla techs. Currently group all vanilla expanded mods together. Default is `true`.
     + Currently this mod groups all vanilla expanded series techs (based on the name of the mod "Vanilla XXX Expanded - YYY) together if this feature's turned on. It is only a temporary solution for mod grouping.
-- Minimum Separate Mod Techs Count: With the option above enabled, it determines the minimal amount of the techs of a certain mod for it to be placed separately from vanilla tech tree (so that mods adding very few techs will still be placed with the main tree). Default to 5 (So a mod with 5 techs or more will be placed separately).
+- **Minimum Separate Mod Techs Count**: With the option above enabled, it determines the minimal amount of the techs of a certain mod for it to be placed separately from vanilla tech tree (so that mods adding very few techs will still be placed along with the main tree). Default is `5` (So a mod with 5 techs or more will be placed separately).
 
 ### Planned Features
 
 - Configurable modded techs grouping. ("I want EPOE and A-dog-said placed together!" etc.)
-- Not limits the position of techs to be integer coordinate in a grid.
+- Not limiting the position of techs to be integer coordinate inside the grid.
 - Less-messy and more-readable arrows (Not exactly sure how to do that though).
 - Legacy code cleanup.
  
@@ -52,20 +52,22 @@ You can add it to existing saves without problems. Removing this mod will lead t
 
 ### *Why is research X in position Y?*
 
-Lonely unconnected researches will be found on top. The rest follows a stacking algorithm. 
+Mostly it's determined by a heuristic-based algorithm, which means that in general we try our best to guess the better position of a tech to be at, but not actually know why they are eventually there. Details see below "Technical Details".
 
 ### *Can I use this with mod X*
 
 Should be incompatible with original ResearchPal and Research Tree, obviously, but I don't actually know.
 
+Other than that, should be compatible with everything the original mod is compatible with.
+
 ### *This looks very similar to ResearchTree and ResearchPal*
 
 There was first Fluffy's research tree, then NotFood and Skyarkangel's ResearchPal is
-a fork of it, and this mod is a fork of the latter, which basically use the same UI framework so of course.
+a fork of it, and this mod is a fork of the latter. We're all basically using the same UI framework (supposely created by Fluffy) so of course.
 
 # Technical Details
 
-Let's start with a quote from Fluffy:
+Let's start with a quote of Fluffy:
 
 > Why is research X in position Y? Honestly, I have no idea. 
 
@@ -77,14 +79,14 @@ The core algorithm is based on Sugiyama's original algorithm (as I simply don't 
 
 You may not know what I'm talking about, but the core algorithm has two important implications:
 
-- **It does NOT guarantee the absolute minimization of crossings. Nodes _could_ still be placed in obviously-suboptimal position**
+- **It does NOT guarantee the absolute minimization of crossings (even worse, it doesn't say at all how far away from the optima the result would be). Nodes _could_ still be placed at obviously-suboptimal position**
 - **It says (almost) nothing about the total length of edges. So edges may travel a bit of detour in order to get the destination.**
 
-It alone actually performs worse than the originally implemented algorithm in general, so I added an additional step to further
-tune down the total edge length and number of crossings after step 2, but I still don't believe the result is anywhere near optimal.
+It alone actually performs worse than the originally implemented algorithm in general, so I added an simple additional step after step 2 to further
+tune down the total edge length and number of crossings, but I still don't believe the result is anywhere near optimal.
 And after step 3, I added an additional step to adjust the position of some nodes to strictly better positions without compromising the core idea of the algorithm.
 
-- [github repository of this mod](https://github.com/VinaLx/RimWorld-ResearchPal)
+[github repository of this mod](https://github.com/VinaLx/RimWorld-ResearchPal). Data structure and algorithm mostly under `Graph/NodeLayers.cs`.
 
 Please feel free to make _technical_ suggestions to the algorithm if you have any idea how to improve it.
 
@@ -92,8 +94,6 @@ Please feel free to make _technical_ suggestions to the algorithm if you have an
 
 I'm a computer science student who have almost no idea of rimworld modding and hardcore c# programming. So should there be bugs or compatibility issues besides
 the layout algorithm, I will try my best to resolve them but I can't really promise anything.
-
-So if you are an experienced modder who would like to take over the algorithm or implement additional features I would be very happy to collaborate with you. Find my email on github.
 
 # License
 

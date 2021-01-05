@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ModMetaData>
-  <packageId>vinalx.ResearchPalForked</packageId>
+  <packageId>VinaLx.ResearchPalForked</packageId>
   <name>ResearchPal - Forked</name>
-  <author>vinalx</author>
-  <url>https://github.com/notfood/RimWorld-ResearchPal</url>
+  <author>VinaLx</author>
+  <url>https://github.com/VinaLx/RimWorld-ResearchPal</url>
   <supportedVersions>
     <li>1.1</li>
+    <li>1.2</li>
   </supportedVersions>
   <modDependencies>
     <li>
@@ -15,13 +16,12 @@
       <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
     </li>
   </modDependencies>
-  <description>Smooth painless research
+  <description>Forked smooth painless research
 # Features
- - automatically generated to maximize readability*. 
- - shows research projects, buildings, plants and recipes unlocked by each research project.
- - projects can be queued, and colonists will automatically start the next project when the current research project completes.
- - search functionality to quickly find research projects.
- - helptab integration, right click the researches for extra information.
+ - Automatically generated to maximize readability*. 
+ - Shows research projects, buildings, plants and recipes unlocked by each research project.
+ - Projects can be queued, and colonists will automatically start the next project when the current research project completes.
+ - Search functionality to quickly find research projects.
 
 # Credits:
  All the work by Fluffy
