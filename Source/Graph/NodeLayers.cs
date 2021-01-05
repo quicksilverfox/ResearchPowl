@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using Verse;
-using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ResearchPal
 {
@@ -21,6 +21,12 @@ namespace ResearchPal
 
         public static NodeLayers InitializeWithLegacyLogic(List<Node> nodes) {
             return new NodeLayers(nodes);
+        }
+
+        public void Merge(NodeLayers layers) {
+            for (int i = 0; i < LayerCount(); ++i) {
+                Layer(i).Merge(layers.Layer(i));
+            }
         }
 
         private NodeLayers(List<Node> nodes) {
@@ -140,6 +146,19 @@ namespace ResearchPal
         public float BottomPosition() {
             return _layers.Select(l => l.BottomPosition()).Max();
         }
+        public float BottomPosition(int l) {
+            return _layers[l].BottomPosition();
+        }
+        public float TopPosition() {
+            return _layers.Select(l => l.TopPosition()).Max();
+        }
+        public float TopPosition(int l) {
+            return _layers[l].TopPosition();
+        }
+
+        public IEnumerable<Node> AllNodes() {
+            return _layers.SelectMany(l => l.Nodes());
+        }
 
         private static List<List<Node>> EmptyNewLayers(int n) {
             var result = new List<List<Node>>();
@@ -147,6 +166,16 @@ namespace ResearchPal
                 result.Add(new List<Node>());
             }
             return result;
+        }
+
+        private static void MergeDataFromTo(Node n, List<List<Node>> data) {
+            data[n.lx].Add(n);
+        }
+
+        private static void MergeDataFromTo(IEnumerable<Node> ns, List<List<Node>> data) {
+            foreach (var n in ns) {
+                MergeDataFromTo(n, data);
+            }
         }
 
         private void DFSConnectiveComponents(
@@ -169,19 +198,55 @@ namespace ResearchPal
         public List<NodeLayers> SplitConnectiveComponents() {
             HashSet<Node> visited = new HashSet<Node>();
             List<NodeLayers> result = new List<NodeLayers>();
-            foreach (var layer in _layers) {
-                var ns = layer.Nodes().ToList();
-                ns.Reverse();
-
-                foreach (var node in ns) {
-                    if (! visited.Contains(node)) {
-                        var data = EmptyNewLayers(LayerCount());
-                        DFSConnectiveComponents(node, data, visited);
-                        result.Add(new NodeLayers(data));
-                    }
+            foreach (var node in AllNodes()) {
+                if (! visited.Contains(node)) {
+                    var data = EmptyNewLayers(LayerCount());
+                    DFSConnectiveComponents(node, data, visited);
+                    result.Add(new NodeLayers(data));
                 }
             }
             return result;
+        }
+
+        private static string GroupingByMods(Node node) {
+            if (node is ResearchNode) {
+                var n = node as ResearchNode;
+                if (n.Research.modContentPack == null) {
+                    Log.Warning("Research {0} do not belongs to any mod?", n.Label);
+                }
+                var name = n.Research.modContentPack?.Name ?? "__Vanilla";
+                if (name == "Royalty" || name == "Core") {
+                    return "__Vanilla";
+                } else if (
+                       (new Regex("^Vanilla (.*)Expanded( - .*)?$")).IsMatch(name)
+                    || (new Regex("VFE")).IsMatch(name)) {
+                    return "__VanillaExpanded";
+                }
+                return name;
+            } else if (node is DummyNode) {
+                return GroupingByMods(node.OutNodes.First());
+            }
+            return "";
+        }
+        
+        public List<NodeLayers> SplitLargeMods() {
+            var result = new List<List<List<Node>>>();
+            var vanilla = EmptyNewLayers(LayerCount());
+            result.Add(vanilla);
+            foreach (var group in AllNodes().GroupBy(n => GroupingByMods(n))) {
+                var ns = group.ToList();
+                var techCount = ns.OfType<ResearchNode>().Count();
+                Log.Message("Mod {0} has {1} techs", group.Key, techCount);
+                if (  group.Key == "__Vanilla"
+                   || techCount < Settings.largeModTechCount) {
+                    MergeDataFromTo(ns, vanilla);
+                } else {
+                    var newMod = EmptyNewLayers(LayerCount());
+                    MergeDataFromTo(ns, newMod);
+                    result.Add(newMod);
+                }
+            }
+            return result.Select(d => new NodeLayers(d)).ToList();
         }
     }
 
@@ -210,6 +275,15 @@ namespace ResearchPal
             get {
                 return _nodes[i];
             }
+        }
+
+        public void Merge(NodeLayer that) {
+            foreach (var n in that.Nodes()) {
+                n.layer = this;
+                n.lx = _layer;
+            }
+            _nodes.Concat(that.Nodes());
+            AdjustY();
         }
 
         public int Count() {
@@ -384,14 +458,14 @@ namespace ResearchPal
 
         public float TopPosition() {
             if (Count() == 0) {
-                return float.PositiveInfinity;
+                return 99999;
             }
             return _nodes.First().Yf;
         }
 
         public float BottomPosition() {
             if (Count() == 0) {
-                return float.NegativeInfinity;
+                return -99999;
             }
             return _nodes.Last().Yf;
         }

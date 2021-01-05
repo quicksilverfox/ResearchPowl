@@ -319,17 +319,20 @@ namespace ResearchPal
         }
 
         public static void MainAlgorithm(List<List<Node>> data) {
-            Log.Message("Truely start with {0} techs", data.Sum(l => l.Count()));
             NodeLayers layers = new NodeLayers(data);
-            Log.Message("Start with {0} techs", layers.NodeCount());
             // var layerss = new List<NodeLayers>();
             // layerss.Add(layers);
-            var layerss = layers.SplitConnectiveComponents();
-            Log.Message("Split layers: {0}", layerss.Count());
-            Log.Message("End with {0} techs", layerss.Sum(l => l.NodeCount()));
+            var modsSplit = layers.SplitLargeMods();
+
+            var layerss = modsSplit
+                .OrderBy(l => l.NodeCount())
+                .SelectMany(
+                    ls => ls
+                        .SplitConnectiveComponents()
+                        .OrderBy(l => l.NodeCount()))
+                .ToList();
             layerss.ForEach(l => OrgainzeLayers(l));
-            PositionAllLayers(layerss.OrderBy(l => l.NodeCount()));
-            // layers.SplitConnectiveComponents();
+            PositionAllLayers(layerss);
         }
 
         public static void OrgainzeLayers(NodeLayers layers) {
@@ -338,11 +341,26 @@ namespace ResearchPal
             layers.ImproveNodePositionsInLayers();
         }
 
-        public static void PositionAllLayers(IEnumerable<NodeLayers> layerss) {
-            foreach (var layers in layerss) {
-                layers.AlignTopAt(mainGraphUpperbound);
-                mainGraphUpperbound = layers.BottomPosition() + 1;
+        private static void FitLayersInBounds(NodeLayers layers, float[] topBounds) {
+            float dy = -99999;
+            for (int i = 0; i < layers.LayerCount(); ++i) {
+                dy = Math.Max(dy, topBounds[i] - layers.TopPosition(i));
             }
+            layers.MoveVertically(dy);
+            for (int i = 0; i < layers.LayerCount(); ++i) {
+                topBounds[i] = Math.Max(topBounds[i], layers.BottomPosition(i) + 1);
+            }
+        }
+
+        public static void PositionAllLayers(IEnumerable<NodeLayers> layerss) {
+            float[] topBounds = new float[_layers.Count()];
+            for (int i = 0; i < topBounds.Count(); ++i) {
+                topBounds[i] = mainGraphUpperbound;
+            }
+            foreach (var layers in layerss) {
+                FitLayersInBounds(layers, topBounds);
+            }
+            mainGraphUpperbound = topBounds.Max();
         }
 
 

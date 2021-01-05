@@ -12,6 +12,8 @@ namespace ResearchPal
         public static bool shouldReset;
         public static bool shouldSeparateByTechLevels;
 
+        public static int largeModTechCount = 5;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
