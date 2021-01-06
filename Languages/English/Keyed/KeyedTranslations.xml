@@ -40,12 +40,12 @@
 	<ResearchPal.ShouldPauseOnOpenTip>Whenever the game should pause when the research tab is displayed.</ResearchPal.ShouldPauseOnOpenTip>
 	<ResearchPal.ShouldResetOnOpen>Reset on Display</ResearchPal.ShouldResetOnOpen>
 	<ResearchPal.ShouldResetOnOpenTip>Clear filtering and reset scroll position.</ResearchPal.ShouldResetOnOpenTip>
-	<ResearchPal.AlignCloserToAncestors>Align Closer to Prerequites</ResearchPal.AlignCloserToAncestors>
-	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequites instead of children. (REQUIRES RESTART)</ResearchPal.AlignCloserToAncestorsTip>
-	<ResearchPal.MinimumSeparateModTech>Minimum Separate Mod Techs Count</ResearchPal.MinimumSeparateModTech>
+	<ResearchPal.AlignCloserToAncestors>Align Closer to Prerequisites</ResearchPal.AlignCloserToAncestors>
+	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children. (REQUIRES RESTART)</ResearchPal.AlignCloserToAncestorsTip>
+	<ResearchPal.MinimumSeparateModTech>Minimum Separated Mod Researches Count</ResearchPal.MinimumSeparateModTech>
 	<ResearchPal.MinimumSeparateModTechTip>Minimum number of techs for a mod to be placed separately from vanilla techs. (REQUIRES RESTART)</ResearchPal.MinimumSeparateModTechTip>
-	<ResearchPal.GroupModTechs>Group Techs from Same Mods</ResearchPal.GroupModTechs>
-	<ResearchPal.GroupModTechsTip>Place techs from the same mod together ignoring heuristics. (REQUIRE RESTART)</ResearchPal.GroupModTechsTip>
+	<ResearchPal.GroupModTechs>Group Researches from Same Mods</ResearchPal.GroupModTechs>
+	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (REQUIRE RESTART)</ResearchPal.GroupModTechsTip>
     
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>

@@ -16,7 +16,7 @@ Smooth painless research
 
 ### Settings
 
-- **Group Research by Tech-Level**: Whether or not explicitly separate techs by their tech-levels (neolithic, medival, industrial etc.) (Will result in a MUCH larger and sparser graph, and persumably slower generation).
+- **Group Research by Tech-Level**: Whether or not explicitly separate techs by their tech-levels (neolithic, medival, industrial etc.) (Will result in a MUCH larger and sparser graph, and persumably slower generation). Default is `false`.
 
 ## ResearchPal - Forked
 
@@ -24,9 +24,9 @@ This mod complete rewrites the ResearchPal's graph layout algorithm. The new alg
 
 > The final step is the hardest, but also the most important to create a visually pleasing tree. Sadly, I've been unable to implement two of the most well known algorithms for this purpose ... *[referring to two work of Sugiyama's algorithm]*
 
-I thought the resulting layout would be much more pleasant than the original with the magical algorithm, but unfortunately it is not true, which I realized after I implemented the core algorithm. So I added a few features and a few other planned. The forked version:
+I thought the resulting layout would be much more pleasant than the original with the magical algorithm, but unfortunately it is not true, which I realized after I implemented the core algorithm. So I added a few features with a few other planned. The forked version:
 
-- Eliminates most of the strange behaviors of original ResearchPal. (e.g. Some arrows make U-turns when there's literally nothing blocking its way, arrows sometimes go through other nodes etc.). And hopefully it's better-looking in general.
+- Eliminates most of the strange behaviors of original ResearchPal. (e.g. Some arrows make U-turns when there's literally nothing blocking their ways, arrows sometimes go through other nodes etc.). And hopefully it's better-looking in general.
 - Guarantees that separate trees are placed separately, instead of relying on heuristics.
 - Guarantees that techs of different mods could be placed together (See below).
 
@@ -79,8 +79,8 @@ The core algorithm is based on Sugiyama's original algorithm (as I simply don't 
 
 You may not know what I'm talking about, but the core algorithm has two important implications:
 
-- **It does NOT guarantee the absolute minimization of crossings (even worse, it doesn't say at all how far away from the optima the result would be). Nodes _could_ still be placed at obviously-suboptimal position**
-- **It says (almost) nothing about the total length of edges. So edges may travel a bit of detour in order to get the destination.**
+- **It does NOT guarantee the absolute minimization of crossings (even worse, it doesn't say at all how far away from the optimal the result would be). Nodes _could_ still be placed at obviously-suboptimal positions**
+- **It says (almost) nothing about the total length of edges. So some edges may travel a bit of detour in order to get the destination.**
 
 It alone actually performs worse than the originally implemented algorithm in general, so I added an simple additional step after step 2 to further
 tune down the total edge length and number of crossings, but I still don't believe the result is anywhere near optimal.
@@ -105,3 +105,4 @@ Parts of the code in this mod, and some content may be licensed by their origina
 ## Credits:
 
 Thanks Fluffy, NotFood and Skyarkangel for this awesome research panel UI framework.
+Thanks Fluffy for mentioning the Sugiyama's algorithm for me to learn.
