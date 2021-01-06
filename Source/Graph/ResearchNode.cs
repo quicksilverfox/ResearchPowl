@@ -30,6 +30,8 @@ namespace ResearchPal
             _pos = new Vector2( 0, research.researchViewY + 1 );
         }
 
+        public bool isMatched = false;
+
         public List<ResearchNode> Parents
         {
             get
@@ -44,14 +46,27 @@ namespace ResearchPal
         {
             get
             {
-                if ( Highlighted )
+                if (Highlighted)
                     return GenUI.MouseoverColor;
-                if ( Completed )
+                if (IsUnmatchedInSearch())
+                {
+                    return Assets.ColorUnmatched[Research.techLevel];
+                }
+                if (Completed)
                     return Assets.ColorCompleted[Research.techLevel];
-                if ( Available )
+                if (Available)
                     return Assets.ColorCompleted[Research.techLevel];
                 return Assets.ColorUnavailable[Research.techLevel];
             }
+        }
+
+        public bool IsUnmatchedInSearch()
+        {
+            return MainTabWindow_ResearchTree.Instance.SearchActive() && !isMatched;
+        }
+        public bool IsMatchedInSearch()
+        {
+            return MainTabWindow_ResearchTree.Instance.SearchActive() && isMatched;
         }
 
         public override Color EdgeColor
@@ -60,6 +75,10 @@ namespace ResearchPal
             {
                 if ( Highlighted )
                     return GenUI.MouseoverColor;
+                if (IsUnmatchedInSearch())
+                {
+                    return Assets.ColorUnmatched[Research.techLevel];
+                }
                 if ( Completed )
                     return Assets.ColorCompleted[Research.techLevel];
                 if ( Available )
@@ -129,11 +148,14 @@ namespace ResearchPal
 
             if ( Research.LabelCap.RawText.ToLower( culture ).Contains( query ) )
                 return 1;
-            if ( Research.GetUnlockDefsAndDescs()
-                         .Any( unlock => unlock.First.LabelCap.RawText.ToLower( culture ).Contains( query ) ) )
+            if (Research.GetUnlockDefsAndDescs()
+                         .Any( unlock => unlock.First.LabelCap.RawText.ToLower( culture ).Contains( query )))
                 return 2;
-            if ( Research.description.ToLower( culture ).Contains( query ) )
+            if ((Research.modContentPack?.Name.ToLower(culture) ?? "").Contains(query) ) {
                 return 3;
+            }
+            if (Research.description.ToLower( culture ).Contains( query ))
+                return 4;
             return 0;
         }
 
@@ -212,12 +234,134 @@ namespace ResearchPal
             return (Research.modContentPack?.Name ?? "").CompareTo(n.Research.modContentPack?.Name ?? "");
         }
 
+        private void DrawProgressBar(Rect rect) {
+            GUI.color            =  Assets.ColorAvailable[Research.techLevel];
+            rect.xMin += Research.ProgressPercent * rect.width;
+            GUI.DrawTexture(rect, BaseContent.WhiteTex);
+        }
+
+        private void DrawNode(bool detailedMode, bool mouseOver) {
+            // researches that are completed or could be started immediately, and that have the required building(s) available
+            GUI.color = mouseOver ? GenUI.MouseoverColor : Color;
+
+            if ( mouseOver || Highlighted )
+                GUI.DrawTexture( Rect, Assets.ButtonActive );
+            else
+                GUI.DrawTexture( Rect, Assets.Button );
+
+            // grey out center to create a progress bar effect, completely greying out research not started.
+            if ( IsMatchedInSearch()
+               || !IsUnmatchedInSearch() && Available
+               || !Available && Highlighted)
+            {
+                var progressBarRect = Rect.ContractedBy( 3f );
+                DrawProgressBar(progressBarRect);
+            }
+
+            Highlighted = false;
+
+
+            // draw the research label
+            if ((Completed || Available) && !IsUnmatchedInSearch())
+                GUI.color = Color.white;
+            else
+                GUI.color = Color.grey;
+
+            if ( detailedMode )
+            {
+                Text.Anchor   = TextAnchor.UpperLeft;
+                Text.WordWrap = false;
+                Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
+                Widgets.Label( LabelRect, Research.LabelCap );
+            }
+            else
+            {
+                Text.Anchor   = TextAnchor.MiddleCenter;
+                Text.WordWrap = false;
+                Text.Font     = GameFont.Medium;
+                Widgets.Label( Rect, Research.LabelCap );
+            }
+
+            // draw research cost and icon
+            if ( detailedMode )
+            {
+                Text.Anchor = TextAnchor.UpperRight;
+                Text.Font   = Research.CostApparent > 1000000 ? GameFont.Tiny : GameFont.Small;
+                Widgets.Label( CostLabelRect, Research.CostApparent.ToStringByStyle( ToStringStyle.Integer ) );
+                GUI.DrawTexture( CostIconRect, !Completed && !Available ? Assets.Lock : Assets.ResearchIcon,
+                                    ScaleMode.ScaleToFit );
+            }
+
+            Text.WordWrap = true;
+
+            // attach description and further info to a tooltip
+            TooltipHandler.TipRegion( Rect, GetResearchTooltipString, Research.GetHashCode() );
+            if ( !BuildingPresent() )
+            {
+                TooltipHandler.TipRegion( Rect,
+                    ResourceBank.String.MissingFacilities( string.Join( ", ",
+                        MissingFacilities().Select( td => td.LabelCap ).ToArray() ) ) );
+            } else if (!TechprintAvailable()) {
+                TooltipHandler.TipRegion(Rect,
+                    ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
+            }
+
+
+            // draw unlock icons
+            if ( detailedMode )
+            {
+                var unlocks = Research.GetUnlockDefsAndDescs();
+                for ( var i = 0; i < unlocks.Count; i++ )
+                {
+                    var iconRect = new Rect(
+                        IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
+                        IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
+                        IconSize.x,
+                        IconSize.y );
+
+                    if ( iconRect.xMin - IconSize.x < IconsRect.xMin &&
+                         i             + 1          < unlocks.Count )
+                    {
+                        // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
+                        iconRect.x = IconsRect.x + 4f;
+                        GUI.DrawTexture( iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit );
+                        var tip = string.Join( "\n",
+                                                unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
+                                                        .ToArray() );
+                        TooltipHandler.TipRegion( iconRect, tip );
+                        // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
+                        break;
+                    }
+
+                    // draw icon
+                    unlocks[i].First.DrawColouredIcon( iconRect );
+
+                    // tooltip
+                    TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+                }
+            }
+
+            if ( mouseOver )
+            {
+                // highlight prerequisites if research available
+                // if ( Available )
+                // {
+                Highlighted = true;
+                foreach ( var prerequisite in GetMissingRequiredRecursive() )
+                    prerequisite.Highlighted = true;
+                // }
+                // highlight children if completed
+                foreach ( var child in Children.Where(c => !c.Completed) )
+                    child.Highlighted = true;
+            }
+        }
+
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
         public override void Draw( Rect visibleRect, bool forceDetailedMode = false )
         {
-            if ( !IsVisible( visibleRect ) )
+            if (!IsVisible(visibleRect))
             {
                 Highlighted = false;
                 return;
@@ -228,125 +372,9 @@ namespace ResearchPal
             var mouseOver = Mouse.IsOver( Rect );
             if ( Event.current.type == EventType.Repaint )
             {
-                // researches that are completed or could be started immediately, and that have the required building(s) available
-                GUI.color = mouseOver ? GenUI.MouseoverColor : Color;
-
-                if ( mouseOver || Highlighted )
-                    GUI.DrawTexture( Rect, Assets.ButtonActive );
-                else
-                    GUI.DrawTexture( Rect, Assets.Button );
-
-                // grey out center to create a progress bar effect, completely greying out research not started.
-                if ( Available )
-                {
-                    var progressBarRect = Rect.ContractedBy( 3f );
-                    GUI.color            =  Assets.ColorAvailable[Research.techLevel];
-                    progressBarRect.xMin += Research.ProgressPercent * progressBarRect.width;
-                    GUI.DrawTexture( progressBarRect, BaseContent.WhiteTex );
-                }
-
-                Highlighted = false;
-
-
-                // draw the research label
-                if ( !Completed && !Available )
-                    GUI.color = Color.grey;
-                else
-                    GUI.color = Color.white;
-
-                if ( detailedMode )
-                {
-                    Text.Anchor   = TextAnchor.UpperLeft;
-                    Text.WordWrap = false;
-                    Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
-                    Widgets.Label( LabelRect, Research.LabelCap );
-                }
-                else
-                {
-                    Text.Anchor   = TextAnchor.MiddleCenter;
-                    Text.WordWrap = false;
-                    Text.Font     = GameFont.Medium;
-                    Widgets.Label( Rect, Research.LabelCap );
-                }
-
-                // draw research cost and icon
-                if ( detailedMode )
-                {
-                    Text.Anchor = TextAnchor.UpperRight;
-                    Text.Font   = Research.CostApparent > 1000000 ? GameFont.Tiny : GameFont.Small;
-                    Widgets.Label( CostLabelRect, Research.CostApparent.ToStringByStyle( ToStringStyle.Integer ) );
-                    GUI.DrawTexture( CostIconRect, !Completed && !Available ? Assets.Lock : Assets.ResearchIcon,
-                                     ScaleMode.ScaleToFit );
-                }
-
-                Text.WordWrap = true;
-
-                // attach description and further info to a tooltip
-                TooltipHandler.TipRegion( Rect, GetResearchTooltipString, Research.GetHashCode() );
-                if ( !BuildingPresent() )
-                {
-                    TooltipHandler.TipRegion( Rect,
-                        ResourceBank.String.MissingFacilities( string.Join( ", ",
-                            MissingFacilities().Select( td => td.LabelCap ).ToArray() ) ) );
-                } else if (!TechprintAvailable()) {
-                    TooltipHandler.TipRegion(Rect,
-                        ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
-                }
-
-
-                // draw unlock icons
-                if ( detailedMode )
-                {
-                    var unlocks = Research.GetUnlockDefsAndDescs();
-                    for ( var i = 0; i < unlocks.Count; i++ )
-                    {
-                        var iconRect = new Rect(
-                            IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
-                            IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
-                            IconSize.x,
-                            IconSize.y );
-
-                        if ( iconRect.xMin - IconSize.x < IconsRect.xMin &&
-                             i             + 1          < unlocks.Count )
-                        {
-                            // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
-                            iconRect.x = IconsRect.x + 4f;
-                            GUI.DrawTexture( iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit );
-                            var tip = string.Join( "\n",
-                                                   unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
-                                                          .ToArray() );
-                            TooltipHandler.TipRegion( iconRect, tip );
-                            // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
-                            break;
-                        }
-
-                        // draw icon
-                        unlocks[i].First.DrawColouredIcon( iconRect );
-
-                        // tooltip
-                        TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
-                    }
-                }
-
-                if ( mouseOver )
-                {
-                    // highlight prerequisites if research available
-                    if ( Available )
-                    {
-                        Highlighted = true;
-                        foreach ( var prerequisite in GetMissingRequiredRecursive() )
-                            prerequisite.Highlighted = true;
-                    }
-                    // highlight children if completed
-                    else if ( Completed )
-                    {
-                        foreach ( var child in Children )
-                            child.Highlighted = true;
-                    }
-                }
+                DrawNode(detailedMode, mouseOver);
             }
-
-            // if clicked and not yet finished, queue up this research and all prereqs.
+                // if clicked and not yet finished, queue up this research and all prereqs.
             if ( Widgets.ButtonInvisible( Rect ) && Available )
             {
                 // LMB is queue operations, RMB is info
@@ -373,8 +401,8 @@ namespace ResearchPal
                     } else if ( !Queue.IsQueued(this) ) {
                         // if shift is held, add to queue, otherwise replace queue
                         var queue = GetMissingRequiredRecursive()
-                                   .Concat( new List<ResearchNode>( new[] {this} ) )
-                                   .Distinct();
+                                .Concat( new List<ResearchNode>( new[] {this} ) )
+                                .Distinct();
                         Queue.EnqueueRange(queue, Event.current.shift);
                     } else {
                         Queue.Dequeue(this);

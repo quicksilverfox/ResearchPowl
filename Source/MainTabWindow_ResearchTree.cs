@@ -31,6 +31,8 @@ namespace ResearchPal
 
         private float _zoomLevel = 1f;
 
+        private List<ResearchNode> _searchResults;
+
         public MainTabWindow_ResearchTree()
         {
             closeOnClickedOutside = false;
@@ -38,6 +40,12 @@ namespace ResearchPal
         }
 
         public static MainTabWindow_ResearchTree Instance { get; private set; }
+
+        private bool _searchActive = false;
+
+        public bool SearchActive() {
+            return _searchActive;
+        }
 
         public float ScaledMargin => Constants.Margin * ZoomLevel / Prefs.UIScale;
 
@@ -322,15 +330,27 @@ namespace ResearchPal
             Queue.DrawQueue( queueRect.ContractedBy( Constants.Margin ), !_dragging );
         }
 
+        private bool CancelSearchButton(Rect canvas) {
+            var iconRect = new Rect(
+                    canvas.xMax - Constants.Margin - 12f,
+                    0f,
+                    12f,
+                    12f )
+               .CenteredOnYIn( canvas );
+
+            var texture = ContentFinder<Texture2D>.Get("UI/Widgets/CloseXSmall");
+            return Widgets.ButtonImage(iconRect, texture, false);
+        }
+
         private void DrawSearchBar( Rect canvas )
         {
             Profiler.Start( "DrawSearchBar" );
-            var iconRect = new Rect(
-                    canvas.xMax - Constants.Margin - 16f,
-                    0f,
-                    16f,
-                    16f )
-               .CenteredOnYIn( canvas );
+            // var iconrect = new Rect(
+            //         canvas.xMax - Constants.Margin - 16f,
+            //         0f,
+            //         16f,
+            //         16f )
+            //    .CenteredOnYIn( canvas );
             var searchRect = new Rect(
                     canvas.xMin,
                     0f,
@@ -338,37 +358,59 @@ namespace ResearchPal
                     30f )
                .CenteredOnYIn( canvas );
 
-            GUI.DrawTexture( iconRect, Assets.Search );
-            var query = Widgets.TextField( searchRect, _query );
+            // GUI.DrawTexture( iconRect, Assets.Search );
+            if (CancelSearchButton(canvas)) {
+                _query = "";
+                ClearPreviousSearch();
+            }
 
+            OnSearchFieldChanged(searchRect);
+
+            Profiler.End();
+        }
+        
+        public void OnSearchFieldChanged(Rect searchRect) {
+            var query = Widgets.TextField( searchRect, _query );
             if ( query != _query )
             {
                 _query = query;
-                Find.WindowStack.FloatMenu?.Close( false );
+                ClearPreviousSearch();
 
                 if ( query.Length > 2 )
                 {
+                    _searchActive = true;
                     // open float menu with search results, if any.
                     var options = new List<FloatMenuOption>();
 
-                    foreach ( var result in Tree.Nodes.OfType<ResearchNode>()
-                                                .Select( n => new {node = n, match = n.Matches( query )} )
-                                                .Where( result => result.match > 0 )
-                                                .OrderBy( result => result.match ) )
-                        options.Add( new FloatMenuOption( result.node.Label, () => CenterOn( result.node ),
-                                                          MenuOptionPriority.Default, () => CenterOn( result.node ) ) );
+                    _searchResults = Tree.ResearchNodes()
+                        .Select( n => new {node = n, match = n.Matches( query )} )
+                        .Where( result => result.match > 0 )
+                        .OrderBy( result => result.match).Select(p => p.node).ToList();
+
+                    foreach (var result in _searchResults) {
+                        result.isMatched = true;
+                        options.Add(new FloatMenuOption(
+                            result.Label, () => CenterOn(result),
+                            MenuOptionPriority.Default, () => CenterOn(result)));
+                    }
 
                     if ( !options.Any() )
-                        options.Add( new FloatMenuOption( ResourceBank.String.NoResearchFound, null ) );
+                        options.Add(new FloatMenuOption(ResourceBank.String.NoResearchFound, null) );
 
-                    Find.WindowStack.Add( new FloatMenu_Fixed( options,
-                                                               UI.GUIToScreenPoint(
-                                                                   new Vector2(
-                                                                       searchRect.xMin, searchRect.yMax ) ) ) );
+                    Find.WindowStack.Add(new FloatMenu_Fixed(
+                        options, UI.GUIToScreenPoint(
+                            new Vector2(searchRect.xMin, searchRect.yMax))));
                 }
             }
+        }
 
-            Profiler.End();
+        private void ClearPreviousSearch() {
+            Find.WindowStack.FloatMenu?.Close(false);
+            _searchActive = false;
+            if (_searchResults != null) {
+                _searchResults.ForEach(n => n.isMatched = false);
+                _searchResults = null;
+            }
         }
 
         public void CenterOn( Node node )

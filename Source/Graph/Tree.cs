@@ -30,6 +30,8 @@ namespace ResearchPal
         private static List<List<Node>> _layers;
         private static List<Node> _singletons;
 
+        private static List<ResearchNode> _researchNodes;
+
         public static Dictionary<TechLevel, IntRange> TechLevelBounds
         {
             get
@@ -66,6 +68,13 @@ namespace ResearchPal
 
                 return _nodes;
             }
+        }
+
+        public static List<ResearchNode> ResearchNodes() {
+            if (_researchNodes == null || _researchNodes.Count() == 0) {
+                _researchNodes = Nodes.OfType<ResearchNode>().ToList();
+            }
+            return _researchNodes;
         }
 
         public static IEnumerable<Node> NonSingletons => Nodes.Where(n => _singletons.IndexOf(n) == -1);

@@ -22,6 +22,8 @@ namespace ResearchPal
         public static Dictionary<TechLevel, Color> ColorCompleted         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorAvailable         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorUnavailable       = new Dictionary<TechLevel, Color>();
+        public static Dictionary<TechLevel, Color> ColorUnmatched         = new Dictionary<TechLevel, Color>();
+        public static Dictionary<TechLevel, Color> ColorMatched         = new Dictionary<TechLevel, Color>();
         public static Color                        TechLevelColor         = new Color( 1f, 1f, 1f, .2f );
 
         public static Texture2D SlightlyDarkBackground =
@@ -37,8 +39,10 @@ namespace ResearchPal
             for ( var i = 0; i < n; i++ )
             {
                 ColorCompleted[techlevels[i]]   = Color.HSVToRGB( 1f / n * i, .75f, .75f );
+                ColorMatched[techlevels[i]]     = Color.HSVToRGB( 1f / n * i, .4f, .45f );
                 ColorAvailable[techlevels[i]]   = Color.HSVToRGB( 1f / n * i, .33f, .33f );
-                ColorUnavailable[techlevels[i]] = Color.HSVToRGB( 1f / n * i, .125f, .33f );
+                ColorUnavailable[techlevels[i]] = Color.HSVToRGB( 1f / n * i, .125f, .33f);
+                ColorUnmatched[techlevels[i]]   = Color.HSVToRGB( 1f / n * i, .17f,  .17f);
             }
         }
 
