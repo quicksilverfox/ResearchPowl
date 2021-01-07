@@ -18,6 +18,8 @@ namespace ResearchPal
 
         public static int largeModTechCount = 5;
 
+        public static bool delayLayoutGeneration = false;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -41,6 +43,10 @@ namespace ResearchPal
                                   ShouldPauseOnOpenTip);
             list.CheckboxLabeled(ShouldResetOnOpen, ref shouldReset,
                                   ShouldResetOnOpenTip);
+            list.CheckboxLabeled(
+                DelayLayoutGeneration,
+                ref delayLayoutGeneration,
+                DelayLayoutGenerationTip);
             list.End();
         }
 
@@ -52,6 +58,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref alignToAncestors, "AlignCloserToAncestors", false);
             Scribe_Values.Look(ref placeModTechSeparately, "placeModTechsSeparately", true);
             Scribe_Values.Look(ref largeModTechCount, "MinimumSeparateModTech", 5);
+            Scribe_Values.Look(ref delayLayoutGeneration, "DelayResearchLayoutGeneration", false);
         }
     }
 }

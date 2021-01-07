@@ -15,10 +15,15 @@ namespace ResearchPal
         {
             new Harmony("rimworld.ResearchPal").PatchAll();
 
-            LongEventHandler.QueueLongEvent(Tree.Initialize, "ResearchPal.BuildingResearchTree", false, null);
-            LongEventHandler.ExecuteWhenFinished(InitializeHelpSuport);
-
             GetSettings<Settings>();
+
+            if (! Settings.delayLayoutGeneration) {
+                LongEventHandler.QueueLongEvent(
+                    Tree.Initialize, "ResearchPal.BuildingResearchTree", false, null);
+            }
+
+
+            LongEventHandler.ExecuteWhenFinished(InitializeHelpSuport);
         }
 
         #region Overrides of Mod

@@ -16,7 +16,7 @@ namespace ResearchPal
 {
     public static class Tree
     {
-        public static  bool                            Initialized;
+        public static  bool                            Initialized = false;
         public static  IntVec2                         Size = IntVec2.Zero;
         public static bool shouldSeparateByTechLevels;
 
@@ -264,6 +264,8 @@ namespace ResearchPal
             // }
             RemoveEmptyRows();
 
+            Log.Message("Research layout initialized");
+            Initialized = true;
 // Legacy Logic Below
 
 // #if DEBUG
