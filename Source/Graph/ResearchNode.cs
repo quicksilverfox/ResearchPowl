@@ -306,7 +306,6 @@ namespace ResearchPal
                     ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
             }
 
-
             // draw unlock icons
             if ( detailedMode )
             {
@@ -328,16 +327,28 @@ namespace ResearchPal
                         var tip = string.Join( "\n",
                                                 unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
                                                         .ToArray() );
+
+                        if (RightClick(iconRect) && Find.WindowStack.FloatMenu == null) {
+                            var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
+                            Find.WindowStack.Add(floatMenu);
+                        }
                         TooltipHandler.TipRegion( iconRect, tip );
+
                         // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
                         break;
                     }
+                    var def = unlocks[i].First;
 
                     // draw icon
-                    unlocks[i].First.DrawColouredIcon( iconRect );
+                    def.DrawColouredIcon( iconRect );
 
                     // tooltip
                     TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+
+                    if (RightClick(iconRect)) {
+                        Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
+                        link.OpenDialog();
+                    }
                 }
             }
 
@@ -354,6 +365,28 @@ namespace ResearchPal
                 foreach ( var child in Children.Where(c => !c.Completed) )
                     child.Highlighted = true;
             }
+        }
+
+        public static bool RightClick(Rect rect) {
+            return Input.GetMouseButton(1) && rect.Contains(Event.current.mousePosition);
+        }
+
+        private static FloatMenu MakeInfoMenuFromDefs(IEnumerable<Def> defs) {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+            foreach (var def in defs) {
+                Texture2D icon = def.IconTexture();
+                // if (def is ThingDef thingDef) {
+                //     icon = thingDef.uiIcon;
+                // } else if (def is RecipeDef recipeDef) {
+                //     icon = recipeDef.UIIconThing.uiIcon;
+                // } else if (def is TerrainDef terrainDef) {
+                //     icon = terrainDef.uiIcon;
+                // }
+                Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
+             
+                options.Add(new FloatMenuOption(def.label, () => hyperlink.OpenDialog(), icon, def.IconColor()));
+            }
+            return new FloatMenu(options);
         }
 
         /// <summary>
