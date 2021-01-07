@@ -436,7 +436,13 @@ namespace ResearchPal
                         var queue = GetMissingRequiredRecursive()
                                 .Concat( new List<ResearchNode>( new[] {this} ) )
                                 .Distinct();
-                        Queue.EnqueueRange(queue, Event.current.shift);
+                        if (Event.current.shift) {
+                            Queue.EnqueueRange(queue, true);
+                        } else if (Event.current.alt) {
+                            Queue.EnstackRange(queue);
+                        } else {
+                            Queue.EnqueueRange(queue, false);
+                        }
                     } else {
                         Queue.Dequeue(this);
                     }

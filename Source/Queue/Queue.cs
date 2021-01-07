@@ -140,6 +140,19 @@ namespace ResearchPal
                 Enqueue( node, true );
         }
 
+        public static void EnstackRange(IEnumerable<ResearchNode> nodes) {
+            var ns = nodes.OrderBy(n => n.X).ThenBy(n => n.Research.CostApparent).ToList();
+            var currentQueue = _instance._queue;
+            int i = 0;
+            foreach (var n in ns) {
+                if (currentQueue.Contains(n)) {
+                    currentQueue.Remove(n);
+                }
+                currentQueue.Insert(i++, n);
+            }
+            Find.ResearchManager.currentProj = currentQueue.FirstOrDefault()?.Research;
+        }
+
         public static bool IsQueued( ResearchNode node )
         {
             return _instance._queue.Contains( node );
