@@ -6,6 +6,7 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using System.Threading;
 
 namespace ResearchPal
 {
@@ -18,12 +19,25 @@ namespace ResearchPal
             GetSettings<Settings>();
 
             if (! Settings.delayLayoutGeneration) {
-                LongEventHandler.QueueLongEvent(
-                    Tree.Initialize, "ResearchPal.BuildingResearchTree", false, null);
+                if (Settings.asyncLoadingOnStartup) {
+                    LongEventHandler.QueueLongEvent(
+                        StartLoadingWorker, "ResearchPal.BuildingResearchTreeAsync", false, null);
+                } else {
+                    LongEventHandler.QueueLongEvent(
+                        Tree.Initialize, "ResearchPal.BuildingResearchTree", false, null);
+                }
             }
 
 
             LongEventHandler.ExecuteWhenFinished(InitializeHelpSuport);
+        }
+
+        public static Thread initializeWorker = null;
+
+        static void StartLoadingWorker() {
+            initializeWorker = new Thread(Tree.Initialize);
+            Log.Message("Initialization start at background");
+            initializeWorker.Start();
         }
 
         #region Overrides of Mod

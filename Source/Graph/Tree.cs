@@ -16,7 +16,7 @@ namespace ResearchPal
 {
     public static class Tree
     {
-        public static  bool                            Initialized = false;
+        public static volatile bool Initialized = false;
         public static  IntVec2                         Size = IntVec2.Zero;
         public static bool shouldSeparateByTechLevels;
 

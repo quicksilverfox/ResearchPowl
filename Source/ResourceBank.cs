@@ -34,6 +34,10 @@ namespace ResearchPal
             public static readonly string DelayLayoutGeneration = TL("DelayLayoutGeneration");
             public static readonly string DelayLayoutGenerationTip = TL("DelayLayoutGenerationTip");
 
+
+            public static readonly string AsyncLoadingOnStartup = TL("AsyncLoadingOnStartup");
+            public static readonly string AsyncLoadingOnStartupTip = TL("AsyncLoadingOnStartupTip");
+
             public static readonly string DebugResearch = TL("DebugResearch");
             public static readonly string DebugResearchTip = TL("DebugResearchTip");
             #endregion

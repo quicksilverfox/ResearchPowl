@@ -27,6 +27,7 @@
 	<ResearchPal.NextInQueue>Next in queue: {0}</ResearchPal.NextInQueue>
 
 	<ResearchPal.BuildingResearchTree>Building Research Tree</ResearchPal.BuildingResearchTree>
+	<ResearchPal.BuildingResearchTreeAsync>Start Building Research Tree on Background</ResearchPal.BuildingResearchTreeAsync>
 	<ResearchPal.PreparingTree.Setup>Preparing research nodes</ResearchPal.PreparingTree.Setup>
 	<ResearchPal.PreparingTree.CrossingReduction>Reducing crossings</ResearchPal.PreparingTree.CrossingReduction>
 	<ResearchPal.PreparingTree.Layout>Finalizing layout</ResearchPal.PreparingTree.Layout>
@@ -48,6 +49,8 @@
 	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (REQUIRE RESTART)</ResearchPal.GroupModTechsTip>
 	<ResearchPal.DelayLayoutGeneration>Delay Layout Generation</ResearchPal.DelayLayoutGeneration>
 	<ResearchPal.DelayLayoutGenerationTip>Generate layout at the first time the research tree is used, instead of when loading the game</ResearchPal.DelayLayoutGenerationTip>
+	<ResearchPal.AsyncLoadingOnStartup>Background Layout Generation</ResearchPal.AsyncLoadingOnStartup>
+	<ResearchPal.AsyncLoadingOnStartupTip>Generate layout on background when game loads</ResearchPal.AsyncLoadingOnStartupTip>
     
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>

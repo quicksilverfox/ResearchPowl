@@ -20,6 +20,8 @@ namespace ResearchPal
 
         public static bool delayLayoutGeneration = false;
 
+        public static bool asyncLoadingOnStartup = false;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -43,10 +45,18 @@ namespace ResearchPal
                                   ShouldPauseOnOpenTip);
             list.CheckboxLabeled(ShouldResetOnOpen, ref shouldReset,
                                   ShouldResetOnOpenTip);
-            list.CheckboxLabeled(
-                DelayLayoutGeneration,
-                ref delayLayoutGeneration,
-                DelayLayoutGenerationTip);
+            if (!asyncLoadingOnStartup || delayLayoutGeneration) {
+                list.CheckboxLabeled(
+                    DelayLayoutGeneration,
+                    ref delayLayoutGeneration,
+                    DelayLayoutGenerationTip);
+            }
+            if (!delayLayoutGeneration) {
+                list.CheckboxLabeled(
+                    AsyncLoadingOnStartup,
+                    ref asyncLoadingOnStartup,
+                    AsyncLoadingOnStartupTip);
+            }
             list.End();
         }
 
@@ -59,6 +69,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref placeModTechSeparately, "placeModTechsSeparately", true);
             Scribe_Values.Look(ref largeModTechCount, "MinimumSeparateModTech", 5);
             Scribe_Values.Look(ref delayLayoutGeneration, "DelayResearchLayoutGeneration", false);
+            Scribe_Values.Look(ref asyncLoadingOnStartup, "AsyncLoadingOnStartup", false);
         }
     }
 }

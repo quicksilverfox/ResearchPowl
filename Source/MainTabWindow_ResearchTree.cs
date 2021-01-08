@@ -184,6 +184,13 @@ namespace ResearchPal
 
         public override void DoWindowContents( Rect canvas )
         {
+            if (! Tree.Initialized) {
+                if (Settings.delayLayoutGeneration) {
+                    Tree.Initialize();
+                } else if (Settings.asyncLoadingOnStartup) {
+                    while (! Tree.Initialized) continue;
+                }
+            }
             if (Settings.delayLayoutGeneration && (! Tree.Initialized)) {
                 Tree.Initialize();
             }
