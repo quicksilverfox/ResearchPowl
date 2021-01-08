@@ -856,6 +856,47 @@ namespace ResearchPal
             }
         }
 
+        // Invariant: currentHighlights should always contain highlightCauser
+        static List<ResearchNode> currentHighlights;
+        static ResearchNode highlightCauser;
+
+        static List<ResearchNode> FindHighlightsFrom(ResearchNode node) {
+            return node.GetMissingRequiredRecursive()
+                .Concat(node.Children.Where(c => !c.Completed))
+                .Append(node)
+                .ToList();
+        }
+
+        static void StopCurrentHighlight() {
+            highlightCauser = null;
+            if (currentHighlights != null) {
+                currentHighlights.ForEach(n => {
+                    n.Highlighted = false;
+                    n.mouseOverHighlight = false;
+                });
+                currentHighlights = null;
+            }
+        }
+
+        static void DoHighlight(ResearchNode node) {
+            StopCurrentHighlight();
+
+            highlightCauser = node;
+            currentHighlights = FindHighlightsFrom(node);
+            currentHighlights.ForEach(n => {
+                n.Highlighted = true;
+                n.mouseOverHighlight = true;
+            });
+        }
+
+        static void HandleHighlights(ResearchNode node) {
+            if (! node.ShouldHighlight() && highlightCauser == node) {
+                StopCurrentHighlight();
+            }
+            if (node.ShouldHighlight() && highlightCauser != node) {
+                DoHighlight(node);
+            }
+        }
 
         public static void Draw( Rect visibleRect )
         {
@@ -874,8 +915,12 @@ namespace ResearchPal
             Profiler.End();
 
             Profiler.Start( "nodes" );
-            foreach ( var node in Nodes )
+            foreach ( var node in Nodes ) {
+                if (node is ResearchNode rnode) {
+                    HandleHighlights(rnode);
+                }
                 node.Draw( visibleRect );
+            }
             Profiler.End();
         }
 

@@ -22,6 +22,8 @@ namespace ResearchPal
 
         public ResearchProjectDef Research;
 
+        public bool mouseOverHighlight = false;
+
         public ResearchNode( ResearchProjectDef research )
         {
             Research = research;
@@ -36,9 +38,10 @@ namespace ResearchPal
         {
             get
             {
-                var parents = InNodes.OfType<ResearchNode>();
-                parents.Concat( InNodes.OfType<DummyNode>().SelectMany( dn => dn.Parent ) );
-                return parents.ToList();
+                return InNodes.OfType<ResearchNode>()
+                    .Concat(
+                        InNodes.OfType<DummyNode>().SelectMany( dn => dn.Parent ))
+                    .ToList();
             }
         }
 
@@ -91,9 +94,10 @@ namespace ResearchPal
         {
             get
             {
-                var children = OutNodes.OfType<ResearchNode>();
-                children.Concat( OutNodes.OfType<DummyNode>().SelectMany( dn => dn.Child ) );
-                return children.ToList();
+                return OutNodes.OfType<ResearchNode>()
+                    .Concat(
+                        OutNodes.OfType<DummyNode>().SelectMany(dn => dn.Child))
+                    .ToList();
             }
         }
 
@@ -234,13 +238,13 @@ namespace ResearchPal
             return (Research.modContentPack?.Name ?? "").CompareTo(n.Research.modContentPack?.Name ?? "");
         }
 
-        private void DrawProgressBar(Rect rect) {
+        private void DrawProgressBarImpl(Rect rect) {
             GUI.color            =  Assets.ColorAvailable[Research.techLevel];
             rect.xMin += Research.ProgressPercent * rect.width;
             GUI.DrawTexture(rect, BaseContent.WhiteTex);
         }
 
-        private void DrawNode(bool detailedMode, bool mouseOver) {
+        private void DrawBackground(bool mouseOver) {
             // researches that are completed or could be started immediately, and that have the required building(s) available
             GUI.color = mouseOver ? GenUI.MouseoverColor : Color;
 
@@ -248,17 +252,26 @@ namespace ResearchPal
                 GUI.DrawTexture( Rect, Assets.ButtonActive );
             else
                 GUI.DrawTexture( Rect, Assets.Button );
+        }
 
+        private void DrawProgressBar() {
             // grey out center to create a progress bar effect, completely greying out research not started.
             if ( IsMatchedInSearch()
                || !IsUnmatchedInSearch() && Available
                || !Available && Highlighted)
             {
                 var progressBarRect = Rect.ContractedBy( 3f );
-                DrawProgressBar(progressBarRect);
+                DrawProgressBarImpl(progressBarRect);
             }
+        }
 
-            Highlighted = false;
+
+
+        private void DrawNode(bool detailedMode, bool mouseOver) {
+            DrawBackground(mouseOver);
+            DrawProgressBar();
+
+            // Highlighted = false;
 
 
             // draw the research label
@@ -352,19 +365,19 @@ namespace ResearchPal
                 }
             }
 
-            if ( mouseOver )
-            {
-                // highlight prerequisites if research available
-                // if ( Available )
-                // {
-                Highlighted = true;
-                foreach ( var prerequisite in GetMissingRequiredRecursive() )
-                    prerequisite.Highlighted = true;
-                // }
-                // highlight children if completed
-                foreach ( var child in Children.Where(c => !c.Completed) )
-                    child.Highlighted = true;
-            }
+            // if ( mouseOver )
+            // {
+            //     // highlight prerequisites if research available
+            //     // if ( Available )
+            //     // {
+            //     Highlighted = true;
+            //     foreach ( var prerequisite in GetMissingRequiredRecursive() )
+            //         prerequisite.Highlighted = true;
+            //     // }
+            //     // highlight children if completed
+            //     foreach ( var child in Children.Where(c => !c.Completed) )
+            //         child.Highlighted = true;
+            // }
         }
 
         public static bool RightClick(Rect rect) {
@@ -389,6 +402,10 @@ namespace ResearchPal
             return new FloatMenu(options);
         }
 
+        public bool ShouldHighlight() {
+            return Mouse.IsOver(Rect);
+        }
+
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
@@ -396,7 +413,7 @@ namespace ResearchPal
         {
             if (!IsVisible(visibleRect))
             {
-                Highlighted = false;
+                // Highlighted = false;
                 return;
             }
 
