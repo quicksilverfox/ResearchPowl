@@ -202,15 +202,15 @@ namespace ResearchPal
                 modsSplit.Add(layers);
             }
 
-            var layerss = modsSplit
+            var allLayers = modsSplit
                 .OrderBy(l => l.NodeCount())
                 .SelectMany(
                     ls => ls
                         .SplitConnectiveComponents()
                         .OrderBy(l => l.NodeCount()))
                 .ToList();
-            layerss.ForEach(l => OrgainzeLayers(l));
-            PositionAllLayers(layerss);
+            allLayers.ForEach(l => OrgainzeLayers(l));
+            PositionAllLayers(allLayers);
         }
 
         public static void OrgainzeLayers(NodeLayers layers) {
@@ -259,10 +259,8 @@ namespace ResearchPal
 
             // CollapseAdjacentDummyNodes();
 
-            // for (int i = 0; i < 3; ++i) {
-            //     TryForwardAdjustNodeSegments();
-            // }
             RemoveEmptyRows();
+            Tree.Size.z = (int) (Nodes.Max(n => n.Yf) + 0.01) + 1;
 
             Log.Message("Research layout initialized");
             Initialized = true;
@@ -295,15 +293,18 @@ namespace ResearchPal
         {
             Log.Debug( "Removing empty rows" );
             Profiler.Start();
-            var y = 1;
-            while ( y <= Size.z )
-            {
+            var z = Nodes.Max(n => n.Yf);
+            for (var y = 1; y < z;) {
                 var row = Row( y );
-                if ( row.NullOrEmpty() )
-                    foreach ( var node in Nodes.Where( n => n.Y > y ) )
-                        node.Y--;
+                if ( row.NullOrEmpty() ) {
+                    var ns = Nodes.Where(n => n.Yf > y).ToList();
+                    if (ns.Count() == 0) {
+                        break;
+                    }
+                    ns.ForEach(n => n.Yf = n.Yf - 1);
+                }
                 else
-                    y++;
+                    ++y;
             }
 
             Profiler.End();
@@ -795,7 +796,7 @@ namespace ResearchPal
                     if ( node.Research.prerequisites.Any( r => r.techLevel > node.Research.techLevel ) )
                     {
                         Log.Warning( "\t{0} has a lower techlevel than (one of) it's prerequisites",
-                                     node.Research.defName );
+                                     node.Research.label );
                         node.Research.techLevel = node.Research.prerequisites.Max( r => r.techLevel );
 
                         // re-enqeue all descendants

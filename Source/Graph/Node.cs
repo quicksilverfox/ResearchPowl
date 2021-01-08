@@ -219,8 +219,8 @@ namespace ResearchPal
                 _pos.y = value;
 
                 // update caches
-                Tree.Size.z     = Tree.Nodes.Max( n => n.Y ) + 1;
-                Tree.OrderDirty = true;
+                // Tree.Size.z     = Tree.Nodes.Max( n => n.Y ) + 1;
+                // Tree.OrderDirty = true;
             }
         }
 
