@@ -438,13 +438,13 @@ namespace ResearchPal
             }
         }
 
-        public void CenterOn( Node node )
+        public void CenterOn( ResearchNode node )
         {
             var position = new Vector2(
                 ( NodeSize.x + NodeMargins.x ) * ( node.X - .5f ),
                 ( NodeSize.y + NodeMargins.y ) * ( node.Y - .5f ) );
 
-            node.Highlighted = true;
+            node.Highlighted(true);
 
             position -= new Vector2( UI.screenWidth, UI.screenHeight ) / 2f;
 

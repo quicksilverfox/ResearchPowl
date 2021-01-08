@@ -22,8 +22,6 @@ namespace ResearchPal
 
         public ResearchProjectDef Research;
 
-        public bool mouseOverHighlight = false;
-
         public ResearchNode( ResearchProjectDef research )
         {
             Research = research;
@@ -33,6 +31,17 @@ namespace ResearchPal
         }
 
         public bool isMatched = false;
+
+        private bool _isHighlighted = false;
+
+        public override bool Highlighted()
+        {
+            return _isHighlighted;
+        }
+
+        public void Highlighted(bool h) {
+            _isHighlighted = h;
+        }
 
         public List<ResearchNode> Parents
         {
@@ -49,7 +58,7 @@ namespace ResearchPal
         {
             get
             {
-                if (Highlighted)
+                if (Highlighted())
                     return GenUI.MouseoverColor;
                 if (IsUnmatchedInSearch())
                 {
@@ -62,6 +71,8 @@ namespace ResearchPal
                 return Assets.ColorUnavailable[Research.techLevel];
             }
         }
+        public bool mouseHoverHighlight = false;
+
 
         public bool IsUnmatchedInSearch()
         {
@@ -72,22 +83,23 @@ namespace ResearchPal
             return MainTabWindow_ResearchTree.Instance.SearchActive() && isMatched;
         }
 
-        public override Color EdgeColor
+        public bool HighlightInEdge(ResearchNode from) {
+            return mouseHoverHighlight && (from.mouseHoverHighlight || from.Research.IsFinished);
+        }
+
+        public override Color InEdgeColor(ResearchNode from)
         {
-            get
+            if (HighlightInEdge(from))
+                return GenUI.MouseoverColor;
+            if (MainTabWindow_ResearchTree.Instance.SearchActive())
             {
-                if ( Highlighted )
-                    return GenUI.MouseoverColor;
-                if (IsUnmatchedInSearch())
-                {
-                    return Assets.ColorUnmatched[Research.techLevel];
-                }
-                if ( Completed )
-                    return Assets.ColorCompleted[Research.techLevel];
-                if ( Available )
-                    return Assets.ColorAvailable[Research.techLevel];
-                return Assets.ColorUnavailable[Research.techLevel];
+                return Assets.ColorUnmatched[Research.techLevel];
             }
+            if (Completed)
+                return Assets.ColorCompleted[Research.techLevel];
+            if (Available)
+                return Assets.ColorAvailable[Research.techLevel];
+            return Assets.ColorUnavailable[Research.techLevel];
         }
 
         public List<ResearchNode> Children
@@ -248,7 +260,7 @@ namespace ResearchPal
             // researches that are completed or could be started immediately, and that have the required building(s) available
             GUI.color = mouseOver ? GenUI.MouseoverColor : Color;
 
-            if ( mouseOver || Highlighted )
+            if ( mouseOver || Highlighted() )
                 GUI.DrawTexture( Rect, Assets.ButtonActive );
             else
                 GUI.DrawTexture( Rect, Assets.Button );
@@ -258,7 +270,7 @@ namespace ResearchPal
             // grey out center to create a progress bar effect, completely greying out research not started.
             if ( IsMatchedInSearch()
                || !IsUnmatchedInSearch() && Available
-               || !Available && Highlighted)
+               || Highlighted())
             {
                 var progressBarRect = Rect.ContractedBy( 3f );
                 DrawProgressBarImpl(progressBarRect);
@@ -404,6 +416,10 @@ namespace ResearchPal
 
         public bool ShouldHighlight() {
             return Mouse.IsOver(Rect);
+        }
+
+        public bool ShouldHighlight(Vector2 mousePos) {
+            return Rect.Contains(mousePos);
         }
 
         /// <summary>

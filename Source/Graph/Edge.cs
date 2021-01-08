@@ -48,7 +48,7 @@ namespace ResearchPal
         {
             get
             {
-                if ( Out.Highlighted )
+                if ( OutResearch().HighlightInEdge(InResearch()) )
                     return 3;
                 if ( Out.Completed )
                     return 2;
@@ -58,12 +58,37 @@ namespace ResearchPal
             }
         }
 
+        private ResearchNode _inResearch;
+        private ResearchNode _outResearch;
+
+        public ResearchNode InResearch() {
+            if (_inResearch == null) {
+                if (In is ResearchNode rn) {
+                    _inResearch = rn;
+                } else if (In is DummyNode dn) {
+                    _inResearch = dn.InResearch();
+                }
+            }
+            return _inResearch;
+        }
+
+        public ResearchNode OutResearch() {
+            if (_outResearch == null) {
+                if (Out is ResearchNode rn) {
+                    _outResearch = rn;
+                } else if (Out is DummyNode dn) {
+                    _outResearch = dn.OutResearch();
+                }
+            }
+            return _outResearch;
+        }
+
         public void Draw( Rect visibleRect )
         {
             if ( !In.IsVisible( visibleRect ) && !Out.IsVisible( visibleRect ) )
                 return;
 
-            var color = Out.EdgeColor;
+            var color = Out.InEdgeColor(InResearch());
             GUI.color = color;
 
             var left  = In.Right;

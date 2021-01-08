@@ -4,6 +4,10 @@
 using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
+using static ResearchPal.Assets;
+using static ResearchPal.Constants;
+using Verse;
+using RimWorld;
 
 namespace ResearchPal
 {
@@ -58,11 +62,29 @@ namespace ResearchPal
             }
         }
 
-        public override bool  Completed   => OutNodes.FirstOrDefault()?.Completed   ?? false;
-        public override bool  Available   => OutNodes.FirstOrDefault()?.Available   ?? false;
-        public override bool  Highlighted => OutNodes.FirstOrDefault()?.Highlighted ?? false;
-        public override Color Color       => OutNodes.FirstOrDefault()?.Color       ?? Color.white;
-        public override Color EdgeColor   => OutNodes.FirstOrDefault()?.EdgeColor   ?? Color.white;
+        public override bool Completed => OutNodes.FirstOrDefault()?.Completed   ?? false;
+        public override bool Available => OutNodes.FirstOrDefault()?.Available   ?? false;
+        public override bool Highlighted() {
+            return OutResearch().HighlightInEdge(InResearch());
+        }
+
+        public ResearchNode OutResearch() {
+            return OutEdges.First().OutResearch();
+        }
+
+        public ResearchNode InResearch() {
+            return InEdges.First().InResearch();
+        }
+
+        public TechLevel OutTechLevel() {
+            return OutResearch().Research.techLevel;
+        }
+
+        public override Color Color {
+            get {
+                return OutResearch().InEdgeColor(InResearch());
+            }
+        }
 
         public void Merge(DummyNode that) {
             foreach (var n in that.OutNodes) {

@@ -73,7 +73,9 @@ namespace ResearchPal
         }
 
         public virtual Color Color     => Color.white;
-        public virtual Color EdgeColor => Color;
+        public virtual Color InEdgeColor(ResearchNode from) {
+            return Color;
+        }
 
         public Rect IconsRect
         {
@@ -228,7 +230,29 @@ namespace ResearchPal
 
         public virtual bool Completed   => false;
         public virtual bool Available   => false;
-        public virtual bool Highlighted { get; set; }
+
+        public virtual bool Highlighted() {
+            return false;
+        }
+
+        public List<Node> MissingPrerequisiteNodes() {
+            List<Node> results = new List<Node>();
+            foreach (var n in InNodes) {
+                if (n is DummyNode dn) {
+                    var temp = dn.MissingPrerequisiteNodes();
+                    if (temp.Count() != 0) {
+                        results.Add(dn);
+                        results.AddRange(temp);
+                    }
+                } else if (n is ResearchNode rn) {
+                    if (! rn.Research.IsFinished) {
+                        results.Add(n);
+                        results.AddRange(n.MissingPrerequisiteNodes());
+                    }
+                }
+            }
+            return results;
+        }
 
         protected internal virtual bool SetDepth( int min = 1 )
         {
