@@ -232,17 +232,31 @@ namespace ResearchPal
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
+        static private bool KeyDefEvent(KeyBindingDef def) {
+            KeyBindingData keyBind;
+            if (! KeyPrefs.KeyPrefsData.keyPrefs.TryGetValue(def, out keyBind)) {
+                return false;
+            }
+            // var code = Event.current.keyCode;
+            // return code == keyBind.keyBindingA || code == keyBind.keyBindingB;
+            return Input.GetKey(keyBind.keyBindingA) || Input.GetKey(keyBind.keyBindingB);
+        }
+
         private void HandleDolly()
         {
             var dollySpeed = 10f;
-            if ( KeyBindingDefOf.MapDolly_Left.IsDown )
+            if ( KeyBindingDefOf.MapDolly_Left.IsDown ) {
                 _scrollPosition.x -= dollySpeed;
-            if ( KeyBindingDefOf.MapDolly_Right.IsDown )
+            }
+            if ( KeyBindingDefOf.MapDolly_Right.IsDown ) {
                 _scrollPosition.x += dollySpeed;
-            if ( KeyBindingDefOf.MapDolly_Up.IsDown )
+            }
+            if ( KeyBindingDefOf.MapDolly_Up.IsDown ) {
                 _scrollPosition.y -= dollySpeed;
-            if ( KeyBindingDefOf.MapDolly_Down.IsDown )
+            }
+            if ( KeyBindingDefOf.MapDolly_Down.IsDown ) {
                 _scrollPosition.y += dollySpeed;
+            }
         }
 
 
@@ -299,6 +313,7 @@ namespace ResearchPal
                 } else {
                     _scrollPosition.y += delta;
                 }
+                Event.current.Use();
             }
         }
 
