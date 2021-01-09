@@ -889,11 +889,11 @@ namespace ResearchPal
             });
         }
 
-        static void HandleHighlights(ResearchNode node, Vector2 mousePos) {
-            if (! node.ShouldHighlight(mousePos) && highlightCauser == node) {
+        static void HandleHighlights(ResearchNode node) {
+            if (! node.ShouldHighlight() && highlightCauser == node) {
                 StopCurrentHighlight();
             }
-            if (node.ShouldHighlight(mousePos) && highlightCauser != node) {
+            if (node.ShouldHighlight() && highlightCauser != node) {
                 DoHighlight(node);
             }
         }
@@ -915,12 +915,10 @@ namespace ResearchPal
             Profiler.End();
 
             Profiler.Start( "nodes" );
-            var mousePos = Event.current.mousePosition;
-            foreach ( var node in Nodes ) {
-                if (node is ResearchNode rnode) {
-                    HandleHighlights(rnode, mousePos);
-                }
-                node.Draw( visibleRect );
+            var drawnNodes = ResearchNodes().Where(n => n.IsVisible(visibleRect));
+            foreach (var node in drawnNodes) {
+                HandleHighlights(node);
+                node.Draw(visibleRect);
             }
             Profiler.End();
         }

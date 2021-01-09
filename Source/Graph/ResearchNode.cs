@@ -277,6 +277,66 @@ namespace ResearchPal
             }
         }
 
+        private void HandleTooltips() {
+            Text.WordWrap = true;
+                // attach description and further info to a tooltip
+            if (!TechprintAvailable()) {
+                TooltipHandler.TipRegion(Rect,
+                    ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
+            }
+            if ( !BuildingPresent() ) {
+                TooltipHandler.TipRegion( Rect,
+                   ResourceBank.String.MissingFacilities(
+                        string.Join(", ",
+                            MissingFacilities().Select( td => td.LabelCap )
+                                .ToArray())));
+            }
+            TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
+        }
+
+        private void DrawIcons() {
+            var unlocks = Research.GetUnlockDefsAndDescs();
+            for ( var i = 0; i < unlocks.Count; i++ )
+            {
+                var iconRect = new Rect(
+                    IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
+                    IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
+                    IconSize.x,
+                    IconSize.y );
+
+                if ( iconRect.xMin - IconSize.x < IconsRect.xMin &&
+                        i             + 1          < unlocks.Count )
+                {
+                    // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
+                    iconRect.x = IconsRect.x + 4f;
+                    GUI.DrawTexture( iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit );
+                    var tip = string.Join( "\n",
+                                            unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
+                                                    .ToArray() );
+
+                    if (RightClick(iconRect) && Find.WindowStack.FloatMenu == null) {
+                        var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
+                        Find.WindowStack.Add(floatMenu);
+                    }
+                    TooltipHandler.TipRegion( iconRect, tip );
+
+                    // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
+                    break;
+                }
+                var def = unlocks[i].First;
+
+                // draw icon
+                def.DrawColouredIcon( iconRect );
+
+                // tooltip
+                TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+
+                if (RightClick(iconRect)) {
+                    Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
+                    link.OpenDialog();
+                }
+            }
+        }
 
 
         private void DrawNode(bool detailedMode, bool mouseOver) {
@@ -317,83 +377,16 @@ namespace ResearchPal
                                     ScaleMode.ScaleToFit );
             }
 
-            Text.WordWrap = true;
-
-            // attach description and further info to a tooltip
-            TooltipHandler.TipRegion( Rect, GetResearchTooltipString, Research.GetHashCode() );
-            if ( !BuildingPresent() )
-            {
-                TooltipHandler.TipRegion( Rect,
-                    ResourceBank.String.MissingFacilities( string.Join( ", ",
-                        MissingFacilities().Select( td => td.LabelCap ).ToArray() ) ) );
-            } else if (!TechprintAvailable()) {
-                TooltipHandler.TipRegion(Rect,
-                    ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
-            }
+            HandleTooltips();
 
             // draw unlock icons
-            if ( detailedMode )
-            {
-                var unlocks = Research.GetUnlockDefsAndDescs();
-                for ( var i = 0; i < unlocks.Count; i++ )
-                {
-                    var iconRect = new Rect(
-                        IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
-                        IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
-                        IconSize.x,
-                        IconSize.y );
-
-                    if ( iconRect.xMin - IconSize.x < IconsRect.xMin &&
-                         i             + 1          < unlocks.Count )
-                    {
-                        // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
-                        iconRect.x = IconsRect.x + 4f;
-                        GUI.DrawTexture( iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit );
-                        var tip = string.Join( "\n",
-                                                unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
-                                                        .ToArray() );
-
-                        if (RightClick(iconRect) && Find.WindowStack.FloatMenu == null) {
-                            var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
-                            Find.WindowStack.Add(floatMenu);
-                        }
-                        TooltipHandler.TipRegion( iconRect, tip );
-
-                        // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
-                        break;
-                    }
-                    var def = unlocks[i].First;
-
-                    // draw icon
-                    def.DrawColouredIcon( iconRect );
-
-                    // tooltip
-                    TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
-
-                    if (RightClick(iconRect)) {
-                        Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
-                        link.OpenDialog();
-                    }
-                }
+            if ( detailedMode ) {
+                DrawIcons();
             }
-
-            // if ( mouseOver )
-            // {
-            //     // highlight prerequisites if research available
-            //     // if ( Available )
-            //     // {
-            //     Highlighted = true;
-            //     foreach ( var prerequisite in GetMissingRequiredRecursive() )
-            //         prerequisite.Highlighted = true;
-            //     // }
-            //     // highlight children if completed
-            //     foreach ( var child in Children.Where(c => !c.Completed) )
-            //         child.Highlighted = true;
-            // }
         }
 
         public static bool RightClick(Rect rect) {
-            return Input.GetMouseButton(1) && rect.Contains(Event.current.mousePosition);
+            return Input.GetMouseButton(1) && Mouse.IsOver(rect);
         }
 
         private static FloatMenu MakeInfoMenuFromDefs(IEnumerable<Def> defs) {
@@ -422,26 +415,43 @@ namespace ResearchPal
             return Rect.Contains(mousePos);
         }
 
+        // bool prevOver = false;
+
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
-        public override void Draw( Rect visibleRect, bool forceDetailedMode = false )
+        public override void Draw(Rect visibleRect, bool forceDetailedMode = false)
         {
-            if (!IsVisible(visibleRect))
-            {
-                // Highlighted = false;
-                return;
-            }
-
+            // Call site should ensure this condition
+            // if (!IsVisible(visibleRect)) {
+            //     return;
+            // }
             var detailedMode = forceDetailedMode ||
                                MainTabWindow_ResearchTree.Instance.ZoomLevel < DetailedModeZoomLevelCutoff;
-            var mouseOver = Mouse.IsOver( Rect );
-            if ( Event.current.type == EventType.Repaint )
-            {
+            var mouseOver = Mouse.IsOver(Rect);
+            if (Event.current.type == EventType.Repaint) {
                 DrawNode(detailedMode, mouseOver);
             }
-                // if clicked and not yet finished, queue up this research and all prereqs.
-            if ( Widgets.ButtonInvisible( Rect ) && Available )
+
+            // Tool tip debugging fail attempt
+            // var curOver = Mouse.IsOver(Rect);
+            // if (prevOver && !curOver) {
+            //     var w = Find.WindowStack.GetWindowAt(UI.GUIToScreenPoint(Event.current.mousePosition)); 
+            //     var w2 = Find.WindowStack[Find.WindowStack.Count - 1];
+            //     var ms = UI.GUIToScreenPoint(Event.current.mousePosition);
+            //     // var w = Find.WindowStack[Find.WindowStack.Count - 1];
+            //     // bool curOver = Rect.Contains(Event.current.mousePosition) && ! (b1 && ! b2 || (b3 || b4));
+            //     Log.Message("LEAVING {0}, immediate: {1}, rect: {2}, {7} pos: {9} => {3} => {10},  rect2 : {4}, {8} w: {5} h: {6}",
+            //         Research.label,
+            //         w is ImmediateWindow, w?.windowRect, ms, w2.windowRect,
+            //         UI.screenWidth, UI.screenHeight, w.windowRect.Contains(ms),
+            //         w2.windowRect.Contains(ms), Event.current.mousePosition,
+            //         GenUI.GetMouseAttachedWindowPos(w2.windowRect.width, w2.windowRect.height));
+            // }
+            // prevOver = curOver;
+
+            // if clicked and not yet finished, queue up this research and all prereqs.
+            if ( Widgets.ButtonInvisible(Rect) && Available )
             {
                 // LMB is queue operations, RMB is info
                 if ( Event.current.button == 0 && !Research.IsFinished )

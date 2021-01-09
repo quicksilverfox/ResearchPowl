@@ -365,7 +365,7 @@ namespace ResearchPal
                 Rect.yMax < visibleRect.yMin );
         }
 
-        public virtual void Draw( Rect visibleRect, bool forceDetailedMode = false )
+        public virtual void Draw(Rect visibleRect, bool forceDetailedMode = false)
         {
         }
 

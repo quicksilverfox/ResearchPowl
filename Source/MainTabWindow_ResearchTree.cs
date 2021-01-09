@@ -191,9 +191,6 @@ namespace ResearchPal
                     while (! Tree.Initialized) continue;
                 }
             }
-            if (Settings.delayLayoutGeneration && (! Tree.Initialized)) {
-                Tree.Initialize();
-            }
             // top bar
             var topRect = new Rect(
                 canvas.xMin,
