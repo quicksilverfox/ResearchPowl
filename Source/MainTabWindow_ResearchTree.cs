@@ -21,8 +21,6 @@ namespace ResearchPal
 
         private bool    _dragging;
         private Vector2 _mousePosition = Vector2.zero;
-
-        private string _query = "";
         private Rect   _viewRect;
 
         private Rect _viewRect_Inner;
@@ -30,6 +28,10 @@ namespace ResearchPal
         private bool _viewRectDirty       = true;
 
         private float _zoomLevel = 1f;
+
+        private string _prevQuery = "";
+
+        private string _curQuery = "";
 
         private List<ResearchNode> _searchResults;
 
@@ -152,7 +154,7 @@ namespace ResearchPal
 
             if (Settings.shouldReset)
             {
-                _query = "";
+                ResetSearch();
                 _scrollPosition = Vector2.zero;
                 ZoomLevel = 1f;
             }
@@ -382,48 +384,68 @@ namespace ResearchPal
 
             // GUI.DrawTexture( iconRect, Assets.Search );
             if (CancelSearchButton(canvas)) {
-                _query = "";
-                ClearPreviousSearch();
+                ResetSearch();
             }
 
+            UpdateTextField(searchRect);
             OnSearchFieldChanged(searchRect);
 
             Profiler.End();
         }
-        
-        public void OnSearchFieldChanged(Rect searchRect) {
-            var query = Widgets.TextField( searchRect, _query );
-            if ( query != _query )
-            {
-                _query = query;
-                ClearPreviousSearch();
 
-                if ( query.Length > 2 )
-                {
-                    _searchActive = true;
-                    // open float menu with search results, if any.
-                    var options = new List<FloatMenuOption>();
+        public static float SearchResponseDelay = 0.3f;
+        private float lastSearchChangeTime = 0;
 
-                    _searchResults = Tree.ResearchNodes()
-                        .Select( n => new {node = n, match = n.Matches( query )} )
-                        .Where( result => result.match > 0 )
-                        .OrderBy( result => result.match).Select(p => p.node).ToList();
-
-                    foreach (var result in _searchResults) {
-                        result.isMatched = true;
-                        options.Add(new FloatMenuOption(
-                            result.Label, () => CenterOn(result),
-                            MenuOptionPriority.Default, () => CenterOn(result)));
-                    }
-
-                    if ( !options.Any() )
-                        options.Add(new FloatMenuOption(ResourceBank.String.NoResearchFound, null) );
-
-                    Find.WindowStack.Add(new FloatMenu_Fixed(
-                        options, UI.GUIToScreenPoint(
-                            new Vector2(searchRect.xMin, searchRect.yMax))));
-                }
+        private void UpdateTextField(Rect searchRect) {
+            var curQuery = Widgets.TextField(searchRect, _curQuery);
+            if (curQuery != _curQuery) {
+                lastSearchChangeTime = Time.realtimeSinceStartup;
+                _curQuery = curQuery;
             }
+        }
+
+        private void OnSearchFieldChanged(Rect searchRect) {
+            if ( _curQuery == _prevQuery
+               || Time.realtimeSinceStartup - lastSearchChangeTime
+                  < SearchResponseDelay) {
+                return;
+            }
+
+            _prevQuery = _curQuery;
+            ClearPreviousSearch();
+
+            if (_curQuery.Length <= 2) {
+                return;
+            }
+
+            _searchActive = true;
+            // open float menu with search results, if any.
+            var options = new List<FloatMenuOption>();
+
+            _searchResults = Tree.ResearchNodes()
+                .Select( n => new {node = n, match = n.Matches( _curQuery )} )
+                .Where( result => result.match > 0 )
+                .OrderBy( result => result.match).Select(p => p.node).ToList();
+
+            foreach (var result in _searchResults) {
+                result.isMatched = true;
+                options.Add(new FloatMenuOption(
+                    result.Label, () => CenterOn(result),
+                    MenuOptionPriority.Default, () => CenterOn(result)));
+            }
+
+            if ( !options.Any() )
+                options.Add(new FloatMenuOption(ResourceBank.String.NoResearchFound, null));
+
+            Find.WindowStack.Add(new FloatMenu_Fixed(
+                options, UI.GUIToScreenPoint(
+                    new Vector2(searchRect.xMin, searchRect.yMax))));
+        }
+
+        private void ResetSearch() {
+            _curQuery = "";
+            _prevQuery = "";
+            ClearPreviousSearch();
         }
 
         private void ClearPreviousSearch() {
