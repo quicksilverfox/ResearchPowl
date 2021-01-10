@@ -250,13 +250,16 @@ namespace ResearchPal
             Scribe_Collections.Look( ref _saveableQueue, "Queue", LookMode.Def );
 
             if ( Scribe.mode == LoadSaveMode.PostLoadInit ) {
+                if (_saveableQueue.Any()) {
+                    Tree.WaitForInitialization();
+                }
                 foreach (var research in _saveableQueue) {
                     // find a node that matches the research - or null if none found
                     var node = research.ResearchNode();
 
                     if (node != null) {
                         Log.Debug( "Adding {0} to queue", node.Research.LabelCap );
-                        _queue.Add(node);
+                        Append(node);
                     } else {
                         Log.Debug( "Could not find node for {0}", research.LabelCap );
                     }

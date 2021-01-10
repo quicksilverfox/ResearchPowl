@@ -26,6 +26,8 @@ namespace ResearchPal
 
         public static bool alwaysDisplayProgress = true;
 
+        public static bool dontIgnoreHiddenPrerequisites = true;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -33,6 +35,11 @@ namespace ResearchPal
             Listing_Standard list = new Listing_Standard(GameFont.Small);
             list.ColumnWidth = rect.width / 2;
             list.Begin(rect);
+
+            list.CheckboxLabeled(
+               DontIgnoreHiddenPrerequisites,
+               ref dontIgnoreHiddenPrerequisites,
+               DontIgnoreHiddenPrerequisitesTip);
 
             list.CheckboxLabeled(ShouldSeparateByTechLevels, ref shouldSeparateByTechLevels,
                                  ShouldSeparateByTechLevelsTip);
@@ -81,6 +88,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref asyncLoadingOnStartup, "AsyncLoadingOnStartup", false);
             Scribe_Values.Look(ref progressTooltip, "ProgressTooltip", false);
             Scribe_Values.Look(ref alwaysDisplayProgress, "AlwaysDisplayProgress", false);
+            Scribe_Values.Look(ref dontIgnoreHiddenPrerequisites, "dontIgnoreHiddenPrerequisites", true);
         }
     }
 }

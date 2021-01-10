@@ -345,7 +345,7 @@ namespace ResearchPal
 
         private void DrawNodeDetailMode(bool mouseOver) {
             Text.Anchor   = TextAnchor.UpperLeft;
-            Text.WordWrap = false;
+            Text.WordWrap = true;
             Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
             Widgets.Label( LabelRect, Research.LabelCap );
 
@@ -398,8 +398,10 @@ namespace ResearchPal
                 textToDraw = Research.LabelCap;
             }
             Text.Anchor   = TextAnchor.MiddleCenter;
-            Text.WordWrap = false;
-            Text.Font     = ChooseFont(textToDraw, Rect, GameFont.Medium);
+            // Text.Font     = ChooseFont(textToDraw, Rect, GameFont.Medium, true);
+            // Text.WordWrap = Text.Font == GameFont.Medium ? false : true;
+            Text.Font     = GameFont.Medium;
+            Text.WordWrap = true;
             Widgets.Label(Rect, textToDraw);
         }
 

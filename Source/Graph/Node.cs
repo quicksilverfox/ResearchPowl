@@ -324,7 +324,7 @@ namespace ResearchPal
             _labelRect = new Rect( _rect.xMin             + 6f,
                                    _rect.yMin             + 3f,
                                    _rect.width * 2f / 3f  - 6f,
-                                   _rect.height     * .5f - 3f );
+                                   _rect.height * 2f / 3f);
 
             // research cost rect
             _costLabelRect = new Rect( _rect.xMin                  + _rect.width * 2f / 3f,
@@ -356,14 +356,16 @@ namespace ResearchPal
             _rectsSet = true;
         }
 
-        public static GameFont ChooseFont(string s, Rect rect, GameFont largest) {
+        public static GameFont ChooseFont(
+            string s, Rect rect, GameFont largest,
+            bool wordWrap = false, GameFont smallest = GameFont.Tiny) {
             if (largest == GameFont.Tiny)
                 return largest;
             var savedFont = Text.Font;
             var savedTextWrap = Text.WordWrap;
             GameFont result;
-            Text.WordWrap = true;
-            for (; largest >= GameFont.Tiny; --largest) {
+            Text.WordWrap = wordWrap;
+            for (; largest > smallest; --largest) {
                 Text.Font = largest;
                 if (Text.CalcHeight(s, rect.width) <= rect.height) {
                     break;

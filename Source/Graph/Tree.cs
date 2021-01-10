@@ -242,6 +242,16 @@ namespace ResearchPal
             mainGraphUpperbound = topBounds.Max();
         }
 
+        public static void WaitForInitialization() {
+            if (! Tree.Initialized) {
+                if (Settings.delayLayoutGeneration) {
+                    Tree.Initialize();
+                } else if (Settings.asyncLoadingOnStartup) {
+                    while (! Tree.Initialized) continue;
+                }
+            }
+        }
+
 
         public static void Initialize()
         {
@@ -809,12 +819,26 @@ namespace ResearchPal
             Profiler.End();
         }
 
+        private static void FixPrerequisites(ResearchProjectDef d) {
+            if (d.prerequisites == null) {
+                d.prerequisites = d.hiddenPrerequisites;
+            } else {
+                if (d.hiddenPrerequisites != null) {
+                    d.prerequisites = d.prerequisites.Concat(d.hiddenPrerequisites).ToList();
+                }
+            }
+        }
+
         private static void PopulateNodes()
         {
             Log.Debug( "Populating nodes." );
             Profiler.Start();
 
             var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
+
+            if (Settings.dontIgnoreHiddenPrerequisites) {
+                projects.ForEach(FixPrerequisites);
+            }
 
             // find hidden nodes (nodes that have themselves as a prerequisite)
             var hidden = projects.Where( p => p.prerequisites?.Contains( p ) ?? false );
