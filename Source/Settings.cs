@@ -22,6 +22,10 @@ namespace ResearchPal
 
         public static bool asyncLoadingOnStartup = false;
 
+        public static bool progressTooltip = true;
+
+        public static bool alwaysDisplayProgress = true;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -57,6 +61,11 @@ namespace ResearchPal
                     ref asyncLoadingOnStartup,
                     AsyncLoadingOnStartupTip);
             }
+            list.Gap();
+
+            list.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);
+            list.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
+
             list.End();
         }
 
@@ -70,6 +79,8 @@ namespace ResearchPal
             Scribe_Values.Look(ref largeModTechCount, "MinimumSeparateModTech", 5);
             Scribe_Values.Look(ref delayLayoutGeneration, "DelayResearchLayoutGeneration", false);
             Scribe_Values.Look(ref asyncLoadingOnStartup, "AsyncLoadingOnStartup", false);
+            Scribe_Values.Look(ref progressTooltip, "ProgressTooltip", false);
+            Scribe_Values.Look(ref alwaysDisplayProgress, "AlwaysDisplayProgress", false);
         }
     }
 }

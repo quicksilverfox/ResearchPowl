@@ -34,6 +34,7 @@ namespace ResearchPal
 
         private bool _isHighlighted = false;
 
+
         public override bool Highlighted()
         {
             return _isHighlighted;
@@ -292,6 +293,10 @@ namespace ResearchPal
                                 .ToArray())));
             }
             TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
+
+            if (Settings.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished) {
+                TooltipHandler.TipRegion(Rect, string.Format("Progress: {0}", ProgressString()));
+            }
         }
 
         private void DrawIcons() {
@@ -338,13 +343,73 @@ namespace ResearchPal
             }
         }
 
+        private void DrawNodeDetailMode(bool mouseOver) {
+            Text.Anchor   = TextAnchor.UpperLeft;
+            Text.WordWrap = false;
+            Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
+            Widgets.Label( LabelRect, Research.LabelCap );
 
-        private void DrawNode(bool detailedMode, bool mouseOver) {
+            GUI.DrawTexture(CostIconRect, !Completed && !Available ? Assets.Lock : Assets.ResearchIcon,
+                                ScaleMode.ScaleToFit);
+
+            Color savedColor = GUI.color;
+            Color numberColor;
+            float numberToDraw;
+            if (Settings.alwaysDisplayProgress && ProgressWorthDisplaying() || SwitchToProgress()) {
+                if (Research.IsFinished) {
+                    numberColor = Color.cyan;
+                    numberToDraw = 0;
+                } else {
+                    numberToDraw = Research.CostApparent - Research.ProgressApparent;
+                    numberColor = Color.green;
+                }
+            } else {
+                numberToDraw = Research.CostApparent;
+                numberColor = savedColor;
+            }
+            if (IsUnmatchedInSearch()) {
+                numberColor = Color.gray;
+            }
+            GUI.color = numberColor;
+            Text.Anchor = TextAnchor.UpperRight;
+
+            Text.Font   = NumericalFont(numberToDraw);
+            Widgets.Label(CostLabelRect, numberToDraw.ToStringByStyle(ToStringStyle.Integer));
+            GUI.color = savedColor;
+
+            DrawIcons();
+        }
+
+        private string ProgressString() {
+            return string.Format("{0} / {1}",
+                Research.ProgressApparent.ToStringByStyle(ToStringStyle.Integer),
+                Research.CostApparent.ToStringByStyle(ToStringStyle.Integer));
+        }
+
+        private bool ProgressWorthDisplaying() {
+            return Research.ProgressApparent > 0;
+        }
+
+        private void DrawNodeZoomedOut(bool mouseOver) {
+            string textToDraw;
+            if (SwitchToProgress() && ! Research.IsFinished) {
+                textToDraw = ProgressString();
+            } else {
+                textToDraw = Research.LabelCap;
+            }
+            Text.Anchor   = TextAnchor.MiddleCenter;
+            Text.WordWrap = false;
+            Text.Font     = ChooseFont(textToDraw, Rect, GameFont.Medium);
+            Widgets.Label(Rect, textToDraw);
+        }
+
+
+        private void DrawNode(bool detailedMode, bool mouseOver, int painter) {
+            // TryModifySharedState(painter, mouseOver);
+            HandleTooltips();
+
             DrawBackground(mouseOver);
             DrawProgressBar();
-
-            // Highlighted = false;
-
 
             // draw the research label
             if ((Completed || Available) && !IsUnmatchedInSearch())
@@ -352,37 +417,17 @@ namespace ResearchPal
             else
                 GUI.color = Color.grey;
 
-            if ( detailedMode )
-            {
-                Text.Anchor   = TextAnchor.UpperLeft;
-                Text.WordWrap = false;
-                Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
-                Widgets.Label( LabelRect, Research.LabelCap );
+            if (detailedMode) {
+                DrawNodeDetailMode(mouseOver);
+            } else {
+                DrawNodeZoomedOut(mouseOver);
             }
-            else
-            {
-                Text.Anchor   = TextAnchor.MiddleCenter;
-                Text.WordWrap = false;
-                Text.Font     = GameFont.Medium;
-                Widgets.Label( Rect, Research.LabelCap );
-            }
+            Text.WordWrap = true;
+        }
 
-            // draw research cost and icon
-            if ( detailedMode )
-            {
-                Text.Anchor = TextAnchor.UpperRight;
-                Text.Font   = Research.CostApparent > 1000000 ? GameFont.Tiny : GameFont.Small;
-                Widgets.Label( CostLabelRect, Research.CostApparent.ToStringByStyle( ToStringStyle.Integer ) );
-                GUI.DrawTexture( CostIconRect, !Completed && !Available ? Assets.Lock : Assets.ResearchIcon,
-                                    ScaleMode.ScaleToFit );
-            }
 
-            HandleTooltips();
-
-            // draw unlock icons
-            if ( detailedMode ) {
-                DrawIcons();
-            }
+        public static GameFont NumericalFont(float number) {
+            return number >= 1000000 ? GameFont.Tiny : GameFont.Small;
         }
 
         public static bool RightClick(Rect rect) {
@@ -411,6 +456,10 @@ namespace ResearchPal
             return Mouse.IsOver(Rect);
         }
 
+        public bool SwitchToProgress() {
+            return Tree.DisplayProgressState && ProgressWorthDisplaying();
+        }
+
         public bool ShouldHighlight(Vector2 mousePos) {
             return Rect.Contains(mousePos);
         }
@@ -420,7 +469,8 @@ namespace ResearchPal
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
-        public override void Draw(Rect visibleRect, bool forceDetailedMode = false)
+        public override void Draw(
+            Rect visibleRect, int painterId, bool forceDetailedMode = false)
         {
             // Call site should ensure this condition
             // if (!IsVisible(visibleRect)) {
@@ -429,8 +479,9 @@ namespace ResearchPal
             var detailedMode = forceDetailedMode ||
                                MainTabWindow_ResearchTree.Instance.ZoomLevel < DetailedModeZoomLevelCutoff;
             var mouseOver = Mouse.IsOver(Rect);
+
             if (Event.current.type == EventType.Repaint) {
-                DrawNode(detailedMode, mouseOver);
+                DrawNode(detailedMode, mouseOver, painterId);
             }
 
             // Tool tip debugging fail attempt
@@ -550,10 +601,10 @@ namespace ResearchPal
             return text.ToString();
         }
 
-        public void DrawAt( Vector2 pos, Rect visibleRect, bool forceDetailedMode = false )
+        public void DrawAt( Vector2 pos, Rect visibleRect, int painterId, bool forceDetailedMode = false )
         {
             SetRects( pos );
-            Draw( visibleRect, forceDetailedMode );
+            Draw(visibleRect, painterId, forceDetailedMode);
             SetRects();
         }
     }

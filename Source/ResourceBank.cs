@@ -38,6 +38,12 @@ namespace ResearchPal
             public static readonly string AsyncLoadingOnStartup = TL("AsyncLoadingOnStartup");
             public static readonly string AsyncLoadingOnStartupTip = TL("AsyncLoadingOnStartupTip");
 
+            public static readonly string ProgressTooltip = TL("ProgressTooltip");
+            public static readonly string ProgressTooltipTip = TL("ProgressTooltipTip");
+
+            public static readonly string AlwaysDisplayProgress = TL("AlwaysDisplayProgress");
+            public static readonly string AlwaysDisplayProgressTip = TL("AlwaysDisplayProgressTip");
+
             public static readonly string DebugResearch = TL("DebugResearch");
             public static readonly string DebugResearchTip = TL("DebugResearchTip");
             #endregion

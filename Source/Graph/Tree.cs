@@ -31,6 +31,7 @@ namespace ResearchPal
         private static List<Node> _singletons;
 
         private static List<ResearchNode> _researchNodes;
+        public static bool DisplayProgressState = false;
 
         public static Dictionary<TechLevel, IntRange> TechLevelBounds
         {
@@ -889,11 +890,11 @@ namespace ResearchPal
             });
         }
 
-        static void HandleHighlights(ResearchNode node) {
-            if (! node.ShouldHighlight() && highlightCauser == node) {
+        static void HandleHighlights(ResearchNode node, Vector2 mousePos) {
+            if (! node.ShouldHighlight(mousePos) && highlightCauser == node) {
                 StopCurrentHighlight();
             }
-            if (node.ShouldHighlight() && highlightCauser != node) {
+            if (node.ShouldHighlight(mousePos) && highlightCauser != node) {
                 DoHighlight(node);
             }
         }
@@ -914,13 +915,32 @@ namespace ResearchPal
                 edge.Draw( visibleRect );
             Profiler.End();
 
+            TryModifySharedState();
+
             Profiler.Start( "nodes" );
+            var evt = new Event(Event.current);
             var drawnNodes = ResearchNodes().Where(n => n.IsVisible(visibleRect));
             foreach (var node in drawnNodes) {
-                HandleHighlights(node);
-                node.Draw(visibleRect);
+                HandleHighlights(node, evt.mousePosition);
+                node.Draw(visibleRect, 0, false);
             }
             Profiler.End();
+        }
+        private static void TryModifySharedState() {
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) {
+                DisplayProgressState = true;
+            } else if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift)) {
+                DisplayProgressState = false;
+            }
+            // if (Event.current.type == EventType.KeyDown) {
+            //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
+            //         _displayProgressState = true;
+            //     }
+            // } else if (Event.current.type == EventType.KeyUp) {
+            //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
+            //         _displayProgressState = false;
+            //     }
+            // }
         }
 
         public static void DrawTechLevel( TechLevel techlevel, Rect visibleRect )

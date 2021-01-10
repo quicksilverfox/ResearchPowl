@@ -246,7 +246,7 @@ namespace ResearchPal
                     NodeSize.x + 2 * Margin,
                     NodeSize.y + 2 * Margin
                 );
-                node.DrawAt( pos, rect, true );
+                node.DrawAt(pos, rect, 1, true);
                 if ( interactible && Mouse.IsOver( rect ) )
                     MainTabWindow_ResearchTree.Instance.CenterOn( node );
                 pos.x += NodeSize.x + Margin;

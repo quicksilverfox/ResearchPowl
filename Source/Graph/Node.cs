@@ -356,6 +356,30 @@ namespace ResearchPal
             _rectsSet = true;
         }
 
+        public static GameFont ChooseFont(string s, Rect rect, GameFont largest) {
+            if (largest == GameFont.Tiny)
+                return largest;
+            var savedFont = Text.Font;
+            var savedTextWrap = Text.WordWrap;
+            GameFont result;
+            Text.WordWrap = true;
+            for (; largest >= GameFont.Tiny; --largest) {
+                Text.Font = largest;
+                if (Text.CalcHeight(s, rect.width) <= rect.height) {
+                    break;
+                }
+            }
+            result = largest;
+
+            Text.Font = savedFont;
+            Text.WordWrap = savedTextWrap;
+            return result;
+        }
+
+        public static GameFont SmallOrTiny(string s, Rect rect) {
+            return ChooseFont(s, rect, GameFont.Small);
+        }
+
         public virtual bool IsVisible( Rect visibleRect )
         {
             return !(
@@ -365,7 +389,7 @@ namespace ResearchPal
                 Rect.yMax < visibleRect.yMin );
         }
 
-        public virtual void Draw(Rect visibleRect, bool forceDetailedMode = false)
+        public virtual void Draw(Rect visibleRect, int painterId, bool forceDetailedMode = false)
         {
         }
 
