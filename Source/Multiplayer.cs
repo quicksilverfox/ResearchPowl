@@ -18,9 +18,11 @@ namespace ResearchPal
 
             // Let's sync all Queue operations that involve the GUI
             // Don't worry about EnqueueRange calling Enqueue, MP mod handles it
-            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.Enqueue));
-            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.EnqueueRange));
-            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.Dequeue));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.AppendS));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.PrependS));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.ReplaceS));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.RemoveS));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.FinishS));
 
             MP.RegisterSyncWorker<ResearchNode>(HandleResearchNode);
 

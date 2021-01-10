@@ -464,6 +464,29 @@ namespace ResearchPal
             return Rect.Contains(mousePos);
         }
 
+        public void HandleMouseEvents() {
+            // LMB is queue operations, RMB is info
+            if (Event.current.button == 0 && !Research.IsFinished) {
+                if (DebugSettings.godMode && Event.current.control) {
+                    Queue.FinishS(this);
+                    Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
+                    Queue.Notify_InstantFinished();
+                } else if (!Queue.ContainsS(this)) {
+                    if (Event.current.shift) {
+                        Queue.AppendS(this);
+                    } else if (Event.current.alt) {
+                        Queue.PrependS(this);
+                    } else {
+                        Queue.ReplaceS(this);
+                    }
+                } else {
+                    Queue.RemoveS(this);
+                }
+            } else if (Event.current.button == 1) {
+                ResearchTree.JumpToHelp(Research);
+            }
+        }
+
         // bool prevOver = false;
 
         /// <summary>
@@ -502,47 +525,8 @@ namespace ResearchPal
             // prevOver = curOver;
 
             // if clicked and not yet finished, queue up this research and all prereqs.
-            if ( Widgets.ButtonInvisible(Rect) && Available )
-            {
-                // LMB is queue operations, RMB is info
-                if ( Event.current.button == 0 && !Research.IsFinished )
-                {
-                    if (DebugSettings.godMode && Event.current.control)
-                    {
-                        var nodes = GetMissingRequiredRecursive()
-                                .Concat(new List<ResearchNode>(new[] { this }))
-                                .Distinct().Reverse();
-                        foreach (ResearchNode n in nodes)
-                        {
-                            if (Queue.IsQueued(n))
-                                Queue.Dequeue(n);
-
-                            if (!n.Research.IsFinished) {
-                                Find.ResearchManager.FinishProject(n.Research, false);
-                            }
-                        }
-                        if (nodes.Any()) {
-                            Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
-                            Queue.Notify_InstantFinished();
-                        }
-                    } else if ( !Queue.IsQueued(this) ) {
-                        // if shift is held, add to queue, otherwise replace queue
-                        var queue = GetMissingRequiredRecursive()
-                                .Concat( new List<ResearchNode>( new[] {this} ) )
-                                .Distinct();
-                        if (Event.current.shift) {
-                            Queue.EnqueueRange(queue, true);
-                        } else if (Event.current.alt) {
-                            Queue.EnstackRange(queue);
-                        } else {
-                            Queue.EnqueueRange(queue, false);
-                        }
-                    } else {
-                        Queue.Dequeue(this);
-                    }
-                } else if (Event.current.button == 1) {
-                    ResearchTree.JumpToHelp(Research);
-                }
+            if (Widgets.ButtonInvisible(Rect) && Available) {
+                HandleMouseEvents();
             }
         }
 
@@ -550,16 +534,41 @@ namespace ResearchPal
         ///     Get recursive list of all incomplete prerequisites
         /// </summary>
         /// <returns>List<Node> prerequisites</Node></returns>
-        public List<ResearchNode> GetMissingRequiredRecursive()
+        public List<ResearchNode> MissingPrerequisitesRev()
         {
-            var parents = Research.prerequisites?.Where( rpd => !rpd.IsFinished ).Select( rpd => rpd.ResearchNode() );
-            if ( parents == null )
-                return new List<ResearchNode>();
-            var allParents = new List<ResearchNode>( parents );
-            foreach ( var parent in parents )
-                allParents.AddRange( parent.GetMissingRequiredRecursive() );
+            var result = MissingPrerequisites();
+            result.Reverse();
+            return result;
+        }
 
-            return allParents.Distinct().ToList();
+        // inc means "inclusive"
+        public List<ResearchNode> MissingPrerequisitesInc() {
+            List<ResearchNode> result = new List<ResearchNode>();
+            MissingPrerequitesRec(result);
+            return result;
+        }
+
+        // rev means "reverse"
+        public List<ResearchNode> MissingPrerequisites() {
+            List<ResearchNode> result = new List<ResearchNode>();
+            foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished)) {
+                n.MissingPrerequitesRec(result);
+            }
+            return result;
+        }
+
+        public IEnumerable<ResearchNode> DirectPrerequisites() {
+            return InEdges.Select(e => e.InResearch());
+        }
+
+        private void MissingPrerequitesRec(List<ResearchNode> acc) {
+            if (acc.Contains(this)) {
+                return;
+            }
+            foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished)) {
+                n.MissingPrerequitesRec(acc);
+            }
+            acc.Add(this);
         }
 
         public override bool Completed => Research.IsFinished;
@@ -581,7 +590,7 @@ namespace ResearchPal
             text.AppendLine( Research.description );
             text.AppendLine();
 
-            if ( Queue.IsQueued( this ) )
+            if ( Queue.ContainsS( this ) )
             {
                 text.AppendLine( ResourceBank.String.LClickReplaceQueue );
             }

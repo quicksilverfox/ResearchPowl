@@ -862,7 +862,7 @@ namespace ResearchPal
         static ResearchNode highlightCauser;
 
         static List<ResearchNode> FindHighlightsFrom(ResearchNode node) {
-            return node.GetMissingRequiredRecursive()
+            return node.MissingPrerequisites()
                 .Concat(node.Children.Where(c => !c.Completed))
                 .Append(node)
                 .ToList();
