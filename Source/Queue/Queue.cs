@@ -86,8 +86,12 @@ namespace ResearchPal
             }
         }
 
+        public bool CantResearch(ResearchNode node) {
+            return node.Research.IsFinished || !node.Available;
+        }
+
         public void Append(ResearchNode node) {
-            if (_queue.Contains(node)) {
+            if (_queue.Contains(node) || CantResearch(node)) {
                 return;
             }
             UnsafeConcat(node.MissingPrerequisitesInc());
@@ -95,6 +99,9 @@ namespace ResearchPal
         }
 
         public void Prepend(ResearchNode node) {
+            if (CantResearch(node)) {
+                return;
+            }
             UnsafeConcatFront(node.MissingPrerequisitesInc());
             UpdateCurrentResearch();
         }
@@ -136,6 +143,22 @@ namespace ResearchPal
 
         static private void UpdateCurrentResearchS() {
             _instance.UpdateCurrentResearch();
+        }
+
+        public void SanityCheck() {
+            List<ResearchNode> finished = new List<ResearchNode>();
+            List<ResearchNode> unavailable = new List<ResearchNode>();
+
+            foreach (var n in _queue) {
+                if (n.Research.IsFinished) {
+                    finished.Add(n);
+                } else if (!n.Available) {
+                    unavailable.Add(n);
+                }
+            }
+            finished.ForEach(n => _queue.Remove(n));
+            unavailable.ForEach(n => Remove(n));
+            UpdateCurrentResearch();
         }
 
         public bool Remove(ResearchNode node) {

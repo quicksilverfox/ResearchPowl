@@ -574,7 +574,8 @@ namespace ResearchPal
         }
 
         public override bool Completed => Research.IsFinished;
-        public override bool Available => !Research.IsFinished && ( DebugSettings.godMode || (BuildingPresent() && TechprintAvailable()));
+        public override bool Available =>
+            !Research.IsFinished && (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable()));
 
         public List<ThingDef> MissingFacilities()
         {

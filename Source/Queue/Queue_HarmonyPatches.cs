@@ -21,15 +21,15 @@ namespace ResearchPal
                 Log.Debug( "{0} progress: {1}", __state.LabelCap, __state.ProgressPercent );
             }
 
-            private static void Postfix( ResearchProjectDef __state )
-            {
-                Log.Debug( "{0} finished?: {1}", __state, __state?.IsFinished );
-                if ( __state?.IsFinished ?? false )
-                {
-                    Log.Debug( "{0} finished", __state.LabelCap );
-                    Queue.TryStartNext( __state );
-                }
-            }
+            // private static void Postfix( ResearchProjectDef __state )
+            // {
+            //     Log.Debug( "{0} finished?: {1}", __state, __state?.IsFinished );
+            //     if ( __state?.IsFinished ?? false )
+            //     {
+            //         Log.Debug( "{0} finished", __state.LabelCap );
+            //         Queue.TryStartNext( __state );
+            //     }
+            // }
         }
 
         [HarmonyPatch( typeof( ResearchManager ), "FinishProject" )]
@@ -39,6 +39,12 @@ namespace ResearchPal
             private static void Prefix( ref bool doCompletionDialog )
             {
                 doCompletionDialog = false;
+            }
+
+            private static void Postfix(ResearchProjectDef proj) {
+                if (proj.IsFinished) {
+                    Queue.TryStartNext(proj);
+                }
             }
         }
     }
