@@ -227,10 +227,6 @@ namespace ResearchPal
         }
 
         public virtual string Label { get; }
-
-        public virtual bool Completed   => false;
-        public virtual bool Available   => false;
-
         public virtual bool Highlighted() {
             return false;
         }
@@ -254,20 +250,16 @@ namespace ResearchPal
             return results;
         }
 
-        protected internal virtual bool SetDepth( int min = 1 )
+        protected internal virtual float SetDepth( int min = 1 )
         {
             // calculate desired position
             var isRoot  = InNodes.NullOrEmpty();
             var desired = isRoot ? 1 : InNodes.Max( n => n.X ) + 1;
             var depth   = Mathf.Max( desired, min );
 
-            // no change
-            if ( depth == X )
-                return false;
-
             // update
             X = depth;
-            return true;
+            return depth;
         }
 
         /// <summary>

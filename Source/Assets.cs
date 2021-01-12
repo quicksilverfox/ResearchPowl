@@ -19,6 +19,7 @@ namespace ResearchPal
         internal static readonly Texture2D CircleFill   = ContentFinder<Texture2D>.Get( "Icons/circle-fill" );
 
         public static Color                        NegativeMouseoverColor = new Color( .4f, .1f, .1f );
+        public static Color HeavyMouseoverColor = new Color(0.9f, 0.8f, 0.2f);
         public static Dictionary<TechLevel, Color> ColorCompleted         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorAvailable         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorUnavailable       = new Dictionary<TechLevel, Color>();

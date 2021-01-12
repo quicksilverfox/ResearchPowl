@@ -459,8 +459,6 @@ namespace ResearchPal
                 ( NodeSize.x + NodeMargins.x ) * ( node.X - .5f ),
                 ( NodeSize.y + NodeMargins.y ) * ( node.Y - .5f ) );
 
-            node.Highlighted(true);
-
             position -= new Vector2( UI.screenWidth, UI.screenHeight ) / 2f;
 
             position.x      = Mathf.Clamp( position.x, 0f, TreeRect.width  - ViewRect.width );

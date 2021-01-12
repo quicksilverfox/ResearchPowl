@@ -32,16 +32,25 @@ namespace ResearchPal
 
         public bool isMatched = false;
 
-        private bool _isHighlighted = false;
+        private bool _available = false;
 
+        private void UpdateAvailable() {
+            _available = GetAvailable();
+        }
+
+        private HighlightReasonSet _highlightReasons = new HighlightReasonSet();
 
         public override bool Highlighted()
         {
-            return _isHighlighted;
+            return _highlightReasons.Highlighted();
         }
 
-        public void Highlighted(bool h) {
-            _isHighlighted = h;
+        public void Highlight(Highlighting.Reason r) {
+            _highlightReasons.Highlight(r);
+        }
+
+        public bool HighlightedAs(Highlighting.Reason r) {
+            return _highlightReasons.HighlightedAs(r);
         }
 
         public List<ResearchNode> Parents
@@ -55,37 +64,62 @@ namespace ResearchPal
             }
         }
 
+        private Color HighlightColor() {
+            return Highlighting.Color(
+                _highlightReasons.Current(), Research.techLevel);
+        }
+
+        public bool Unhighlight(Highlighting.Reason r) {
+            return _highlightReasons.Unhighlight(r);
+        }
+
+        public IEnumerable<Highlighting.Reason> HighlightReasons() {
+            return _highlightReasons.Reasons();
+        }
+
         public override Color Color
         {
             get
             {
-                if (Highlighted())
-                    return GenUI.MouseoverColor;
-                if (IsUnmatchedInSearch())
-                {
+                if (Completed() && (!IsUnmatchedInSearch() || Highlighted())) {
+                    return Assets.ColorCompleted[Research.techLevel];
+                }
+                if (Highlighted()) {
+                    return HighlightColor();
+                }
+                if (IsUnmatchedInSearch()) {
                     return Assets.ColorUnmatched[Research.techLevel];
                 }
-                if (Completed)
+                if (Available()) {
                     return Assets.ColorCompleted[Research.techLevel];
-                if (Available)
-                    return Assets.ColorCompleted[Research.techLevel];
+                }
                 return Assets.ColorUnavailable[Research.techLevel];
             }
         }
-        public bool mouseHoverHighlight = false;
-
 
         public bool IsUnmatchedInSearch()
         {
+            // return highlightReasons.Contains(HL.Reason.SearchUnmatched);
             return MainTabWindow_ResearchTree.Instance.SearchActive() && !isMatched;
         }
         public bool IsMatchedInSearch()
         {
+            // return highlightReasons.Contains(HL.Reason.SearchMatched);
             return MainTabWindow_ResearchTree.Instance.SearchActive() && isMatched;
         }
 
         public bool HighlightInEdge(ResearchNode from) {
-            return mouseHoverHighlight && (from.mouseHoverHighlight || from.Research.IsFinished);
+            if (from.Completed()) {
+                return HighlightReasons().Any(Highlighting.CauseEdgeHighlight);
+            }
+            foreach (var r1 in HighlightReasons()) {
+                foreach (var r2 in from.HighlightReasons()) {
+                    if (Highlighting.Similar(r1, r2)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public override Color InEdgeColor(ResearchNode from)
@@ -96,9 +130,9 @@ namespace ResearchPal
             {
                 return Assets.ColorUnmatched[Research.techLevel];
             }
-            if (Completed)
+            if (Completed())
                 return Assets.ColorCompleted[Research.techLevel];
-            if (Available)
+            if (Available())
                 return Assets.ColorAvailable[Research.techLevel];
             return Assets.ColorUnavailable[Research.techLevel];
         }
@@ -116,8 +150,9 @@ namespace ResearchPal
 
         public override string Label => Research.LabelCap;
 
-        public static bool BuildingPresent( ResearchProjectDef research )
+        public static bool BuildingPresent( ResearchNode node )
         {
+            var research = node.Research;
             if ( DebugSettings.godMode && Prefs.DevMode )
                 return true;
 
@@ -135,7 +170,7 @@ namespace ResearchPal
                              .Any( b => research.CanBeResearchedAt( b, true ) );
 
             if ( result )
-                result = research.Ancestors().All( BuildingPresent );
+                result = node.MissingPrerequisites().All(BuildingPresent);
 
             // update cache
             _buildingPresentCache.Add( research, result );
@@ -171,8 +206,10 @@ namespace ResearchPal
             if ((Research.modContentPack?.Name.ToLower(culture) ?? "").Contains(query) ) {
                 return 3;
             }
-            if (Research.description.ToLower( culture ).Contains( query ))
-                return 4;
+            if (Settings.searchByDescription) {
+                if (Research.description.ToLower(culture).Contains(query))
+                    return 4;
+            }
             return 0;
         }
 
@@ -219,7 +256,7 @@ namespace ResearchPal
 
         public bool BuildingPresent()
         {
-            return BuildingPresent( Research );
+            return BuildingPresent(this);
         }
         
         public bool TechprintAvailable()
@@ -259,18 +296,18 @@ namespace ResearchPal
 
         private void DrawBackground(bool mouseOver) {
             // researches that are completed or could be started immediately, and that have the required building(s) available
-            GUI.color = mouseOver ? GenUI.MouseoverColor : Color;
+            GUI.color = Color;
 
-            if ( mouseOver || Highlighted() )
-                GUI.DrawTexture( Rect, Assets.ButtonActive );
+            if (mouseOver)
+                GUI.DrawTexture(Rect, Assets.ButtonActive);
             else
-                GUI.DrawTexture( Rect, Assets.Button );
+                GUI.DrawTexture(Rect, Assets.Button);
         }
 
         private void DrawProgressBar() {
             // grey out center to create a progress bar effect, completely greying out research not started.
             if ( IsMatchedInSearch()
-               || !IsUnmatchedInSearch() && Available
+               || !IsUnmatchedInSearch() && _available
                || Highlighted())
             {
                 var progressBarRect = Rect.ContractedBy( 3f );
@@ -349,8 +386,10 @@ namespace ResearchPal
             Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
             Widgets.Label( LabelRect, Research.LabelCap );
 
-            GUI.DrawTexture(CostIconRect, !Completed && !Available ? Assets.Lock : Assets.ResearchIcon,
-                                ScaleMode.ScaleToFit);
+            GUI.DrawTexture(
+                CostIconRect,
+                !Completed() && !Available() ? Assets.Lock : Assets.ResearchIcon,
+                ScaleMode.ScaleToFit);
 
             Color savedColor = GUI.color;
             Color numberColor;
@@ -367,7 +406,7 @@ namespace ResearchPal
                 numberToDraw = Research.CostApparent;
                 numberColor = savedColor;
             }
-            if (IsUnmatchedInSearch()) {
+            if (IsUnmatchedInSearch() && (! Highlighted())) {
                 numberColor = Color.gray;
             }
             GUI.color = numberColor;
@@ -405,6 +444,11 @@ namespace ResearchPal
             Widgets.Label(Rect, textToDraw);
         }
 
+        bool ShouldGreyOutText() {
+            return !
+                (  (Completed() || Available())
+                && (Highlighted() || !IsUnmatchedInSearch()));
+        }
 
         private void DrawNode(bool detailedMode, bool mouseOver, int painter) {
             // TryModifySharedState(painter, mouseOver);
@@ -414,10 +458,10 @@ namespace ResearchPal
             DrawProgressBar();
 
             // draw the research label
-            if ((Completed || Available) && !IsUnmatchedInSearch())
-                GUI.color = Color.white;
-            else
+            if (ShouldGreyOutText())
                 GUI.color = Color.grey;
+            else
+                GUI.color = Color.white;
 
             if (detailedMode) {
                 DrawNodeDetailMode(mouseOver);
@@ -506,6 +550,7 @@ namespace ResearchPal
             var mouseOver = Mouse.IsOver(Rect);
 
             if (Event.current.type == EventType.Repaint) {
+                UpdateAvailable();
                 DrawNode(detailedMode, mouseOver, painterId);
             }
 
@@ -527,20 +572,9 @@ namespace ResearchPal
             // prevOver = curOver;
 
             // if clicked and not yet finished, queue up this research and all prereqs.
-            if (Widgets.ButtonInvisible(Rect) && Available) {
+            if (Widgets.ButtonInvisible(Rect) && _available) {
                 HandleMouseEvents();
             }
-        }
-
-        /// <summary>
-        ///     Get recursive list of all incomplete prerequisites
-        /// </summary>
-        /// <returns>List<Node> prerequisites</Node></returns>
-        public List<ResearchNode> MissingPrerequisitesRev()
-        {
-            var result = MissingPrerequisites();
-            result.Reverse();
-            return result;
         }
 
         // inc means "inclusive"
@@ -562,6 +596,10 @@ namespace ResearchPal
         public IEnumerable<ResearchNode> DirectPrerequisites() {
             return InEdges.Select(e => e.InResearch());
         }
+        public IEnumerable<ResearchNode> DirectChildren() {
+            return OutEdges.Select(e => e.OutResearch());
+        }
+
 
         private void MissingPrerequitesRec(List<ResearchNode> acc) {
             if (acc.Contains(this)) {
@@ -573,9 +611,18 @@ namespace ResearchPal
             acc.Add(this);
         }
 
-        public override bool Completed => Research.IsFinished;
-        public override bool Available =>
-            !Research.IsFinished && (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable()));
+        public bool Completed() {
+            return Research.IsFinished;
+        }
+
+        public bool GetAvailable() {
+            return !Research.IsFinished &&
+                (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable()));
+        }
+
+        public bool Available() {
+            return _available;
+        }
 
         public List<ThingDef> MissingFacilities()
         {

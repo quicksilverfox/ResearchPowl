@@ -61,9 +61,6 @@ namespace ResearchPal
                     .Concat(OutNodes.OfType<DummyNode>().SelectMany(n => n.Child)).ToList();
             }
         }
-
-        public override bool Completed => OutNodes.FirstOrDefault()?.Completed   ?? false;
-        public override bool Available => OutNodes.FirstOrDefault()?.Available   ?? false;
         public override bool Highlighted() {
             return OutResearch().HighlightInEdge(InResearch());
         }

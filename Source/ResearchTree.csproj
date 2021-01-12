@@ -76,6 +76,7 @@
     <Compile Include="Extensions\Building_ResearchBench_Extensions.cs" />
     <Compile Include="Extensions\Def_Extensions.cs" />
     <Compile Include="FloatMenu_Fixed.cs" />
+    <Compile Include="Graph\Highlighting.cs" />
     <Compile Include="Graph\NodeLayers.cs" />
     <Compile Include="Graph\DummyNode.cs" />
     <Compile Include="Graph\Edge.cs" />

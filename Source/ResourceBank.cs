@@ -31,6 +31,9 @@ namespace ResearchPal
 
             public static readonly string MinimumSeparateModTech = TL("MinimumSeparateModTech");
             public static readonly string MinimumSeparateModTechTip = TL("MinimumSeparateModTechTip");
+
+            public static readonly string SearchByDescription = TL("SearchByDescription");
+            public static readonly string SearchByDescriptionTip = TL("SearchByDescriptionTip");
             public static readonly string DelayLayoutGeneration = TL("DelayLayoutGeneration");
             public static readonly string DelayLayoutGenerationTip = TL("DelayLayoutGenerationTip");
 

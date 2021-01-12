@@ -20,6 +20,8 @@ namespace ResearchPal
 
         public static bool delayLayoutGeneration = false;
 
+        public static bool searchByDescription = false;
+
         public static bool asyncLoadingOnStartup = false;
 
         public static bool progressTooltip = true;
@@ -41,21 +43,33 @@ namespace ResearchPal
                ref dontIgnoreHiddenPrerequisites,
                DontIgnoreHiddenPrerequisitesTip);
 
-            list.CheckboxLabeled(ShouldSeparateByTechLevels, ref shouldSeparateByTechLevels,
-                                 ShouldSeparateByTechLevelsTip);
-            list.CheckboxLabeled(AlignCloserToAncestors, ref alignToAncestors, AlignCloserToAncestorsTip);
-            list.CheckboxLabeled(PlaceModTechSeparately, ref placeModTechSeparately, PlaceModTechSeparatelyTip);
+            list.CheckboxLabeled(
+                ShouldSeparateByTechLevels,
+                ref shouldSeparateByTechLevels,
+                ShouldSeparateByTechLevelsTip);
+            list.CheckboxLabeled(
+                AlignCloserToAncestors,
+                ref alignToAncestors,
+                AlignCloserToAncestorsTip);
+            list.CheckboxLabeled(
+                PlaceModTechSeparately,
+                ref placeModTechSeparately,
+                PlaceModTechSeparatelyTip);
             if (placeModTechSeparately) {
                 list.Label(MinimumSeparateModTech, -1, MinimumSeparateModTechTip);
                 string buffer = largeModTechCount.ToString();
                 list.IntEntry(ref largeModTechCount, ref buffer);
             }
+            list.CheckboxLabeled(
+                SearchByDescription,
+                ref searchByDescription,
+                SearchByDescriptionTip);
             list.Gap();
 
-            list.CheckboxLabeled(ShouldPauseOnOpen, ref shouldPause,
-                                  ShouldPauseOnOpenTip);
-            list.CheckboxLabeled(ShouldResetOnOpen, ref shouldReset,
-                                  ShouldResetOnOpenTip);
+            list.CheckboxLabeled(
+                ShouldPauseOnOpen, ref shouldPause, ShouldPauseOnOpenTip);
+            list.CheckboxLabeled(
+                ShouldResetOnOpen, ref shouldReset, ShouldResetOnOpenTip);
             if (!asyncLoadingOnStartup || delayLayoutGeneration) {
                 list.CheckboxLabeled(
                     DelayLayoutGeneration,
@@ -84,6 +98,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref alignToAncestors, "AlignCloserToAncestors", false);
             Scribe_Values.Look(ref placeModTechSeparately, "placeModTechsSeparately", true);
             Scribe_Values.Look(ref largeModTechCount, "MinimumSeparateModTech", 5);
+            Scribe_Values.Look(ref searchByDescription, "SearchByDescription", false);
             Scribe_Values.Look(ref delayLayoutGeneration, "DelayResearchLayoutGeneration", false);
             Scribe_Values.Look(ref asyncLoadingOnStartup, "AsyncLoadingOnStartup", false);
             Scribe_Values.Look(ref progressTooltip, "ProgressTooltip", false);

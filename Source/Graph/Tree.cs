@@ -334,74 +334,60 @@ namespace ResearchPal
             Profiler.End();
         }
 
-        static void HorizontalPositionsByTechLevels()
-        {
-            // get list of techlevels
-            var  techlevels = RelevantTechLevels;
-            bool anyChange;
-            var  iteration     = 1;
-            var  maxIterations = 50;
-
-            // assign horizontal positions based on tech levels and prerequisites
-            do
-            {
-                Profiler.Start( "iteration " + iteration );
-                var min = 1;
-                anyChange = false;
-
-                foreach ( var techlevel in techlevels )
-                {
-                    // enforce minimum x position based on techlevels
-                    var nodes = ResearchNodes().Where( n => n.Research.techLevel == techlevel );
-                    if ( !nodes.Any() )
-                        continue;
-
-                    foreach ( var node in nodes )
-                        anyChange = node.SetDepth( min ) || anyChange;
-
-                    min = nodes.Max( n => n.X ) + 1;
-
-                    Log.Trace( "\t{0}, change: {1}", techlevel, anyChange );
-                }
-
-                Profiler.End();
-            } while ( anyChange && iteration++ < maxIterations );
-
-
-            // store tech level boundaries
+        static void HorizontalPositionsByTechLevels() {
             _techLevelBounds = new Dictionary<TechLevel, IntRange>();
-            foreach ( var techlevel in techlevels )
-            {
-                var nodes = ResearchNodes().Where( n => n.Research.techLevel == techlevel );
-                _techLevelBounds[techlevel] = new IntRange( nodes.Min( n => n.X ) - 1, nodes.Max( n => n.X ) );
+            float leftBound = 1;
+            foreach (var group in
+                ResearchNodes()
+                    .GroupBy(n => n.Research.techLevel)
+                    .OrderBy(g => g.Key)) {
+                var updateOrder = FilteredTopoSort(
+                    group, n => n.Research.techLevel == group.Key);
+                float newLeftBound  = leftBound;
+                foreach (var node in updateOrder) {
+                    newLeftBound = Math.Max(newLeftBound, node.SetDepth((int)leftBound));
+                }
+                _techLevelBounds[group.Key] = new IntRange((int)leftBound - 1, (int)newLeftBound);
+                leftBound = newLeftBound + 1;
             }
         }
 
         static void HorizontalPositionsByDensity() {
-            foreach (var node in Nodes)
-            {
-                List<Node> level = new List<Node>();
-                level.Add(node);
-
-                int depth = 1;
-                while (level.Count > 0 && level.Any(n => n.InNodes.Count > 0))
-                {
-                    // has any parent, increment level.
-                    depth++;
-
-                    // set level to next batch of distinct Parents, where Parents may not be itself.
-                    level = level.SelectMany(n => n.InNodes).Distinct().Where(n => n != node).ToList();
-
-                    // stop infinite recursion with loops of size greater than 2
-                    if (depth > 100)
-                    {
-                        Log.Error("{0} has more than 100 levels of prerequisites. Is the Research Tree defined as a loop?", false, node);
-                        break;
-                    }
-                }
-                node.SetDepth(depth);
+            var updateOrder = TopologicalSort(ResearchNodes());
+            foreach (var node in updateOrder) {
+                node.SetDepth(1);
             }
+        }
+        
+        static private List<ResearchNode> TopologicalSort(IEnumerable<ResearchNode> nodes) {
+            return FilteredTopoSort(nodes, n => true);
+        }
 
+        static private List<ResearchNode> FilteredTopoSort(
+            IEnumerable<ResearchNode> nodes, Func<ResearchNode, bool> p) {
+            List<ResearchNode> result = new List<ResearchNode>();
+            HashSet<ResearchNode> visited = new HashSet<ResearchNode>();
+            foreach (var node in nodes) {
+                if (node.OutNodes.OfType<ResearchNode>().Where(p).Any()) {
+                    continue;
+                }
+                FilteredTopoSortRec(node, p, result, visited);
+            }
+            // result.Reverse();
+            return result;
+        }
+
+        static private void FilteredTopoSortRec(
+            ResearchNode cur, Func<ResearchNode, bool> p,
+            List<ResearchNode> result, HashSet<ResearchNode> visited) {
+            if (visited.Contains(cur)) {
+                return;
+            }
+            foreach (var next in cur.InNodes.OfType<ResearchNode>().Where(p)) {
+                FilteredTopoSortRec(next, p, result, visited);
+            }
+            result.Add(cur);
+            visited.Add(cur);
         }
 
         private static void NormalizeEdges()
@@ -577,46 +563,37 @@ namespace ResearchPal
             }
         }
 
-        // Invariant: currentHighlights should always contain highlightCauser
-        static List<ResearchNode> currentHighlights;
-        static ResearchNode highlightCauser;
+        private static RelatedNodeHighlightSet hoverHighlightSet;
 
         static List<ResearchNode> FindHighlightsFrom(ResearchNode node) {
             return node.MissingPrerequisites()
-                .Concat(node.Children.Where(c => !c.Completed))
-                .Append(node)
+                .Concat(node.Children.Where(c => !c.Completed()))
                 .ToList();
         }
 
-        static void StopCurrentHighlight() {
-            highlightCauser = null;
-            if (currentHighlights != null) {
-                currentHighlights.ForEach(n => {
-                    n.Highlighted(false);
-                    n.mouseHoverHighlight = false;
-                });
-                currentHighlights = null;
+        static void OverrideHighlight(ResearchNode node) {
+            hoverHighlightSet?.Stop();
+            hoverHighlightSet = RelatedNodeHighlightSet.HoverOn(node);
+            hoverHighlightSet.Start();
+        }
+
+        static void HandleHoverHighlight(ResearchNode node, Vector2 mousePos) {
+            if (node.ShouldHighlight(mousePos)) {
+                Log.Message("Highlighting {0}", node.Label);
+                OverrideHighlight(node);
             }
         }
 
-        static void DoHighlight(ResearchNode node) {
-            StopCurrentHighlight();
-
-            highlightCauser = node;
-            currentHighlights = FindHighlightsFrom(node);
-            currentHighlights.ForEach(n => {
-                n.Highlighted(true);
-                n.mouseHoverHighlight = true;
-            });
-        }
-
-        static void HandleHighlights(ResearchNode node, Vector2 mousePos) {
-            if (! node.ShouldHighlight(mousePos) && highlightCauser == node) {
-                StopCurrentHighlight();
+        static bool ContinueHoverHighlight(Vector2 mouse) {
+            if (hoverHighlightSet == null) {
+                return false;
             }
-            if (node.ShouldHighlight(mousePos) && highlightCauser != node) {
-                DoHighlight(node);
+            if (hoverHighlightSet.TryStop(mouse)) {
+                Log.Message("Unhighlighting {0}", hoverHighlightSet.Causer().Label);
+                hoverHighlightSet = null;
+                return false;
             }
+            return true;
         }
 
         public static void Draw( Rect visibleRect )
@@ -640,8 +617,11 @@ namespace ResearchPal
             Profiler.Start( "nodes" );
             var evt = new Event(Event.current);
             var drawnNodes = ResearchNodes().Where(n => n.IsVisible(visibleRect));
+            bool hoverHighlight = ContinueHoverHighlight(evt.mousePosition);
             foreach (var node in drawnNodes) {
-                HandleHighlights(node, evt.mousePosition);
+                if (! hoverHighlight) {
+                    HandleHoverHighlight(node, evt.mousePosition);
+                }
                 node.Draw(visibleRect, 0, false);
             }
             Profiler.End();

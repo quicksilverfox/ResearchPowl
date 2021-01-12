@@ -47,6 +47,8 @@
 	<ResearchPal.MinimumSeparateModTechTip>Minimum number of techs for a mod to be placed separately from vanilla techs. (REQUIRES RESTART)</ResearchPal.MinimumSeparateModTechTip>
 	<ResearchPal.GroupModTechs>Group Researches from Same Mods</ResearchPal.GroupModTechs>
 	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (REQUIRE RESTART)</ResearchPal.GroupModTechsTip>
+	<ResearchPal.SearchByDescription>Search by Descriptions</ResearchPal.SearchByDescription>
+	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance)</ResearchPal.SearchByDescriptionTip>
 	<ResearchPal.DelayLayoutGeneration>Delay Layout Generation</ResearchPal.DelayLayoutGeneration>
 	<ResearchPal.DelayLayoutGenerationTip>Generate layout at the first time the research tree is used, instead of when loading the game</ResearchPal.DelayLayoutGenerationTip>
 	<ResearchPal.AsyncLoadingOnStartup>Background Layout Generation</ResearchPal.AsyncLoadingOnStartup>

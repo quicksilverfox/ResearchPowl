@@ -87,7 +87,7 @@ namespace ResearchPal
         }
 
         public bool CantResearch(ResearchNode node) {
-            return node.Research.IsFinished || !node.Available;
+            return node.Research.IsFinished || !node.GetAvailable();
         }
 
         public void Append(ResearchNode node) {
@@ -152,7 +152,7 @@ namespace ResearchPal
             foreach (var n in _queue) {
                 if (n.Research.IsFinished) {
                     finished.Add(n);
-                } else if (!n.Available) {
+                } else if (!n.GetAvailable()) {
                     unavailable.Add(n);
                 }
             }

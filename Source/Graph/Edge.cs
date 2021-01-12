@@ -50,9 +50,9 @@ namespace ResearchPal
             {
                 if ( OutResearch().HighlightInEdge(InResearch()) )
                     return 3;
-                if ( Out.Completed )
+                if ( OutResearch().Completed() )
                     return 2;
-                if ( Out.Available )
+                if ( OutResearch().Available() )
                     return 1;
                 return 0;
             }
@@ -97,37 +97,23 @@ namespace ResearchPal
             GUI.color = Color.white;
         }
 
-        public void DrawLines( Rect visibleRect )
-        {
-            var color = Out.InEdgeColor(InResearch());
-            GUI.color = color;
-
-            var left  = In.Right;
-            var right = Out.Left;
-
-            // draw the end arrow (if not dummy)
-            if ( !IsDummy ) {
-                var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
-                if (RectVisible(visibleRect, end)) {
-                    GUI.DrawTexture( end, Lines.End );
-                }
-            } else {
+        public void DrawEnd(Rect visibleRect, Vector2 left, Vector2 right) {
+            if ( IsDummy ) {
                 // or draw a line piece through the dummy
                 var through = new Rect(right.x, right.y - 2, NodeSize.x, 4f);
                 if (RectVisible(visibleRect, through)) {
                     GUI.DrawTexture( through, Lines.EW );
                 }
-            }
-
-            // if left and right are on the same level, just draw a straight line.
-            if (Math.Abs( left.y - right.y ) < Epsilon) {
-                var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
-                if (RectVisible(visibleRect, line)) {
-                    GUI.DrawTexture( line, Lines.EW );
-                }
                 return;
             }
+            // draw the end arrow (if not dummy)
+            var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
+            if (RectVisible(visibleRect, end)) {
+                GUI.DrawTexture( end, Lines.End );
+            }
+        }
 
+        public void DrawComplicatedSegments(Rect visibleRect, Vector2 left, Vector2 right) {
             // draw three line pieces and two curves.
             // determine top and bottom y positions
             var yMin = Math.Min(left.y, right.y);
@@ -208,6 +194,23 @@ namespace ResearchPal
                 }
                 // bottom left quadrant
             }
+        }
+
+        public void DrawLines( Rect visibleRect )
+        {
+            var left  = In.Right;
+            var right = Out.Left;
+
+            // if left and right are on the same level, just draw a straight line.
+            if (Math.Abs( left.y - right.y ) < Epsilon) {
+                var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
+                if (RectVisible(visibleRect, line)) {
+                    GUI.DrawTexture( line, Lines.EW );
+                }
+            } else {
+                DrawComplicatedSegments(visibleRect, left, right);
+            }
+            DrawEnd(visibleRect, left, right);
         }
 
         public override string ToString()
