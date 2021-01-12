@@ -56,11 +56,10 @@ namespace ResearchPal
                 return prerequisites;
 
             // keep a stack of prerequisites that should be checked
-            var stack = new Stack<ResearchProjectDef>( research.prerequisites.Where( parent => parent != research ) );
+            var stack = new Stack<ResearchProjectDef>(research.prerequisites.Where(parent => parent != research));
 
             // keep on checking everything on the stack until there is nothing left
-            while ( stack.Count > 0 )
-            {
+            while (stack.Count > 0) {
                 // add to list of prereqs
                 var parent = stack.Pop();
                 prerequisites.Add( parent );
@@ -148,7 +147,7 @@ namespace ResearchPal
 
         public static ResearchNode ResearchNode( this ResearchProjectDef research )
         {
-            var node = Tree.Nodes.OfType<ResearchNode>().FirstOrDefault( n => n.Research == research );
+            var node = Tree.ResearchNodes().FirstOrDefault( n => n.Research == research );
             if ( node == null )
                 Log.Error( "Node for {0} not found. Was it intentionally hidden or locked?", true, research.LabelCap );
             return node;
