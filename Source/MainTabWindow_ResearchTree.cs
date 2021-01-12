@@ -304,6 +304,7 @@ namespace ResearchPal
                     var _currentMousePosition = Event.current.mousePosition;
                     _scrollPosition += _mousePosition - _currentMousePosition;
                     _mousePosition = _currentMousePosition;
+                    Event.current.Use();
                 }
             }
             // scroll wheel vertical, switch to horizontal with alt

@@ -83,111 +83,131 @@ namespace ResearchPal
             return _outResearch;
         }
 
-        public void Draw( Rect visibleRect )
-        {
-            if ( !In.IsVisible( visibleRect ) && !Out.IsVisible( visibleRect ) )
-                return;
+        static private bool RectVisible(Rect view, Rect test) {
+            return ! ( view.xMin > test.xMax
+                    || view.yMin > test.yMax
+                    || view.yMax < test.yMin
+                    || view.xMax < test.xMin);
+        }
 
+        public void Draw(Rect visibleRect) {
+            var color = Out.InEdgeColor(InResearch());
+            GUI.color = color;
+            DrawLines(visibleRect);
+            GUI.color = Color.white;
+        }
+
+        public void DrawLines( Rect visibleRect )
+        {
             var color = Out.InEdgeColor(InResearch());
             GUI.color = color;
 
             var left  = In.Right;
             var right = Out.Left;
 
+            // draw the end arrow (if not dummy)
+            if ( !IsDummy ) {
+                var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
+                if (RectVisible(visibleRect, end)) {
+                    GUI.DrawTexture( end, Lines.End );
+                }
+            } else {
+                // or draw a line piece through the dummy
+                var through = new Rect(right.x, right.y - 2, NodeSize.x, 4f);
+                if (RectVisible(visibleRect, through)) {
+                    GUI.DrawTexture( through, Lines.EW );
+                }
+            }
+
             // if left and right are on the same level, just draw a straight line.
-            if ( Math.Abs( left.y - right.y ) < Epsilon )
-            {
+            if (Math.Abs( left.y - right.y ) < Epsilon) {
                 var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
-                GUI.DrawTexture( line, Lines.EW );
+                if (RectVisible(visibleRect, line)) {
+                    GUI.DrawTexture( line, Lines.EW );
+                }
+                return;
             }
 
             // draw three line pieces and two curves.
-            else
-            {
-                // determine top and bottom y positions
-                var top    = Math.Min( left.y, right.y ) + NodeMargins.x / 4f;
-                var bottom = Math.Max( left.y, right.y ) - NodeMargins.x / 4f;
+            // determine top and bottom y positions
+            var yMin = Math.Min(left.y, right.y);
+            var yMax = Math.Max(left.y, right.y);
+            var top    = yMin + NodeMargins.x / 4f;
+            var bottom = yMax - NodeMargins.x / 4f;
 
-                // straight bits
-                // left to curve
-                var leftToCurve = new Rect(
-                    left.x,
-                    left.y - 2f,
-                    NodeMargins.x / 4f,
-                    4f );
+            // if too far off, just skip
+            if (! RectVisible(visibleRect, new Rect(left.x, yMin, right.x - left.x, yMax - yMin))) {
+                return;
+            }
+
+            // straight bits
+            // left to curve
+            var leftToCurve = new Rect(
+                left.x,
+                left.y - 2f,
+                NodeMargins.x / 4f,
+                4f );
+            if (RectVisible(visibleRect, leftToCurve)) {
                 GUI.DrawTexture( leftToCurve, Lines.EW );
+            }
 
-                // curve to curve
-                var curveToCurve = new Rect(
-                    left.x + NodeMargins.x / 2f - 2f,
-                    top,
-                    4f,
-                    bottom - top );
+            // curve to curve
+            var curveToCurve = new Rect(
+                left.x + NodeMargins.x / 2f - 2f,
+                top,
+                4f,
+                bottom - top );
+            if (RectVisible(visibleRect, curveToCurve)) {
                 GUI.DrawTexture( curveToCurve, Lines.NS );
+            }
 
-                // curve to right
-                var curveToRight = new Rect(
-                    left.x           + NodeMargins.x / 4f * 3,
-                    right.y          - 2f,
-                    right.x - left.x - NodeMargins.x / 4f * 3,
-                    4f );
+            // curve to right
+            var curveToRight = new Rect(
+                left.x           + NodeMargins.x / 4f * 3,
+                right.y          - 2f,
+                right.x - left.x - NodeMargins.x / 4f * 3,
+                4f );
+            if (RectVisible(visibleRect, curveToRight)) {
                 GUI.DrawTexture( curveToRight, Lines.EW );
+            }
 
-                // curve positions
-                var curveLeft = new Rect(
-                    left.x + NodeMargins.x / 4f,
-                    left.y - NodeMargins.x / 4f,
-                    NodeMargins.x / 2f,
-                    NodeMargins.x / 2f );
-                var curveRight = new Rect(
-                    left.x  + NodeMargins.x / 4f,
-                    right.y - NodeMargins.x / 4f,
-                    NodeMargins.x / 2f,
-                    NodeMargins.x / 2f );
+            // curve positions
+            var curveLeft = new Rect(
+                left.x + NodeMargins.x / 4f,
+                left.y - NodeMargins.x / 4f,
+                NodeMargins.x / 2f,
+                NodeMargins.x / 2f );
+            var curveRight = new Rect(
+                left.x  + NodeMargins.x / 4f,
+                right.y - NodeMargins.x / 4f,
+                NodeMargins.x / 2f,
+                NodeMargins.x / 2f );
 
-                // going down
-                if ( left.y < right.y )
-                {
-                    GUI.DrawTextureWithTexCoords( curveLeft, Lines.Circle, new Rect( 0.5f, 0.5f, 0.5f, 0.5f ) );
-                    // bottom right quadrant
-                    GUI.DrawTextureWithTexCoords( curveRight, Lines.Circle, new Rect( 0f, 0f, 0.5f, 0.5f ) );
-                    // top left quadrant
+            // going down
+            if ( left.y < right.y ) {
+                if (RectVisible(visibleRect, curveLeft)) {
+                    GUI.DrawTextureWithTexCoords(
+                        curveLeft, Lines.Circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
                 }
+                if (RectVisible(visibleRect, curveRight)) {
+                    GUI.DrawTextureWithTexCoords(
+                        curveRight, Lines.Circle, new Rect(0f, 0f, 0.5f, 0.5f));
+                }
+                // bottom right quadrant
+                // top left quadrant
+            } else {
                 // going up
-                else
-                {
-                    GUI.DrawTextureWithTexCoords( curveLeft, Lines.Circle, new Rect( 0.5f, 0f, 0.5f, 0.5f ) );
-                    // top right quadrant
-                    GUI.DrawTextureWithTexCoords( curveRight, Lines.Circle, new Rect( 0f, 0.5f, 0.5f, 0.5f ) );
-                    // bottom left quadrant
+                if (RectVisible(visibleRect, curveLeft)) {
+                    GUI.DrawTextureWithTexCoords(
+                        curveLeft, Lines.Circle, new Rect(0.5f, 0f, 0.5f, 0.5f));
                 }
+                // top right quadrant
+                if (RectVisible(visibleRect, curveRight)) {
+                    GUI.DrawTextureWithTexCoords(
+                        curveRight, Lines.Circle, new Rect(0f, 0.5f, 0.5f, 0.5f));
+                }
+                // bottom left quadrant
             }
-
-            // draw the end arrow (if not dummy)
-            if ( !IsDummy )
-            {
-                var end = new Rect(
-                    right.x - 16f,
-                    right.y - 8f,
-                    16f,
-                    16f );
-                GUI.DrawTexture( end, Lines.End );
-            }
-
-            // or draw a line piece through the dummy
-            else
-            {
-                var through = new Rect(
-                    right.x,
-                    right.y - 2,
-                    NodeSize.x,
-                    4f
-                );
-                GUI.DrawTexture( through, Lines.EW );
-            }
-
-            // reset color
-            GUI.color = Color.white;
         }
 
         public override string ToString()
