@@ -6,6 +6,7 @@ using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 using static ResearchPal.Constants;
 
 namespace ResearchPal
@@ -215,6 +216,7 @@ namespace ResearchPal
 
             Tree.Draw( VisibleRect );
             Queue.DrawLabels( VisibleRect );
+            HandleStopFixedHighlights();
 
             HandleZoom();
 
@@ -231,6 +233,16 @@ namespace ResearchPal
             // cleanup;
             GUI.color   = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        static private void HandleStopFixedHighlights() {
+            if (  Event.current.type == EventType.MouseDown
+               && (  Event.current.button == 0
+                  || Event.current.button == 1 && !Event.current.shift)) {
+                if (Tree.StopFixedHighlights()) {
+                    SoundDefOf.Click.PlayOneShotOnCamera();
+                }
+            }
         }
 
         static private bool KeyDefEvent(KeyBindingDef def) {
@@ -287,7 +299,8 @@ namespace ResearchPal
         void HandleDragging()
         {
             // middle mouse or holding down shift for panning
-            if (Event.current.button == 2 || Event.current.shift) {
+            if (  Event.current.button == 2
+               || Event.current.shift && Event.current.button == 0) {
                 if (Event.current.type == EventType.MouseDown)
                 {
                     _dragging = true;

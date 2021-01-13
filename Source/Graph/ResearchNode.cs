@@ -1,6 +1,7 @@
 // ResearchNode.cs
 // Copyright Karel Kroeze, 2020-2020
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Text;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 using static ResearchPal.Constants;
 
 namespace ResearchPal
@@ -33,6 +35,15 @@ namespace ResearchPal
         public bool isMatched = false;
 
         private bool _available = false;
+
+        private List<Pair<Def, string>> _unlocks;
+
+        private List<Pair<Def, string>> Unlocks() {
+            if (_unlocks == null) {
+                _unlocks = Research.GetUnlockDefsAndDescs();
+            }
+            return _unlocks;
+        }
 
         private void UpdateAvailable() {
             _available = GetAvailable();
@@ -109,9 +120,6 @@ namespace ResearchPal
         }
 
         public bool HighlightInEdge(ResearchNode from) {
-            if (from.Completed()) {
-                return HighlightReasons().Any(Highlighting.CauseEdgeHighlight);
-            }
             foreach (var r1 in HighlightReasons()) {
                 foreach (var r2 in from.HighlightReasons()) {
                     if (Highlighting.Similar(r1, r2)) {
@@ -336,6 +344,54 @@ namespace ResearchPal
             }
         }
 
+        private void IconActions(bool draw) {
+            // handle only right click
+            if (!draw && !(Event.current.type == EventType.MouseDown && Event.current.button == 1)) {
+                return;
+            }
+            var unlocks = Unlocks();
+            for (var i = 0; i < unlocks.Count; ++i) {
+                var iconRect = new Rect(
+                    IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
+                    IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
+                    IconSize.x,
+                    IconSize.y );
+
+                if ( iconRect.xMin - IconSize.x < IconsRect.xMin
+                   &&   i          + 1          < unlocks.Count ) {
+                    // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
+                    iconRect.x = IconsRect.x + 4f;
+
+                    if (draw) {
+                        GUI.DrawTexture(iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit);
+                        var tip = string.Join(
+                            "\n",
+                            unlocks.GetRange(i, unlocks.Count - i).Select(p => p.Second).ToArray());
+                        TooltipHandler.TipRegion( iconRect, tip );
+                    } else if
+                        ( Mouse.IsOver(iconRect)
+                        && Find.WindowStack.FloatMenu == null) {
+                        var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
+                        Find.WindowStack.Add(floatMenu);
+                        Event.current.Use();
+                    }
+                    break;
+                }
+                var def = unlocks[i].First;
+
+                if (draw) {
+                    def.DrawColouredIcon( iconRect );
+
+                    TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+                } else if (Mouse.IsOver(iconRect)) {
+                    Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
+                    link.OpenDialog();
+                    Event.current.Use();
+                    break;
+                }
+            }
+        }
+
         private void DrawIcons() {
             var unlocks = Research.GetUnlockDefsAndDescs();
             for ( var i = 0; i < unlocks.Count; i++ )
@@ -416,7 +472,7 @@ namespace ResearchPal
             Widgets.Label(CostLabelRect, numberToDraw.ToStringByStyle(ToStringStyle.Integer));
             GUI.color = savedColor;
 
-            DrawIcons();
+            IconActions(true);
         }
 
         private string ProgressString() {
@@ -498,7 +554,7 @@ namespace ResearchPal
             return new FloatMenu(options);
         }
 
-        public bool ShouldHighlight() {
+        public bool MouseOver() {
             return Mouse.IsOver(Rect);
         }
 
@@ -506,7 +562,7 @@ namespace ResearchPal
             return Tree.DisplayProgressState && ProgressWorthDisplaying();
         }
 
-        public bool ShouldHighlight(Vector2 mousePos) {
+        public bool MouseOver(Vector2 mousePos) {
             return Rect.Contains(mousePos);
         }
 
@@ -529,7 +585,7 @@ namespace ResearchPal
                     Queue.RemoveS(this);
                 }
             } else if (Event.current.button == 1) {
-                ResearchTree.JumpToHelp(Research);
+                // ResearchTree.JumpToHelp(Research);
             }
         }
 
@@ -554,6 +610,7 @@ namespace ResearchPal
                 DrawNode(detailedMode, mouseOver, painterId);
             }
 
+
             // Tool tip debugging fail attempt
             // var curOver = Mouse.IsOver(Rect);
             // if (prevOver && !curOver) {
@@ -570,7 +627,14 @@ namespace ResearchPal
             //         GenUI.GetMouseAttachedWindowPos(w2.windowRect.width, w2.windowRect.height));
             // }
             // prevOver = curOver;
-
+            if (detailedMode) {
+                IconActions(false);
+            }
+            if (  Event.current.type == EventType.MouseDown
+               && Event.current.button == 1 && mouseOver) {
+                SoundDefOf.Click.PlayOneShotOnCamera();
+                Tree.HandleFixedHighlight(this);
+            }
             // if clicked and not yet finished, queue up this research and all prereqs.
             if (Widgets.ButtonInvisible(Rect) && _available) {
                 HandleMouseEvents();

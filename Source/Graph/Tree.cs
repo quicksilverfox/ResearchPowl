@@ -564,6 +564,15 @@ namespace ResearchPal
         }
 
         private static RelatedNodeHighlightSet hoverHighlightSet;
+        private static List<RelatedNodeHighlightSet> fixedHighlightSets =
+            new List<RelatedNodeHighlightSet>();
+
+        static public bool StopFixedHighlights() {
+            bool success = fixedHighlightSets.Any();
+            fixedHighlightSets.ForEach(s => s.Stop());
+            fixedHighlightSets.Clear();
+            return success;
+        }
 
         static List<ResearchNode> FindHighlightsFrom(ResearchNode node) {
             return node.MissingPrerequisites()
@@ -578,10 +587,25 @@ namespace ResearchPal
         }
 
         static void HandleHoverHighlight(ResearchNode node, Vector2 mousePos) {
-            if (node.ShouldHighlight(mousePos)) {
-                Log.Message("Highlighting {0}", node.Label);
+            if (node.MouseOver(mousePos)) {
                 OverrideHighlight(node);
             }
+        }
+
+        public static void HandleFixedHighlight(ResearchNode node) {
+            var i = fixedHighlightSets.FirstIndexOf(s => s.Causer() == node);
+            if (i < fixedHighlightSets.Count()) {
+                fixedHighlightSets[i].Stop();
+                fixedHighlightSets.RemoveAt(i);
+            } else {
+                var hl = RelatedNodeHighlightSet.FixHighlight(node);
+                hl.Start();
+                if (!Event.current.shift) {
+                    StopFixedHighlights();
+                }
+                fixedHighlightSets.Add(hl);
+            }
+            Event.current.Use();
         }
 
         static bool ContinueHoverHighlight(Vector2 mouse) {
@@ -589,7 +613,6 @@ namespace ResearchPal
                 return false;
             }
             if (hoverHighlightSet.TryStop(mouse)) {
-                Log.Message("Unhighlighting {0}", hoverHighlightSet.Causer().Label);
                 hoverHighlightSet = null;
                 return false;
             }
@@ -634,11 +657,11 @@ namespace ResearchPal
             }
             // if (Event.current.type == EventType.KeyDown) {
             //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
-            //         _displayProgressState = true;
+            //         DisplayProgressState = true;
             //     }
             // } else if (Event.current.type == EventType.KeyUp) {
             //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
-            //         _displayProgressState = false;
+            //         DisplayProgressState = false;
             //     }
             // }
         }

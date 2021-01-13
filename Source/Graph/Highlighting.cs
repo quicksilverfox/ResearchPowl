@@ -12,11 +12,11 @@ public static class Highlighting {
     public enum Reason {
         Unknown = 0,
         FixedSecondary = 1,
-        FixedPrimary = 2,
         // SearchUnmatched = 3,
-        HoverSecondary = 4,
+        HoverSecondary = 3,
         // SearchMatched = 5,
-        HoverPrimary = 6
+        HoverPrimary = 4,
+        FixedPrimary = 6,
     }
 
     public static int Priority(Reason reason) {
@@ -43,13 +43,16 @@ public static class Highlighting {
 
     public static Color Color(Reason reason, TechLevel techLevel) {
         if (reason == Reason.FixedSecondary) {
-            return Assets.HeavyMouseoverColor;
+            return GenUI.MouseoverColor;
+        }
+        if (reason == Reason.FixedPrimary) {
+            return Assets.FixedPrimaryColor;
         }
         if (reason == Reason.HoverSecondary) {
             return GenUI.MouseoverColor;
         }
         if (reason == Reason.HoverPrimary) {
-            return Assets.HeavyMouseoverColor;
+            return Assets.HoverPrimaryColor;
         }
         // if (reason == Reason.SearchMatched) {
         //     return GenUI.MouseoverColor;
@@ -176,7 +179,7 @@ public class RelatedNodeHighlightSet {
     }
 
     public bool ShouldContinue(Vector2 mouse) {
-        return _causer.ShouldHighlight(mouse);
+        return _causer.MouseOver(mouse);
     }
     public bool Stop() {
         if (!Activated()) {
