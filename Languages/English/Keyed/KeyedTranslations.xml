@@ -57,6 +57,8 @@
 	<ResearchPal.ProgressTooltipTip>Display research progress in a tooltip for in-progress project (Warning: currently may not work properly)</ResearchPal.ProgressTooltipTip>
 	<ResearchPal.AlwaysDisplayProgress>Always Display Progress</ResearchPal.AlwaysDisplayProgress>
 	<ResearchPal.AlwaysDisplayProgressTip>Always displays the rest of the points needed to complete a project, doesn't affect the display when zooming out</ResearchPal.AlwaysDisplayProgressTip>
+	<ResearchPal.ShowQueueIndexOnQueue>Display Indices on Research Queue</ResearchPal.ShowQueueIndexOnQueue>
+	<ResearchPal.ShowQueueIndexOnQueueTip>Display index icons on researches in the research queue.</ResearchPal.ShowQueueIndexOnQueueTip>
 	<ResearchPal.DontIgnoreHiddenPrerequisites>DON'T IGNORE HIDDEN PREREQUISITES</ResearchPal.DontIgnoreHiddenPrerequisites>
     <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prerequisites.
 You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (REQUIRE RESTART)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>

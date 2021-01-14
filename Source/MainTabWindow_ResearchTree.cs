@@ -169,13 +169,13 @@ namespace ResearchPal
 
         private void SetRects()
         {
+            var ymin = TopBarHeight + StandardMargin + SideMargin;
             // tree view rects, have to deal with UIScale and ZoomLevel manually.
             _baseViewRect = new Rect(
-                StandardMargin                                            / Prefs.UIScale,
-                ( TopBarHeight + Constants.Margin + StandardMargin )      / Prefs.UIScale,
-                ( Screen.width                    - StandardMargin * 2f ) / Prefs.UIScale,
-                ( Screen.height - MainButtonDef.ButtonHeight - StandardMargin * 2f - TopBarHeight - Constants.Margin ) /
-                Prefs.UIScale );
+                StandardMargin / Prefs.UIScale, ymin,
+                (Screen.width - StandardMargin) / Prefs.UIScale,
+                (Screen.height - MainButtonDef.ButtonHeight - StandardMargin - Constants.Margin) /
+                Prefs.UIScale - ymin);
             _baseViewRect_Inner = _baseViewRect.ContractedBy( Constants.Margin / Prefs.UIScale );
 
             // windowrect, set to topleft (for some reason vanilla alignment overlaps bottom buttons).
@@ -189,13 +189,18 @@ namespace ResearchPal
         {
             Tree.WaitForInitialization();
 
-            // top bar
+            GUI.EndClip();
+            GUI.EndClip(); // some window black magic by fluffy
+
+
+            absoluteMousePos = Event.current.mousePosition;
             var topRect = new Rect(
-                canvas.xMin,
-                canvas.yMin,
-                canvas.width,
+                canvas.xMin + SideMargin,
+                canvas.yMin + StandardMargin,
+                canvas.width - StandardMargin,
                 TopBarHeight );
             DrawTopBar( topRect );
+            // HandleNodeDragging();
 
             ApplyZoomLevel();
 
@@ -209,30 +214,45 @@ namespace ResearchPal
                 new Rect(
                     ScaledMargin,
                     ScaledMargin,
-                    TreeRect.width  + ScaledMargin * 2f,
-                    TreeRect.height + ScaledMargin * 2f
+                    TreeRect.width  - ScaledMargin * 2f,
+                    TreeRect.height - ScaledMargin * 2f
                 )
             );
 
             Tree.Draw( VisibleRect );
             Queue.DrawLabels( VisibleRect );
+            HandleLeftoverNodeRelease();
             HandleStopFixedHighlights();
 
             HandleZoom();
 
             GUI.EndGroup();
-            GUI.EndScrollView( false );
+            GUI.EndScrollView(false);
+
+            ResetZoomLevel();
+            HandleNodeDragging();
+            ApplyZoomLevel();
 
             HandleDragging();
             HandleDolly();
 
             // reset zoom level
-            ResetZoomLevel();
+            ResetClips();
 
 
-            // cleanup;
+
+            // // cleanup;
             GUI.color   = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        private void HandleLeftoverNodeRelease() {
+            if (  Event.current.type == EventType.MouseUp
+               && Event.current.button == 0
+               && DraggingNode()) {
+                StopDragging();
+                Event.current.Use();
+            }
         }
 
         static private void HandleStopFixedHighlights() {
@@ -296,6 +316,8 @@ namespace ResearchPal
             }
         }
 
+        private Vector2 absoluteMousePos;
+
         void HandleDragging()
         {
             // middle mouse or holding down shift for panning
@@ -332,15 +354,24 @@ namespace ResearchPal
             }
         }
 
+        private Matrix4x4 originalMatrix;
+
         private void ApplyZoomLevel()
         {
-            GUI.EndClip(); // window contents
-            GUI.EndClip(); // window itself?
-            GUI.matrix = Matrix4x4.TRS( new Vector3( 0f, 0f, 0f ), Quaternion.identity,
-                                        new Vector3( Prefs.UIScale / ZoomLevel, Prefs.UIScale / ZoomLevel, 1f ) );
+            // GUI.EndClip(); // window contents
+            // GUI.EndClip(); // window itself?
+            originalMatrix = GUI.matrix;
+            GUI.matrix = Matrix4x4.TRS(
+                new Vector3( 0f, 0f, 0f ),
+                Quaternion.identity,
+                new Vector3(Prefs.UIScale / ZoomLevel, Prefs.UIScale / ZoomLevel, 1f));
         }
 
-        private void ResetZoomLevel()
+        private void ResetZoomLevel() {
+            GUI.matrix = originalMatrix;
+        }
+
+        private void ResetClips()
         {
             // dummies to maintain correct stack size
             // TODO; figure out how to get actual clipping rects in ApplyZoomLevel();
@@ -349,18 +380,83 @@ namespace ResearchPal
             GUI.BeginClip( new Rect( 0f, 0f, UI.screenWidth, UI.screenHeight ) );
         }
 
+        private ResearchNode draggedNode = null;
+        private Vector2 draggedPosition;
+
+        private Painter draggingSource;
+        private float startDragging;
+
+        public bool DraggingNode() {
+            return ! (draggedNode == null);
+        }
+
+        public ResearchNode DraggedNode() {
+            return draggedNode;
+        }
+
+        public void StartDragging(ResearchNode node, Painter painter) {
+            draggedNode = node;
+            draggingSource = painter;
+            draggedPosition = UI.GUIToScreenPoint(node.Rect.position);
+            startDragging = Time.time;
+        }
+        public void StopDragging() {
+            draggedNode?.NotifyDraggingRelease();
+            draggedNode = null;
+        }
+
+        public Painter DraggingSource() {
+            return draggingSource;
+        }
+
+        public Vector2 DraggedNodePos() {
+            return draggedPosition;
+        }
+
+        public void HandleNodeDragging() {
+            if (!DraggingNode()) {
+                return;
+            }
+            var evt = Event.current;
+            if (evt.type == EventType.MouseDrag && evt.button == 0) {
+                draggedPosition += evt.delta;
+                Queue.NotifyNodeDraggedS();
+                evt.Use();
+            }
+            if (DraggingSource() == Painter.Tree) {
+                if (DraggingTime() > Constants.DraggingClickDelay) {
+                    var pos = absoluteMousePos;
+                    pos.x -= NodeSize.x * 0.5f;
+                    pos.y -= NodeSize.y * 0.5f;
+                    draggedNode.DrawAt(pos, windowRect, Painter.Drag, true);
+                }
+            } else {
+                draggedNode.DrawAt(
+                    draggedPosition, windowRect,
+                    Painter.Drag, true); 
+            }
+        }
+
+        public float DraggingTime() {
+            if (!DraggingNode()) {
+                return 0;
+            }
+            return Time.time - startDragging;
+        }
+
         private void DrawTopBar( Rect canvas )
         {
             var searchRect = canvas;
             var queueRect  = canvas;
             searchRect.width =  200f;
-            queueRect.xMin   += 200f + Constants.Margin;
+            queueRect.xMin   += 200f;
+            queueRect.xMax   -= 130f;
 
             GUI.DrawTexture( searchRect, Assets.SlightlyDarkBackground );
-            GUI.DrawTexture( queueRect, Assets.SlightlyDarkBackground );
+            // GUI.DrawTexture( queueRect, Assets.SlightlyDarkBackground );
 
             DrawSearchBar( searchRect.ContractedBy( Constants.Margin ) );
-            Queue.DrawQueue( queueRect.ContractedBy( Constants.Margin ), !_dragging );
+            Queue.DrawS( queueRect, !_dragging );
         }
 
         private bool CancelSearchButton(Rect canvas) {

@@ -308,7 +308,7 @@ namespace ResearchPal
             _right = new Vector2( _rect.xMax, _left.y );
 
             // queue rect
-            _queueRect = new Rect( _rect.xMax - QueueLabelSize                    / 2f,
+            _queueRect = new Rect( _rect.xMax - QueueLabelSize * 0.6f,
                                    _rect.yMin + ( _rect.height - QueueLabelSize ) / 2f, QueueLabelSize,
                                    QueueLabelSize );
 
@@ -383,7 +383,7 @@ namespace ResearchPal
                 Rect.yMax < visibleRect.yMin );
         }
 
-        public virtual void Draw(Rect visibleRect, int painterId, bool forceDetailedMode = false)
+        public virtual void Draw(Rect visibleRect, Painter painter, bool forceDetailedMode = false)
         {
         }
 

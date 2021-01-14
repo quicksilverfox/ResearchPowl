@@ -22,6 +22,7 @@ namespace ResearchPal
             MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.PrependS));
             MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.ReplaceS));
             MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.RemoveS));
+            MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.Insert));
             MP.RegisterSyncMethod(typeof(Queue), nameof(Queue.FinishS));
 
             MP.RegisterSyncWorker<ResearchNode>(HandleResearchNode);

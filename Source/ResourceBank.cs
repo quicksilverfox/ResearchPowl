@@ -47,6 +47,9 @@ namespace ResearchPal
             public static readonly string AlwaysDisplayProgress = TL("AlwaysDisplayProgress");
             public static readonly string AlwaysDisplayProgressTip = TL("AlwaysDisplayProgressTip");
 
+            public static readonly string ShowIndexOnQueue = TL("ShowQueueIndexOnQueue");
+            public static readonly string ShowIndexOnQueueTip = TL("ShowQueueIndexOnQueueTip");
+
             public static readonly string DontIgnoreHiddenPrerequisites = TL("DontIgnoreHiddenPrerequisites");
             public static readonly string DontIgnoreHiddenPrerequisitesTip = TL("DontIgnoreHiddenPrerequisitesTip");
             public static readonly string DebugResearch = TL("DebugResearch");

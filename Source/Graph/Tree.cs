@@ -645,7 +645,7 @@ namespace ResearchPal
                 if (! hoverHighlight) {
                     HandleHoverHighlight(node, evt.mousePosition);
                 }
-                node.Draw(visibleRect, 0, false);
+                node.Draw(visibleRect, Painter.Tree, false);
             }
             Profiler.End();
         }

@@ -14,6 +14,11 @@ using static ResearchPal.Constants;
 
 namespace ResearchPal
 {
+    public enum Painter {
+        Tree = 0,
+        Queue = 1,
+        Drag = 2
+    }
     public class ResearchNode : Node
     {
         private static readonly Dictionary<ResearchProjectDef, bool> _buildingPresentCache =
@@ -37,6 +42,12 @@ namespace ResearchPal
         private bool _available = false;
 
         private List<Pair<Def, string>> _unlocks;
+
+        private Painter _currentPainter;
+
+        public bool PainterIs(Painter p) {
+            return p == _currentPainter;
+        }
 
         private List<Pair<Def, string>> Unlocks() {
             if (_unlocks == null) {
@@ -324,6 +335,9 @@ namespace ResearchPal
         }
 
         private void HandleTooltips() {
+            if (PainterIs(Painter.Drag)) {
+                return;
+            }
             Text.WordWrap = true;
                 // attach description and further info to a tooltip
             if (!TechprintAvailable()) {
@@ -364,12 +378,14 @@ namespace ResearchPal
 
                     if (draw) {
                         GUI.DrawTexture(iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit);
-                        var tip = string.Join(
-                            "\n",
-                            unlocks.GetRange(i, unlocks.Count - i).Select(p => p.Second).ToArray());
-                        TooltipHandler.TipRegion( iconRect, tip );
+                        if (!PainterIs(Painter.Drag)) {
+                            var tip = string.Join(
+                                "\n",
+                                unlocks.GetRange(i, unlocks.Count - i).Select(p => p.Second).ToArray());
+                            TooltipHandler.TipRegion( iconRect, tip );
+                        }
                     } else if
-                        ( Mouse.IsOver(iconRect)
+                        (!draw && Mouse.IsOver(iconRect)
                         && Find.WindowStack.FloatMenu == null) {
                         var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
                         Find.WindowStack.Add(floatMenu);
@@ -381,57 +397,14 @@ namespace ResearchPal
 
                 if (draw) {
                     def.DrawColouredIcon( iconRect );
-
-                    TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+                    if (! PainterIs(Painter.Drag)) {
+                        TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+                    }
                 } else if (Mouse.IsOver(iconRect)) {
                     Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
                     link.OpenDialog();
                     Event.current.Use();
                     break;
-                }
-            }
-        }
-
-        private void DrawIcons() {
-            var unlocks = Research.GetUnlockDefsAndDescs();
-            for ( var i = 0; i < unlocks.Count; i++ )
-            {
-                var iconRect = new Rect(
-                    IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
-                    IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
-                    IconSize.x,
-                    IconSize.y );
-
-                if ( iconRect.xMin - IconSize.x < IconsRect.xMin &&
-                        i             + 1          < unlocks.Count )
-                {
-                    // stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
-                    iconRect.x = IconsRect.x + 4f;
-                    GUI.DrawTexture( iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit );
-                    var tip = string.Join( "\n",
-                                            unlocks.GetRange( i, unlocks.Count - i ).Select( p => p.Second )
-                                                    .ToArray() );
-
-                    if (RightClick(iconRect) && Find.WindowStack.FloatMenu == null) {
-                        var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
-                        Find.WindowStack.Add(floatMenu);
-                    }
-                    TooltipHandler.TipRegion( iconRect, tip );
-
-                    // new TipSignal( tip, Settings.TipID, TooltipPriority.Pawn ) );
-                    break;
-                }
-                var def = unlocks[i].First;
-
-                // draw icon
-                def.DrawColouredIcon( iconRect );
-
-                // tooltip
-                TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
-
-                if (RightClick(iconRect)) {
-                    Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
-                    link.OpenDialog();
                 }
             }
         }
@@ -506,7 +479,7 @@ namespace ResearchPal
                 && (Highlighted() || !IsUnmatchedInSearch()));
         }
 
-        private void DrawNode(bool detailedMode, bool mouseOver, int painter) {
+        private void DrawNode(bool detailedMode, bool mouseOver) {
             // TryModifySharedState(painter, mouseOver);
             HandleTooltips();
 
@@ -540,13 +513,6 @@ namespace ResearchPal
             List<FloatMenuOption> options = new List<FloatMenuOption>();
             foreach (var def in defs) {
                 Texture2D icon = def.IconTexture();
-                // if (def is ThingDef thingDef) {
-                //     icon = thingDef.uiIcon;
-                // } else if (def is RecipeDef recipeDef) {
-                //     icon = recipeDef.UIIconThing.uiIcon;
-                // } else if (def is TerrainDef terrainDef) {
-                //     icon = terrainDef.uiIcon;
-                // }
                 Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
              
                 options.Add(new FloatMenuOption(def.label, () => hyperlink.OpenDialog(), icon, def.IconColor()));
@@ -568,25 +534,60 @@ namespace ResearchPal
 
         public void HandleMouseEvents() {
             // LMB is queue operations, RMB is info
-            if (Event.current.button == 0 && !Research.IsFinished) {
-                if (DebugSettings.godMode && Event.current.control) {
-                    Queue.FinishS(this);
-                    Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
-                    Queue.Notify_InstantFinished();
-                } else if (!Queue.ContainsS(this)) {
-                    if (Event.current.shift) {
-                        Queue.AppendS(this);
-                    } else if (Event.current.alt) {
-                        Queue.PrependS(this);
-                    } else {
-                        Queue.ReplaceS(this);
-                    }
-                } else {
-                    Queue.RemoveS(this);
-                }
-            } else if (Event.current.button == 1) {
-                // ResearchTree.JumpToHelp(Research);
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0) {
+                Click();
             }
+        }
+
+        public void Click() {
+            if (Completed() || !Available()) {
+                return;
+            }
+            if (DebugSettings.godMode && Event.current.control) {
+                Queue.FinishS(this);
+                Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
+                Queue.Notify_InstantFinished();
+            } else if (!Queue.ContainsS(this)) {
+                if (Event.current.shift) {
+                    Queue.AppendS(this);
+                } else if (Event.current.alt) {
+                    Queue.PrependS(this);
+                } else {
+                    Queue.ReplaceS(this);
+                }
+            } else {
+                Queue.RemoveS(this);
+            }
+        }
+
+        private void HandleDragging(bool mouseOver) {
+            var evt = Event.current;
+            if (! mouseOver) {
+                return;
+            }
+            if (evt.type == EventType.MouseDown && evt.button == 0 && Available()) {
+                MainTabWindow_ResearchTree.Instance.StartDragging(this, _currentPainter);
+                if (PainterIs(Painter.Queue)) {
+                    Queue.NotifyNodeDraggedS();
+                }
+                Highlight(Highlighting.Reason.Focused);
+                Event.current.Use();
+            } else if (evt.type == EventType.MouseUp && evt.button == 0 && PainterIs(Painter.Tree)) {
+                var tab = MainTabWindow_ResearchTree.Instance;
+                if (tab.DraggedNode() == this && tab.DraggingTime() < Constants.DraggingClickDelay) {
+                    Click();
+                    tab.StopDragging();
+                    Event.current.Use();
+                }
+            }
+        }
+
+        public void NotifyDraggingRelease() {
+            Unhighlight(Highlighting.Reason.Focused);
+        }
+
+        public bool IsDragged() {
+            return MainTabWindow_ResearchTree.Instance.DraggedNode() == this;
         }
 
         // bool prevOver = false;
@@ -595,8 +596,9 @@ namespace ResearchPal
         ///     Draw the node, including interactions.
         /// </summary>
         public override void Draw(
-            Rect visibleRect, int painterId, bool forceDetailedMode = false)
+            Rect visibleRect, Painter painter, bool forceDetailedMode = false)
         {
+            _currentPainter = painter;
             // Call site should ensure this condition
             // if (!IsVisible(visibleRect)) {
             //     return;
@@ -607,7 +609,7 @@ namespace ResearchPal
 
             if (Event.current.type == EventType.Repaint) {
                 UpdateAvailable();
-                DrawNode(detailedMode, mouseOver, painterId);
+                DrawNode(detailedMode, mouseOver);
             }
 
 
@@ -627,16 +629,24 @@ namespace ResearchPal
             //         GenUI.GetMouseAttachedWindowPos(w2.windowRect.width, w2.windowRect.height));
             // }
             // prevOver = curOver;
+            if (PainterIs(Painter.Drag)) {
+                return;
+            }
             if (detailedMode) {
                 IconActions(false);
             }
+            HandleDragging(mouseOver);
             if (  Event.current.type == EventType.MouseDown
                && Event.current.button == 1 && mouseOver) {
                 SoundDefOf.Click.PlayOneShotOnCamera();
                 Tree.HandleFixedHighlight(this);
+                if (_currentPainter == Painter.Queue) {
+                    MainTabWindow_ResearchTree.Instance.CenterOn(this);
+                }
             }
             // if clicked and not yet finished, queue up this research and all prereqs.
-            if (Widgets.ButtonInvisible(Rect) && _available) {
+            if (  !MainTabWindow_ResearchTree.Instance.DraggingNode()
+               && Widgets.ButtonInvisible(Rect)) {
                 HandleMouseEvents();
             }
         }
@@ -724,11 +734,17 @@ namespace ResearchPal
             return text.ToString();
         }
 
-        public void DrawAt( Vector2 pos, Rect visibleRect, int painterId, bool forceDetailedMode = false )
+        public void DrawAt(
+            Vector2 pos, Rect visibleRect, Painter painter, bool forceDetailedMode = false,
+            bool deferRectReset = false)
         {
             SetRects( pos );
-            Draw(visibleRect, painterId, forceDetailedMode);
-            SetRects();
+            if (IsVisible(visibleRect)) {
+                Draw(visibleRect, painter, forceDetailedMode);
+            }
+            if (! deferRectReset) {
+                SetRects();
+            }
         }
     }
 }

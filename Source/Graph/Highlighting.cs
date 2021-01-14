@@ -17,6 +17,7 @@ public static class Highlighting {
         // SearchMatched = 5,
         HoverPrimary = 4,
         FixedPrimary = 6,
+        Focused = 7
     }
 
     public static int Priority(Reason reason) {
@@ -54,9 +55,9 @@ public static class Highlighting {
         if (reason == Reason.HoverPrimary) {
             return Assets.HoverPrimaryColor;
         }
-        // if (reason == Reason.SearchMatched) {
-        //     return GenUI.MouseoverColor;
-        // }
+        if (reason == Reason.Focused) {
+            return Assets.FixedPrimaryColor;
+        }
         // if (reason == Reason.SearchUnmatched) {
         //     return Assets.ColorUnmatched[techLevel];
         // }

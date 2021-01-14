@@ -30,6 +30,8 @@ namespace ResearchPal
 
         public static bool dontIgnoreHiddenPrerequisites = true;
 
+        public static bool showIndexOnQueue = false;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -86,6 +88,7 @@ namespace ResearchPal
 
             list.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);
             list.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
+            list.CheckboxLabeled(ShowIndexOnQueue, ref showIndexOnQueue, ShowIndexOnQueueTip);
 
             list.End();
         }
@@ -103,6 +106,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref asyncLoadingOnStartup, "AsyncLoadingOnStartup", false);
             Scribe_Values.Look(ref progressTooltip, "ProgressTooltip", false);
             Scribe_Values.Look(ref alwaysDisplayProgress, "AlwaysDisplayProgress", false);
+            Scribe_Values.Look(ref showIndexOnQueue, "ShowQueuePositionOnQueue", false);
             Scribe_Values.Look(ref dontIgnoreHiddenPrerequisites, "dontIgnoreHiddenPrerequisites", true);
         }
     }
