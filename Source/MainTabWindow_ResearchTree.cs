@@ -129,32 +129,27 @@ namespace ResearchPal
             }
         }
 
-        public override void PreClose()
-        {
+        public override void PreClose() {
             base.PreClose();
             Log.Debug( "CloseOnClickedOutside: {0}", closeOnClickedOutside );
             Log.Debug( StackTraceUtility.ExtractStackTrace() );
         }
 
-        public override void PreOpen()
-        {
+        public override void PreOpen() {
             base.PreOpen();
 
             SetRects();
 
             // settings changed, notify...
-            if (Tree.shouldSeparateByTechLevels != Settings.shouldSeparateByTechLevels)
-            {
+            if (Tree.shouldSeparateByTechLevels != Settings.shouldSeparateByTechLevels) {
                 Messages.Message(ResourceBank.String.NeedsRestart, MessageTypeDefOf.CautionInput, false);
             }
 
-            if (Settings.shouldPause)
-            {
+            if (Settings.shouldPause) {
                 forcePause = Settings.shouldPause;
             }
 
-            if (Settings.shouldReset)
-            {
+            if (Settings.shouldReset) {
                 ResetSearch();
                 _scrollPosition = Vector2.zero;
                 ZoomLevel = 1f;
@@ -162,6 +157,7 @@ namespace ResearchPal
 
             // clear node availability caches
             ResearchNode.ClearCaches();
+            Queue.SanityCheckS();
 
             _dragging             = false;
             closeOnClickedOutside = false;

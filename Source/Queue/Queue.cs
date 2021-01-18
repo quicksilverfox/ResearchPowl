@@ -95,15 +95,20 @@ namespace ResearchPal
         }
 
         public bool CantResearch(ResearchNode node) {
-            return node.Research.IsFinished || !node.GetAvailable();
+            return !node.GetAvailable();
         }
 
-        public void Append(ResearchNode node) {
-            if (_queue.Contains(node) || CantResearch(node)) {
-                return;
-            }
+        private void UnsafeAppend(ResearchNode node) {
             UnsafeConcat(node.MissingPrerequisitesInc());
             UpdateCurrentResearch();
+        }
+
+        public bool Append(ResearchNode node) {
+            if (_queue.Contains(node) || CantResearch(node)) {
+                return false;
+            }
+            UnsafeAppend(node);
+            return true;
         }
 
         public void Prepend(ResearchNode node) {
@@ -115,8 +120,8 @@ namespace ResearchPal
         }
 
         // S means "static"
-        static public void AppendS(ResearchNode node) {
-            _instance.Append(node);
+        static public bool AppendS(ResearchNode node) {
+            return _instance.Append(node);
         }
 
         static public void PrependS(ResearchNode node) {
@@ -167,6 +172,10 @@ namespace ResearchPal
             finished.ForEach(n => _queue.Remove(n));
             unavailable.ForEach(n => Remove(n));
             UpdateCurrentResearch();
+        }
+
+        static public void SanityCheckS() {
+            _instance.SanityCheck();
         }
 
         public bool Remove(ResearchNode node) {
@@ -289,10 +298,7 @@ namespace ResearchPal
                     var node = research.ResearchNode();
 
                     if (node != null) {
-                        Log.Debug( "Adding {0} to queue", node.Research.LabelCap );
-                        Append(node);
-                    } else {
-                        Log.Debug( "Could not find node for {0}", research.LabelCap );
+                        UnsafeAppend(node);
                     }
                 }
                 UpdateCurrentResearch();
@@ -304,7 +310,6 @@ namespace ResearchPal
             to = Math.Max(0, Math.Min(Count(), to));
             if (to > from) {
                 movingNodes.Add(node);
-                Log.Message("moving {0} from {1} to {2}", node.Label, from, to);
                 int dest = --to;
                 for (int i = from + 1; i <= to; ++i) {
                     if (_queue[i].MissingPrerequisites().Contains(node)) {

@@ -86,10 +86,6 @@ namespace ResearchPal
             #endregion
 
             #region Tree
-            public static readonly string PreparingTree_Setup = TL("PreparingTree.Setup");
-            public static readonly string PreparingTree_CrossingReduction = TL("PreparingTree.CrossingReduction");
-            public static readonly string PreparingTree_Layout = TL("PreparingTree.Layout");
-            public static readonly string PreparingTree_RestoreQueue = TL("PreparingTree.RestoreQueue");
             #endregion
         }
   }

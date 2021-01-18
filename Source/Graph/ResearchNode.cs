@@ -181,15 +181,17 @@ namespace ResearchPal
                 return result;
 
             // do the work manually
-            if ( research.requiredResearchBuilding == null )
+            if ( research.requiredResearchBuilding == null ) {
                 result = true;
-            else
-                result = Find.Maps.SelectMany( map => map.listerBuildings.allBuildingsColonist )
+            } else {
+                result = Find.Maps.SelectMany(map => map.listerBuildings.allBuildingsColonist)
                              .OfType<Building_ResearchBench>()
-                             .Any( b => research.CanBeResearchedAt( b, true ) );
+                             .Any(b => research.CanBeResearchedAt(b, true));
+            }
 
-            if ( result )
+            if ( result ) {
                 result = node.MissingPrerequisites().All(BuildingPresent);
+            }
 
             // update cache
             _buildingPresentCache.Add( research, result );

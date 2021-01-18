@@ -240,7 +240,7 @@ namespace ResearchPal
             if (node is ResearchNode) {
                 var n = node as ResearchNode;
                 if (n.Research.modContentPack == null) {
-                    Log.Warning("Research {0} do not belongs to any mod?", n.Label);
+                    Log.Warning("Research {0} does not belong to any mod?", n.Label);
                 }
                 var name = n.Research.modContentPack?.Name ?? "__Vanilla";
                 if (name == "Royalty" || name == "Core") {
