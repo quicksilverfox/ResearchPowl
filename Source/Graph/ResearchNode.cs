@@ -534,7 +534,7 @@ namespace ResearchPal
             return Rect.Contains(mousePos);
         }
 
-        private void HandleDraggingStart(bool mouseOver) {
+        private void HandleDragging(bool mouseOver) {
             var evt = Event.current;
             if (! mouseOver || Event.current.shift || Event.current.alt) {
                 return;
@@ -612,7 +612,7 @@ namespace ResearchPal
             if (DetailMode()) {
                 IconActions(false);
             }
-            HandleDraggingStart(mouseOver);
+            HandleDragging(mouseOver);
 
             // if clicked and not yet finished, queue up this research and all prereqs.
             if (  !MainTabWindow_ResearchTree.Instance.DraggingNode()
