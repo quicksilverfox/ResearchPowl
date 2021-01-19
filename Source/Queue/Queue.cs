@@ -376,7 +376,7 @@ namespace ResearchPal
             var tab = MainTabWindow_ResearchTree.Instance;
             if (_queue.IndexOf(node) == dropIdx) {
                 if (tab.DraggingTime() < 0.2f) {
-                    node.Click();
+                    node.LeftClick();
                 }
             } else {
                 if (DraggingFromQueue() && dropIdx > _queue.IndexOf(node)) {

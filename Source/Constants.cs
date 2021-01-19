@@ -22,6 +22,6 @@ namespace ResearchPal
         public static readonly float   TopBarHeight                = NodeSize.y + 2 * Margin;
         public static readonly Vector2 TechLevelLabelSize          = new Vector2( 200f, 30f );
 
-        public static readonly float DraggingClickDelay = 0.2f;
+        public static readonly float DraggingClickDelay = 0.25f;
     }
 }

@@ -534,37 +534,9 @@ namespace ResearchPal
             return Rect.Contains(mousePos);
         }
 
-        public void HandleMouseEvents() {
-            // LMB is queue operations, RMB is info
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0) {
-                Click();
-            }
-        }
-
-        public void Click() {
-            if (Completed() || !Available()) {
-                return;
-            }
-            if (DebugSettings.godMode && Event.current.control) {
-                Queue.FinishS(this);
-                Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
-                Queue.Notify_InstantFinished();
-            } else if (!Queue.ContainsS(this)) {
-                if (Event.current.shift) {
-                    Queue.AppendS(this);
-                } else if (Event.current.alt) {
-                    Queue.PrependS(this);
-                } else {
-                    Queue.ReplaceS(this);
-                }
-            } else {
-                Queue.RemoveS(this);
-            }
-        }
-
-        private void HandleDragging(bool mouseOver) {
+        private void HandleDraggingStart(bool mouseOver) {
             var evt = Event.current;
-            if (! mouseOver) {
+            if (! mouseOver || Event.current.shift || Event.current.alt) {
                 return;
             }
             if (evt.type == EventType.MouseDown && evt.button == 0 && Available()) {
@@ -577,7 +549,7 @@ namespace ResearchPal
             } else if (evt.type == EventType.MouseUp && evt.button == 0 && PainterIs(Painter.Tree)) {
                 var tab = MainTabWindow_ResearchTree.Instance;
                 if (tab.DraggedNode() == this && tab.DraggingTime() < Constants.DraggingClickDelay) {
-                    Click();
+                    LeftClick();
                     tab.StopDragging();
                     Event.current.Use();
                 }
@@ -610,12 +582,11 @@ namespace ResearchPal
             // if (!IsVisible(visibleRect)) {
             //     return;
             // }
-            var detailedMode = DetailMode();
             var mouseOver = Mouse.IsOver(Rect);
 
             if (Event.current.type == EventType.Repaint) {
                 UpdateAvailable();
-                DrawNode(detailedMode, mouseOver);
+                DrawNode(DetailMode(), mouseOver);
             }
 
 
@@ -638,23 +609,52 @@ namespace ResearchPal
             if (PainterIs(Painter.Drag)) {
                 return;
             }
-            if (detailedMode) {
+            if (DetailMode()) {
                 IconActions(false);
             }
-            HandleDragging(mouseOver);
-            if (  Event.current.type == EventType.MouseDown
-               && Event.current.button == 1 && mouseOver) {
-                SoundDefOf.Click.PlayOneShotOnCamera();
-                Tree.HandleFixedHighlight(this);
-                if (_currentPainter == Painter.Queue) {
-                    MainTabWindow_ResearchTree.Instance.CenterOn(this);
-                }
-            }
+            HandleDraggingStart(mouseOver);
+
             // if clicked and not yet finished, queue up this research and all prereqs.
             if (  !MainTabWindow_ResearchTree.Instance.DraggingNode()
                && Widgets.ButtonInvisible(Rect)) {
-                HandleMouseEvents();
+                if (Event.current.button == 0) {
+                    LeftClick();
+                } else if (Event.current.button == 1) {
+                    RightClick();
+                }
             }
+        }
+
+        public bool LeftClick() {
+            if (Completed() || !Available()) {
+                return false;
+            }
+            if (DebugSettings.godMode && Event.current.control) {
+                Queue.FinishS(this);
+                Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
+                Queue.Notify_InstantFinished();
+            } else if (!Queue.ContainsS(this)) {
+                if (Event.current.shift) {
+                    Queue.AppendS(this);
+                } else if (Event.current.alt) {
+                    Queue.PrependS(this);
+                } else {
+                    Queue.ReplaceS(this);
+                }
+            } else {
+                Queue.RemoveS(this);
+            }
+            return true;
+        }
+
+
+        private bool RightClick() {
+            SoundDefOf.Click.PlayOneShotOnCamera();
+            Tree.HandleFixedHighlight(this);
+            if (_currentPainter == Painter.Queue) {
+                MainTabWindow_ResearchTree.Instance.CenterOn(this);
+            }
+            return true;
         }
 
         // inc means "inclusive"
@@ -664,7 +664,6 @@ namespace ResearchPal
             return result;
         }
 
-        // rev means "reverse"
         public List<ResearchNode> MissingPrerequisites() {
             List<ResearchNode> result = new List<ResearchNode>();
             foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished)) {
