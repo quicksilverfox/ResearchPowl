@@ -592,21 +592,25 @@ namespace ResearchPal
             return MainTabWindow_ResearchTree.Instance.DraggedNode() == this;
         }
 
+        private bool DetailMode() {
+            return PainterIs(Painter.Queue)
+                || PainterIs(Painter.Drag)
+                || MainTabWindow_ResearchTree.Instance.ZoomLevel < DetailedModeZoomLevelCutoff;
+        }
+
         // bool prevOver = false;
 
         /// <summary>
         ///     Draw the node, including interactions.
         /// </summary>
-        public override void Draw(
-            Rect visibleRect, Painter painter, bool forceDetailedMode = false)
+        public override void Draw(Rect visibleRect, Painter painter)
         {
             _currentPainter = painter;
             // Call site should ensure this condition
             // if (!IsVisible(visibleRect)) {
             //     return;
             // }
-            var detailedMode = forceDetailedMode ||
-                               MainTabWindow_ResearchTree.Instance.ZoomLevel < DetailedModeZoomLevelCutoff;
+            var detailedMode = DetailMode();
             var mouseOver = Mouse.IsOver(Rect);
 
             if (Event.current.type == EventType.Repaint) {
@@ -693,7 +697,7 @@ namespace ResearchPal
 
         public bool GetAvailable() {
             return !Research.IsFinished &&
-                (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable()));
+                (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable() && MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel)));
         }
 
         public bool Available() {
@@ -713,36 +717,25 @@ namespace ResearchPal
         {
             // start with the descripton
             var text = new StringBuilder();
-            text.AppendLine( Research.description );
+            text.AppendLine(Research.description);
             text.AppendLine();
 
-            if ( Queue.ContainsS( this ) )
-            {
-                text.AppendLine( ResourceBank.String.LClickReplaceQueue );
-            }
-            else
-            {
-                text.AppendLine( ResourceBank.String.LClickReplaceQueue );
-                text.AppendLine( ResourceBank.String.SLClickAddToQueue );
-            }
-            if ( DebugSettings.godMode )
-            {
-                text.AppendLine( ResourceBank.String.CLClickDebugInstant );
-            }
-            if (ResearchTree.HasHelpTreeLoaded) {
-                text.AppendLine( ResourceBank.String.RClickForDetails );
+            text.AppendLine(ResourceBank.String.SLClickAddToQueue);
+            text.AppendLine(ResourceBank.String.ALClickAddToQueue);
+
+            if (DebugSettings.godMode) {
+                text.AppendLine(ResourceBank.String.CLClickDebugInstant);
             }
 
             return text.ToString();
         }
 
         public void DrawAt(
-            Vector2 pos, Rect visibleRect, Painter painter, bool forceDetailedMode = false,
-            bool deferRectReset = false)
+            Vector2 pos, Rect visibleRect, Painter painter, bool deferRectReset = false)
         {
             SetRects( pos );
             if (IsVisible(visibleRect)) {
-                Draw(visibleRect, painter, forceDetailedMode);
+                Draw(visibleRect, painter);
             }
             if (! deferRectReset) {
                 SetRects();

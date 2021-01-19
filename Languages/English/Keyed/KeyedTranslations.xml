@@ -10,9 +10,9 @@
 
 	<ResearchPal.LClickReplaceQueue>Left-Click to replace queue</ResearchPal.LClickReplaceQueue>
 	<ResearchPal.LClickRemoveFromQueue>Left-Click to remove from queue</ResearchPal.LClickRemoveFromQueue>
-	<ResearchPal.SLClickAddToQueue>Shift-Left-Click to add to queue</ResearchPal.SLClickAddToQueue>
+	<ResearchPal.SLClickAddToQueue>Shift-Left-Click to append to queue</ResearchPal.SLClickAddToQueue>
+	<ResearchPal.ALClickAddToQueue>Alt-Left-Click to prepend to queue</ResearchPal.ALClickAddToQueue>
 	<ResearchPal.CLClickDebugInstant>(DEBUG) Ctrl-Left-Click to instantly complete</ResearchPal.CLClickDebugInstant>
-	<ResearchPal.RClickForDetails>Right click for details</ResearchPal.RClickForDetails>
 
 	<ResearchPal.Requires>Requires</ResearchPal.Requires>
 	<ResearchPal.LeadsTo>Leads to</ResearchPal.LeadsTo>

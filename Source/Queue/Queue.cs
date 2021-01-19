@@ -599,7 +599,7 @@ namespace ResearchPal
                 } 
                 var pos = NodePos(currentPositions[i]);
                 var node = AtS(i);
-                node.DrawAt(pos, visibleRect, Painter.Queue, true, true);
+                node.DrawAt(pos, visibleRect, Painter.Queue, true);
             }
             if (Settings.showIndexOnQueue) {
                 DrawLabels(visibleRect);

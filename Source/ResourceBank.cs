@@ -67,8 +67,8 @@ namespace ResearchPal
             public static readonly string LClickReplaceQueue = TL("LClickReplaceQueue");
             public static readonly string LClickRemoveFromQueue = TL("LClickRemoveFromQueue");
             public static readonly string SLClickAddToQueue = TL("SLClickAddToQueue");
+            public static readonly string ALClickAddToQueue = TL("ALClickAddToQueue");
             public static readonly string CLClickDebugInstant = TL("CLClickDebugInstant");
-            public static readonly string RClickForDetails = TL("RClickForDetails");
 
             public static string MissingFacilities(string list) => TL("MissingFacilities", list);
             public static string MissingTechprints(int techprintsApplied, int techprintCount) => TL("MissingTechprints", techprintsApplied, techprintCount);

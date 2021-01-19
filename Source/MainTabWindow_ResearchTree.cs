@@ -1,6 +1,8 @@
 // MainTabWindow_ResearchTree.cs
 // Copyright Karel Kroeze, 2020-2020
 
+using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -117,6 +119,14 @@ namespace ResearchPal
                 _scrollPosition.y,
                 ViewRect_Inner.width,
                 ViewRect_Inner.height );
+
+        // special rules for tech-level availability
+        public static bool AllowedTechlevel(TechLevel level) {
+            if (Find.Storyteller.def.defName == "VFEM_Maynard") {
+                return level >= TechLevel.Animal && level <= TechLevel.Medieval;
+            }
+            return true;
+        }
 
         internal float MaxZoomLevel
         {
@@ -424,12 +434,11 @@ namespace ResearchPal
                     var pos = absoluteMousePos;
                     pos.x -= NodeSize.x * 0.5f;
                     pos.y -= NodeSize.y * 0.5f;
-                    draggedNode.DrawAt(pos, windowRect, Painter.Drag, true);
+                    draggedNode.DrawAt(pos, windowRect, Painter.Drag);
                 }
             } else {
                 draggedNode.DrawAt(
-                    draggedPosition, windowRect,
-                    Painter.Drag, true); 
+                    draggedPosition, windowRect, Painter.Drag); 
             }
         }
 

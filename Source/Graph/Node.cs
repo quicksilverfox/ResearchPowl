@@ -383,7 +383,7 @@ namespace ResearchPal
                 Rect.yMax < visibleRect.yMin );
         }
 
-        public virtual void Draw(Rect visibleRect, Painter painter, bool forceDetailedMode = false)
+        public virtual void Draw(Rect visibleRect, Painter painter)
         {
         }
 
