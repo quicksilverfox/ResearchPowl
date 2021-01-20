@@ -29,20 +29,23 @@
 	<ResearchPal.BuildingResearchTree>Building Research Tree</ResearchPal.BuildingResearchTree>
 	<ResearchPal.BuildingResearchTreeAsync>Start Building Research Tree on Background</ResearchPal.BuildingResearchTreeAsync>
 
+	<ResearchPal.ResetLayout>Regenerate Research Tree Layout</ResearchPal.ResetLayout>
+	<ResearchPal.LayoutRegenerated>Research Tree Layout Regenerated</ResearchPal.LayoutRegenerated>
+
 	<ResearchPal.ShowNotificationPopup>Show Notification Popup</ResearchPal.ShowNotificationPopup>
 	<ResearchPal.ShowNotificationPopupTip>Whenever you finish research, pause and show the default notification.</ResearchPal.ShowNotificationPopupTip>
 	<ResearchPal.ShouldSeparateByTechLevels>Group Researches by Tech Level</ResearchPal.ShouldSeparateByTechLevels>
-	<ResearchPal.ShouldSeparateByTechLevelsTip>Otherwise use a more dense layout (REQUIRES RESTART)</ResearchPal.ShouldSeparateByTechLevelsTip>
+	<ResearchPal.ShouldSeparateByTechLevelsTip>Otherwise use a more dense layout (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.ShouldSeparateByTechLevelsTip>
 	<ResearchPal.ShouldPauseOnOpen>Pause on Display</ResearchPal.ShouldPauseOnOpen>
 	<ResearchPal.ShouldPauseOnOpenTip>Whenever the game should pause when the research tab is displayed.</ResearchPal.ShouldPauseOnOpenTip>
 	<ResearchPal.ShouldResetOnOpen>Reset on Display</ResearchPal.ShouldResetOnOpen>
 	<ResearchPal.ShouldResetOnOpenTip>Clear filtering and reset scroll position.</ResearchPal.ShouldResetOnOpenTip>
 	<ResearchPal.AlignCloserToAncestors>Align Closer to Prerequisites</ResearchPal.AlignCloserToAncestors>
-	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children. (REQUIRES RESTART)</ResearchPal.AlignCloserToAncestorsTip>
+	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.AlignCloserToAncestorsTip>
 	<ResearchPal.MinimumSeparateModTech>Minimum Separated Mod Researches Count</ResearchPal.MinimumSeparateModTech>
-	<ResearchPal.MinimumSeparateModTechTip>Minimum number of added techs for a mod to be placed separately from the main vanilla tech-tree. (REQUIRES RESTART)</ResearchPal.MinimumSeparateModTechTip>
+	<ResearchPal.MinimumSeparateModTechTip>Minimum number of added techs for a mod to be placed separately from the main vanilla tech-tree. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.MinimumSeparateModTechTip>
 	<ResearchPal.GroupModTechs>Group Researches from Same Mods</ResearchPal.GroupModTechs>
-	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (REQUIRE RESTART)</ResearchPal.GroupModTechsTip>
+	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.GroupModTechsTip>
 	<ResearchPal.SearchByDescription>Search by Descriptions</ResearchPal.SearchByDescription>
 	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance)</ResearchPal.SearchByDescriptionTip>
 	<ResearchPal.DelayLayoutGeneration>Delay Layout Generation</ResearchPal.DelayLayoutGeneration>
@@ -56,8 +59,9 @@
 	<ResearchPal.ShowQueueIndexOnQueue>Display Indices on Research Queue</ResearchPal.ShowQueueIndexOnQueue>
 	<ResearchPal.ShowQueueIndexOnQueueTip>Display index icons on researches in the research queue.</ResearchPal.ShowQueueIndexOnQueueTip>
 	<ResearchPal.DontIgnoreHiddenPrerequisites>DON'T IGNORE HIDDEN PREREQUISITES</ResearchPal.DontIgnoreHiddenPrerequisites>
-    <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prerequisites.
-You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (REQUIRE RESTART)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
+    <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prereqisites.
+You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
+
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
 </LanguageData>
