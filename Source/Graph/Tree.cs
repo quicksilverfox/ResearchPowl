@@ -17,8 +17,9 @@ namespace ResearchPal
     public static class Tree
     {
         public static volatile bool Initialized = false;
+        public static volatile bool Initializing = false;
         public static  IntVec2                         Size = IntVec2.Zero;
-        public static bool shouldSeparateByTechLevels;
+        public static bool _shouldSeparateByTechLevels;
 
         private static List<Node>                      _nodes;
         private static List<Edge<Node, Node>>          _edges;
@@ -118,7 +119,7 @@ namespace ResearchPal
         private static float mainGraphUpperbound = 1;
 
         private static List<Node> ProcessSingletons(List<List<Node>> layers) {
-            if (shouldSeparateByTechLevels) {
+            if (_shouldSeparateByTechLevels) {
                 return new List<Node>();
             }
             var singletons = layers[0]
@@ -212,15 +213,21 @@ namespace ResearchPal
             }
         }
 
-        public static void ResetLayout() {
+        public static bool ResetLayout() {
+            if (Initializing) {
+                return false;
+            }
+            Initializing = true;
+            Initialized = false;
             InitializeNodesStructures();
             InitializeLayout();
+            return true;
         }
 
 
         public static void InitializeLayout()
         {
-            shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
+            Initializing = true;
 
             // actually a lot of the initialization are done by the call of
             // `Nodes()` and `ResearchNodes()`
@@ -234,6 +241,7 @@ namespace ResearchPal
 
             Log.Message("Research layout initialized");
             Initialized = true;
+            Initializing = false;
         }
 
         private static void RemoveEmptyRows()
@@ -261,7 +269,9 @@ namespace ResearchPal
             Log.Debug("Assigning horizontal positions.");
             Profiler.Start();
 
-            if (shouldSeparateByTechLevels) {
+            _shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
+
+            if (_shouldSeparateByTechLevels) {
                 HorizontalPositionsByTechLevels(nodes);
             } else {
                 HorizontalPositionsByDensity(nodes);
@@ -555,7 +565,7 @@ namespace ResearchPal
         public static void Draw( Rect visibleRect )
         {
             Profiler.Start( "Tree.Draw" );
-            if (shouldSeparateByTechLevels)
+            if (_shouldSeparateByTechLevels)
             {
                 Profiler.Start("techlevels");
                 foreach (var techlevel in RelevantTechLevels)

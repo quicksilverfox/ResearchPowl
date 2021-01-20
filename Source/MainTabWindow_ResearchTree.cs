@@ -152,11 +152,6 @@ namespace ResearchPal
 
             SetRects();
 
-            // settings changed, notify...
-            if (Tree.shouldSeparateByTechLevels != Settings.shouldSeparateByTechLevels) {
-                Messages.Message(ResourceBank.String.NeedsRestart, MessageTypeDefOf.CautionInput, false);
-            }
-
             if (Settings.shouldPause) {
                 forcePause = Settings.shouldPause;
             }

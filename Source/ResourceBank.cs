@@ -15,6 +15,10 @@ namespace ResearchPal
             public static readonly string ShowNotificationPopup = TL("ShowNotificationPopup");
             public static readonly string ShowNotificationPopupTip = TL("ShowNotificationPopupTip");
 
+            public static readonly string ResetTreeLayout = TL("ResetLayout");
+
+            public static readonly string LayoutRegenerated = TL("LayoutRegenerated");
+
             public static readonly string ShouldSeparateByTechLevels = TL("ShouldSeparateByTechLevels");
             public static readonly string ShouldSeparateByTechLevelsTip = TL("ShouldSeparateByTechLevelsTip");
 

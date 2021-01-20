@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using Verse;
+using RimWorld;
+using Verse.Sound;
 using static ResearchPal.ResourceBank.String;
 
 namespace ResearchPal
@@ -39,6 +41,14 @@ namespace ResearchPal
             Listing_Standard list = new Listing_Standard(GameFont.Small);
             list.ColumnWidth = rect.width / 2;
             list.Begin(rect);
+
+            if (list.ButtonText(ResetTreeLayout)) {
+                SoundDefOf.Click.PlayOneShotOnCamera();
+                if (Tree.ResetLayout()) {
+                    Messages.Message(
+                        LayoutRegenerated, MessageTypeDefOf.CautionInput, false);
+                }
+            }
 
             list.CheckboxLabeled(
                DontIgnoreHiddenPrerequisites,
