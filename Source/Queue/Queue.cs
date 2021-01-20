@@ -179,6 +179,9 @@ namespace ResearchPal
         }
 
         public bool Remove(ResearchNode node) {
+            if (node.Completed()) {
+                return _queue.Remove(node);
+            }
             List<ResearchNode> shouldRemove = new List<ResearchNode>();
             var idx = _queue.IndexOf(node);
             if (idx == -1) {
@@ -244,21 +247,31 @@ namespace ResearchPal
             return _instance[n];
         }
 
+        public ResearchNode Current() {
+            return _queue.FirstOrDefault();
+        }
+
+        public static ResearchNode CurrentS() {
+            return _instance.Current();
+        }
+
         public static void TryStartNext( ResearchProjectDef finished )
         {
-            var current = _instance._queue.FirstOrDefault()?.Research;
-            Log.Debug( "TryStartNext: current; {0}, finished; {1}", current, finished );
-            if ( finished != _instance._queue.FirstOrDefault()?.Research )
-            {
-                _instance._queue.Remove(finished);
+            var current = CurrentS();
+            Log.Debug( "TryStartNext: current; {0}, finished; {1}", current?.Research, finished );
+
+            var finishedNode = _instance._queue.Find(n => n.Research == finished);
+            if (finishedNode == null) {
                 return;
             }
-
-            _instance._queue.RemoveAt(0);
-            var next = _instance._queue.FirstOrDefault()?.Research;
-            Log.Debug( "TryStartNext: next; {0}", next );
+            RemoveS(finishedNode);
+            if (finishedNode != current) {
+                return;
+            }
+            var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
-            DoCompletionLetter(current, next);
+            DoCompletionLetter(current.Research, next);
+            Log.Debug( "TryStartNext: next; {0}", next );
         }
 
         private static void DoCompletionLetter( ResearchProjectDef current, ResearchProjectDef next )
@@ -290,8 +303,8 @@ namespace ResearchPal
             Scribe_Collections.Look( ref _saveableQueue, "Queue", LookMode.Def );
 
             if ( Scribe.mode == LoadSaveMode.PostLoadInit ) {
-                if (_saveableQueue.Any()) {
-                    Tree.WaitForInitialization();
+                if (Settings.asyncLoadingOnStartup) {
+                    Tree.WaitForResearchNodes();
                 }
                 foreach (var research in _saveableQueue) {
                     // find a node that matches the research - or null if none found

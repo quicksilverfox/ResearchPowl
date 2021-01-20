@@ -60,25 +60,31 @@ namespace ResearchPal
             }
         }
 
-        public static List<Node> Nodes
-        {
-            get
-            {
-                if ( _nodes == null )
-                    PopulateNodes();
-
-                return _nodes;
+        public static List<Node> Nodes() {
+            if ( _nodes == null ) {
+                InitializeNodesStructures();
             }
+
+            return _nodes;
         }
 
         public static List<ResearchNode> ResearchNodes() {
-            if (_researchNodes == null || _researchNodes.Count() == 0) {
-                _researchNodes = Nodes.OfType<ResearchNode>().ToList();
+            if (_researchNodes == null) {
+                InitializeNodesStructures();
             }
             return _researchNodes;
         }
 
-        public static IEnumerable<Node> NonSingletons => Nodes.Where(n => _singletons.IndexOf(n) == -1);
+        public static List<ResearchNode> WaitForResearchNodes() {
+            while (_researchNodes == null) {
+                continue;
+            }
+            return _researchNodes;
+        }
+
+        public static IEnumerable<Node> NonSingletons() {
+            return Nodes().Where(n => _singletons.IndexOf(n) == -1);
+        }
 
         public static List<Edge<Node, Node>> Edges
         {
@@ -93,7 +99,7 @@ namespace ResearchPal
 
         private static List<List<Node>> Layering(List<Node> nodes) {
             var layers = new List<List<Node>>();
-            foreach (var node in Nodes)
+            foreach (var node in Nodes())
             {
                 if (node.X > layers.Count()) {
                     for (int i = layers.Count(); i < node.X; ++i) {
@@ -138,54 +144,8 @@ namespace ResearchPal
             mainGraphUpperbound = x == 0 ? y : y + 1;
         }
 
-        private static void MergeDummiesByParents(List<Node> layer, List<DummyNode> dummies) {
-            for (int i = 0; i < dummies.Count() - 1; ) {
-                DummyNode node = dummies[i];
-                List<Node> parents = node.InNodes;
-                parents.Sort();
-                int j = i + 1;
-                for (; j < dummies.Count(); ++j) {
-                    var parents2 = dummies[j].InNodes;
-                    parents2.Sort();
-                    if (!parents.SequenceEqual(parents2)) break;
-                    node.Merge(dummies[j]);
-                    Nodes.Remove(dummies[j]);
-                    layer.Remove(dummies[j]);
-                }
-                i = j;
-            }
-        }
-        private static void MergeDummiesByChildren(List<Node> layer, List<DummyNode> dummies) {
-            for (int i = 0; i < dummies.Count() - 1; ) {
-                DummyNode node = dummies[i];
-                List<Node> children = node.OutNodes;
-                children.SortBy(n => n.GetHashCode());
-                int j = i + 1;
-                for (; j < dummies.Count(); ++j) {
-                    var children2 = dummies[j].OutNodes;
-                    children2.SortBy(n => n.GetHashCode());
-                    if (!children.SequenceEqual(children2)) break;
-                    node.Merge(dummies[j]);
-                    Nodes.Remove(dummies[j]);
-                    layer.Remove(dummies[j]);
-                }
-                i = j;
-            }
-        }
-
-        private static void CollapseAdjacentDummyNodes() {
-            for (int i = 0; i < _layers.Count(); ++i) {
-                var dummies = _layers[i].OfType<DummyNode>().ToList();
-                MergeDummiesByParents(_layers[i], dummies);
-            }
-            for (int i = _layers.Count() - 1; i >= 0; --i) {
-                var dummies = _layers[i].OfType<DummyNode>().ToList();
-                MergeDummiesByChildren(_layers[i], dummies);
-            }
-        }
-
         public static void LegacyPreprocessing() {
-            var layers = Layering(Nodes);
+            var layers = Layering(Nodes());
             var singletons = ProcessSingletons(layers);
             _layers = layers;
             _singletons = singletons;
@@ -245,70 +205,46 @@ namespace ResearchPal
         public static void WaitForInitialization() {
             if (! Tree.Initialized) {
                 if (Settings.delayLayoutGeneration) {
-                    Tree.Initialize();
+                    Tree.InitializeLayout();
                 } else if (Settings.asyncLoadingOnStartup) {
                     while (! Tree.Initialized) continue;
                 }
             }
         }
 
+        public static void ResetLayout() {
+            InitializeNodesStructures();
+            InitializeLayout();
+        }
 
-        public static void Initialize()
+
+        public static void InitializeLayout()
         {
             shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
 
-            // setup
-            // Log.Message(ResourceBank.String.PreparingTree_Setup);
-            CheckPrerequisites();
-            CreateEdges();
-            HorizontalPositions();
-            NormalizeEdges();
-// Legacy Logic Above
+            // actually a lot of the initialization are done by the call of
+            // `Nodes()` and `ResearchNodes()`
 
             LegacyPreprocessing();
             MainAlgorithm(_layers);
 
-            // CollapseAdjacentDummyNodes();
-
             RemoveEmptyRows();
-            Tree.Size.z = (int) (Nodes.Max(n => n.Yf) + 0.01) + 1;
+            Tree.Size.z = (int) (Nodes().Max(n => n.Yf) + 0.01) + 1;
+            Tree.Size.x = Nodes().Max(n => n.X);
 
             Log.Message("Research layout initialized");
             Initialized = true;
-// Legacy Logic Below
-
-// #if DEBUG
-//             DebugStatus();
-// #endif
-//             // crossing reduction
-//             Log.Message(ResourceBank.String.PreparingTree_CrossingReduction);
-//             Collapse();
-//             MinimizeCrossings();
-// #if DEBUG
-//             DebugStatus();
-// #endif
-//             // layout
-//             Log.Message(ResourceBank.String.PreparingTree_Layout);
-//             MinimizeEdgeLength();
-//             SquashOrphans();
-            // RemoveEmptyRows();
-// #if DEBUG
-//             DebugStatus();
-// #endif
-//             // done!
-//             // we're ready
-//             Log.Message(ResourceBank.String.PreparingTree_RestoreQueue);
         }
 
         private static void RemoveEmptyRows()
         {
             Log.Debug( "Removing empty rows" );
             Profiler.Start();
-            var z = Nodes.Max(n => n.Yf);
+            var z = Nodes().Max(n => n.Yf);
             for (var y = 1; y < z;) {
                 var row = Row( y );
                 if ( row.NullOrEmpty() ) {
-                    var ns = Nodes.Where(n => n.Yf > y).ToList();
+                    var ns = Nodes().Where(n => n.Yf > y).ToList();
                     if (ns.Count() == 0) {
                         break;
                     }
@@ -321,26 +257,25 @@ namespace ResearchPal
             Profiler.End();
         }
 
-        static void HorizontalPositions() {
+        static void HorizontalPositions(List<ResearchNode> nodes) {
             Log.Debug("Assigning horizontal positions.");
             Profiler.Start();
 
             if (shouldSeparateByTechLevels) {
-                HorizontalPositionsByTechLevels();
+                HorizontalPositionsByTechLevels(nodes);
             } else {
-                HorizontalPositionsByDensity();
+                HorizontalPositionsByDensity(nodes);
             }
 
             Profiler.End();
         }
 
-        static void HorizontalPositionsByTechLevels() {
+        static void HorizontalPositionsByTechLevels(List<ResearchNode> nodes) {
             _techLevelBounds = new Dictionary<TechLevel, IntRange>();
             float leftBound = 1;
             foreach (var group in
-                ResearchNodes()
-                    .GroupBy(n => n.Research.techLevel)
-                    .OrderBy(g => g.Key)) {
+                nodes.GroupBy(n => n.Research.techLevel)
+                     .OrderBy(g => g.Key)) {
                 var updateOrder = FilteredTopoSort(
                     group, n => n.Research.techLevel == group.Key);
                 float newLeftBound  = leftBound;
@@ -352,8 +287,8 @@ namespace ResearchPal
             }
         }
 
-        static void HorizontalPositionsByDensity() {
-            var updateOrder = TopologicalSort(ResearchNodes());
+        static void HorizontalPositionsByDensity(List<ResearchNode> nodes) {
+            var updateOrder = TopologicalSort(nodes);
             foreach (var node in updateOrder) {
                 node.SetDepth(1);
             }
@@ -390,16 +325,15 @@ namespace ResearchPal
             visited.Add(cur);
         }
 
-        private static void NormalizeEdges()
-        {
+        private static void NormalizeEdges(List<Edge<Node, Node>> edges, List<Node> nodes) {
             Log.Debug( "Normalizing edges." );
             Profiler.Start();
-            foreach (var edge in new List<Edge<Node, Node>>(Edges.Where(e => e.Span > 1)))
+            foreach (var edge in new List<Edge<Node, Node>>(edges.Where(e => e.Span > 1)))
             {
                 Log.Trace( "\tCreating dummy chain for {0}", edge );
 
                 // remove and decouple long edge
-                Edges.Remove( edge );
+                edges.Remove( edge );
                 edge.In.OutEdges.Remove( edge );
                 edge.Out.InEdges.Remove( edge );
                 var cur     = edge.In;
@@ -411,11 +345,11 @@ namespace ResearchPal
                     var dummy = new DummyNode();
                     dummy.X  = x;
                     dummy.Yf = edge.In.Yf + yOffset * ( x - edge.In.X );
-                    var dummyEdge = new Edge<Node, Node>( cur, dummy );
+                    var dummyEdge = new Edge<Node, Node>(cur, dummy);
                     cur.OutEdges.Add( dummyEdge );
                     dummy.InEdges.Add( dummyEdge );
-                    _nodes.Add( dummy );
-                    Edges.Add( dummyEdge );
+                    nodes.Add( dummy );
+                    edges.Add( dummyEdge );
                     cur = dummy;
                     Log.Trace( "\t\tCreated dummy {0}", dummy );
                 }
@@ -424,29 +358,29 @@ namespace ResearchPal
                 var finalEdge = new Edge<Node, Node>( cur, edge.Out );
                 cur.OutEdges.Add( finalEdge );
                 edge.Out.InEdges.Add( finalEdge );
-                Edges.Add( finalEdge );
+                edges.Add( finalEdge );
             }
 
             Profiler.End();
         }
-        private static void CreateEdges()
+        private static List<Edge<Node, Node>> CreateEdges(List<ResearchNode> nodes)
         {
             Log.Debug( "Creating edges." );
             Profiler.Start();
             // create links between nodes
-            if ( _edges.NullOrEmpty() ) _edges = new List<Edge<Node, Node>>();
+            var edges = new List<Edge<Node, Node>>();
 
-            foreach ( var node in Nodes.OfType<ResearchNode>() )
+            foreach (var node in nodes)
             {
                 if ( node.Research.prerequisites.NullOrEmpty() )
                     continue;
                 foreach ( var prerequisite in node.Research.prerequisites )
                 {
-                    ResearchNode prerequisiteNode = prerequisite;
+                    ResearchNode prerequisiteNode = nodes.Find(n => n.Research == prerequisite);
                     if ( prerequisiteNode == null )
                         continue;
                     var edge = new Edge<Node, Node>( prerequisiteNode, node );
-                    Edges.Add( edge );
+                    edges.Add( edge );
                     node.InEdges.Add( edge );
                     prerequisiteNode.OutEdges.Add( edge );
                     Log.Trace( "\tCreated edge {0}", edge );
@@ -454,19 +388,20 @@ namespace ResearchPal
             }
 
             Profiler.End();
+            return edges;
         }
 
-        private static void CheckPrerequisites()
+        private static void CheckPrerequisites(List<ResearchNode> nodes)
         {
             // check prerequisites
             Log.Debug( "Checking prerequisites." );
             Profiler.Start();
 
-            var nodes = new Queue<ResearchNode>(ResearchNodes());
+            var nodesQueue = new Queue<ResearchNode>(nodes);
             // remove redundant prerequisites
-            while ( nodes.Count > 0 )
+            while ( nodesQueue.Count > 0 )
             {
-                var node = nodes.Dequeue();
+                var node = nodesQueue.Dequeue();
                 if ( node.Research.prerequisites.NullOrEmpty() )
                     continue;
 
@@ -482,10 +417,10 @@ namespace ResearchPal
             }
 
             // fix bad techlevels
-            nodes = new Queue<ResearchNode>(ResearchNodes());
-            while ( nodes.Count > 0 )
+            nodesQueue = new Queue<ResearchNode>(nodes);
+            while ( nodesQueue.Count > 0 )
             {
-                var node = nodes.Dequeue();
+                var node = nodesQueue.Dequeue();
                 if ( !node.Research.prerequisites.NullOrEmpty() )
                     // warn and fix badly configured techlevels
                     if ( node.Research.prerequisites.Any( r => r.techLevel > node.Research.techLevel ) )
@@ -496,7 +431,7 @@ namespace ResearchPal
 
                         // re-enqeue all descendants
                         foreach ( var descendant in node.Descendants.OfType<ResearchNode>() )
-                            nodes.Enqueue( descendant );
+                            nodesQueue.Enqueue( descendant );
                     }
             }
 
@@ -511,7 +446,21 @@ namespace ResearchPal
             }
         }
 
-        private static void PopulateNodes()
+        private static void InitializeNodesStructures() {
+            var nodes = PopulateNodes();
+            var allNodes = nodes.OfType<Node>().ToList();
+            CheckPrerequisites(nodes);
+            var edges = CreateEdges(nodes);
+
+            HorizontalPositions(nodes);
+            NormalizeEdges(edges, allNodes);
+
+            _nodes = allNodes;
+            _researchNodes = nodes;
+            _edges = edges;
+        }
+
+        private static List<ResearchNode> PopulateNodes()
         {
             Log.Debug( "Populating nodes." );
             Profiler.Start();
@@ -529,36 +478,20 @@ namespace ResearchPal
             var locked = projects.Where( p => p.Ancestors().Intersect( hidden ).Any() );
 
             // populate all nodes
-            _nodes = new List<Node>( DefDatabase<ResearchProjectDef>.AllDefsListForReading
-                                                                    .Except( hidden )
-                                                                    .Except( locked )
-                                                                    .Select( def => new ResearchNode( def ) as Node ) );
-            Log.Debug( "\t{0} nodes", _nodes.Count );
+            var nodes = new List<ResearchNode>(DefDatabase<ResearchProjectDef>
+                .AllDefsListForReading
+                .Except( hidden )
+                .Except( locked )
+                .Select(def => new ResearchNode( def )));
+            Log.Debug( "\t{0} nodes", nodes.Count );
             Profiler.End();
-        }
-
-        private static void Collapse()
-        {
-            Log.Debug( "Collapsing nodes." );
-            Profiler.Start();
-            var pre = Size;
-            for ( var l = 1; l <= Size.x; l++ )
-            {
-                var nodes = Layer( l, true );
-                var Y     = 1;
-                foreach ( var node in nodes )
-                    node.Y = Y++;
-            }
-
-            Log.Debug( "{0} -> {1}", pre, Size );
-            Profiler.End();
+            return nodes;
         }
 
         [Conditional( "DEBUG" )]
         internal static void DebugDraw()
         {
-            foreach ( var v in Nodes )
-            {
+            foreach (var v in Nodes()) {
                 foreach ( var w in v.OutNodes ) Widgets.DrawLine( v.Right, w.Left, Color.white, 1 );
             }
         }
@@ -729,23 +662,23 @@ namespace ResearchPal
         {
             if ( ordered && OrderDirty )
             {
-                _nodes     = Nodes.OrderBy( n => n.X ).ThenBy( n => n.Y ).ToList();
+                _nodes     = Nodes().OrderBy( n => n.X ).ThenBy( n => n.Y ).ToList();
                 OrderDirty = false;
             }
 
-            return Nodes.Where( n => n.X == depth ).ToList();
+            return Nodes().Where( n => n.X == depth ).ToList();
         }
 
         public static List<Node> Row( int Y )
         {
-            return Nodes.Where( n => n.Y == Y ).ToList();
+            return Nodes().Where( n => n.Y == Y ).ToList();
         }
 
         public new static string ToString()
         {
             var text = new StringBuilder();
 
-            for ( var l = 1; l <= Nodes.Max( n => n.X ); l++ )
+            for ( var l = 1; l <= Nodes().Max( n => n.X ); l++ )
             {
                 text.AppendLine( $"Layer {l}:" );
                 var layer = Layer( l, true );
@@ -761,19 +694,6 @@ namespace ResearchPal
             }
 
             return text.ToString();
-        }
-
-        public static void DebugStatus()
-        {
-            Log.Message( "duplicated positions:\n " +
-                         string.Join(
-                             "\n",
-                             Nodes.Where( n => Nodes.Any( n2 => n != n2 && n.X == n2.X && n.Y == n2.Y ) )
-                                  .Select( n => n.X + ", " + n.Y + ": " + n.Label ).ToArray() ) );
-            Log.Message( "out-of-bounds nodes:\n" +
-                         string.Join(
-                             "\n", Nodes.Where( n => n.X < 1 || n.Y < 1 ).Select( n => n.ToString() ).ToArray() ) );
-            Log.Trace( ToString() );
         }
     }
 }

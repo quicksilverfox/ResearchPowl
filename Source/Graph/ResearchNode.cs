@@ -144,13 +144,13 @@ namespace ResearchPal
         public override Color InEdgeColor(ResearchNode from)
         {
             if (HighlightInEdge(from))
-                return GenUI.MouseoverColor;
+                return Assets.NormalHighlightColor;
             if (MainTabWindow_ResearchTree.Instance.SearchActive())
             {
                 return Assets.ColorUnmatched[Research.techLevel];
             }
             if (Completed())
-                return Assets.ColorCompleted[Research.techLevel];
+                return Assets.ColorEdgeCompleted[Research.techLevel];
             if (Available())
                 return Assets.ColorAvailable[Research.techLevel];
             return Assets.ColorUnavailable[Research.techLevel];
@@ -207,11 +207,6 @@ namespace ResearchPal
         {
             _buildingPresentCache.Clear();
             _missingFacilitiesCache.Clear();
-        }
-
-        public static implicit operator ResearchNode( ResearchProjectDef def )
-        {
-            return def.ResearchNode();
         }
 
         public int Matches( string query )

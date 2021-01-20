@@ -24,7 +24,7 @@ namespace ResearchPal
                         StartLoadingWorker, "ResearchPal.BuildingResearchTreeAsync", false, null);
                 } else {
                     LongEventHandler.QueueLongEvent(
-                        Tree.Initialize, "ResearchPal.BuildingResearchTree", false, null);
+                        Tree.InitializeLayout, "ResearchPal.BuildingResearchTree", false, null);
                 }
             }
 
@@ -35,8 +35,8 @@ namespace ResearchPal
         public static Thread initializeWorker = null;
 
         static void StartLoadingWorker() {
-            initializeWorker = new Thread(Tree.Initialize);
-            Log.Message("Initialization start at background");
+            initializeWorker = new Thread(Tree.InitializeLayout);
+            Log.Message("Initialization start on background");
             initializeWorker.Start();
         }
 

@@ -44,13 +44,13 @@ public static class Highlighting {
 
     public static Color Color(Reason reason, TechLevel techLevel) {
         if (reason == Reason.FixedSecondary) {
-            return GenUI.MouseoverColor;
+            return Assets.NormalHighlightColor;
         }
         if (reason == Reason.FixedPrimary) {
             return Assets.FixedPrimaryColor;
         }
         if (reason == Reason.HoverSecondary) {
-            return GenUI.MouseoverColor;
+            return Assets.NormalHighlightColor;
         }
         if (reason == Reason.HoverPrimary) {
             return Assets.HoverPrimaryColor;
@@ -61,7 +61,7 @@ public static class Highlighting {
         // if (reason == Reason.SearchUnmatched) {
         //     return Assets.ColorUnmatched[techLevel];
         // }
-        return GenUI.MouseoverColor;
+        return Assets.NormalHighlightColor;
     }
 
     public static bool Stackable(Reason r) {

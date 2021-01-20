@@ -33,7 +33,7 @@ namespace ResearchPal
         static ResearchNode Lookup(ResearchProjectDef projectDef)
         {
             if (_cache == null)
-                _cache = Tree.Nodes.OfType<ResearchNode>().ToDictionary(r => r.Research);
+                _cache = Tree.ResearchNodes().ToDictionary(r => r.Research);
 
             return _cache[projectDef];
         }

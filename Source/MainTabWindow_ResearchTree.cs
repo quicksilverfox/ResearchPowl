@@ -148,6 +148,8 @@ namespace ResearchPal
         public override void PreOpen() {
             base.PreOpen();
 
+            Tree.WaitForInitialization();
+
             SetRects();
 
             // settings changed, notify...
@@ -193,11 +195,8 @@ namespace ResearchPal
 
         public override void DoWindowContents( Rect canvas )
         {
-            Tree.WaitForInitialization();
-
             GUI.EndClip();
             GUI.EndClip(); // some window black magic by fluffy
-
 
             absoluteMousePos = Event.current.mousePosition;
             var topRect = new Rect(

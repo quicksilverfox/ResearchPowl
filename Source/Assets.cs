@@ -18,11 +18,14 @@ namespace ResearchPal
         public static            Texture2D Lock         = ContentFinder<Texture2D>.Get( "Icons/padlock" );
         internal static readonly Texture2D CircleFill   = ContentFinder<Texture2D>.Get( "Icons/circle-fill" );
 
+        public static Color NormalHighlightColor = GenUI.MouseoverColor;
+
         public static Color                        NegativeMouseoverColor = new Color( .4f, .1f, .1f );
         public static Color HoverPrimaryColor = new Color(0.6f, 0.55f, 0.9f);
         public static Color FixedPrimaryColor = new Color(0.55f, 0.9f, 0.95f);
         // public static Color HeavyMouseoverColor = Color.white;
         public static Dictionary<TechLevel, Color> ColorCompleted         = new Dictionary<TechLevel, Color>();
+        public static Dictionary<TechLevel, Color> ColorEdgeCompleted         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorAvailable         = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorUnavailable       = new Dictionary<TechLevel, Color>();
         public static Dictionary<TechLevel, Color> ColorUnmatched         = new Dictionary<TechLevel, Color>();
@@ -41,7 +44,8 @@ namespace ResearchPal
             var n          = techlevels.Count;
             for ( var i = 0; i < n; i++ )
             {
-                ColorCompleted[techlevels[i]]   = Color.HSVToRGB( 1f / n * i, .75f, .75f );
+                ColorCompleted[techlevels[i]]     = Color.HSVToRGB( 1f / n * i, .75f, .75f );
+                ColorEdgeCompleted[techlevels[i]] = Color.HSVToRGB( 1f / n * i, .5f, .6f );
                 ColorMatched[techlevels[i]]     = Color.HSVToRGB( 1f / n * i, .4f, .45f );
                 ColorAvailable[techlevels[i]]   = Color.HSVToRGB( 1f / n * i, .33f, .33f );
                 ColorUnavailable[techlevels[i]] = Color.HSVToRGB( 1f / n * i, .125f, .33f);
