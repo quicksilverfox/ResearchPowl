@@ -58,6 +58,7 @@ namespace ResearchPal
             public static readonly string DontIgnoreHiddenPrerequisitesTip = TL("DontIgnoreHiddenPrerequisitesTip");
             public static readonly string DebugResearch = TL("DebugResearch");
             public static readonly string DebugResearchTip = TL("DebugResearchTip");
+
             #endregion
 
             #region ResearchProjectDef_Extensions

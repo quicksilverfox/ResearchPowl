@@ -34,6 +34,10 @@ namespace ResearchPal
 
         public static bool showIndexOnQueue = false;
 
+        public static float scrollingSpeedMultiplier = 1f;
+        public static float zoomingSpeedMultiplier = 1f;
+        public static float draggingDisplayDelay = 0.25f;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -100,6 +104,22 @@ namespace ResearchPal
             list.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
             list.CheckboxLabeled(ShowIndexOnQueue, ref showIndexOnQueue, ShowIndexOnQueueTip);
 
+            list.Gap();
+            list.Label(
+                "ResearchPal.ScrollSpeedMultiplier".Translate()
+                    + string.Format(" {0:0.00}", scrollingSpeedMultiplier), -1,
+                "ResearchPal.ScrollSpeedMultiplierTip".Translate());
+            scrollingSpeedMultiplier = list.Slider(scrollingSpeedMultiplier, 0.1f, 5);
+            list.Label(
+                "ResearchPal.ZoomingSpeedMultiplier".Translate()
+                    + string.Format(" {0:0.00}", zoomingSpeedMultiplier), -1,
+                "ResearchPal.ZoomingSpeedMultiplierTip".Translate());
+            zoomingSpeedMultiplier = list.Slider(zoomingSpeedMultiplier, 0.1f, 5);
+            list.Label(
+                "ResearchPal.DraggingDisplayDelay".Translate()
+                    + string.Format(": {0:0.00}s", draggingDisplayDelay), -1,
+                "ResearchPal.DraggingDisplayDelayTip".Translate());
+            draggingDisplayDelay = list.Slider(draggingDisplayDelay, 0, 1);
             list.End();
         }
 
@@ -118,6 +138,9 @@ namespace ResearchPal
             Scribe_Values.Look(ref alwaysDisplayProgress, "AlwaysDisplayProgress", false);
             Scribe_Values.Look(ref showIndexOnQueue, "ShowQueuePositionOnQueue", false);
             Scribe_Values.Look(ref dontIgnoreHiddenPrerequisites, "dontIgnoreHiddenPrerequisites", true);
+            Scribe_Values.Look(ref scrollingSpeedMultiplier, "ScrollingSpeedMultiplier", 1);
+            Scribe_Values.Look(ref zoomingSpeedMultiplier, "zoomingSpeedMultiplier", 1);
+            Scribe_Values.Look(ref draggingDisplayDelay, "zoomingSpeedMultiplier", 0.25f);
         }
     }
 }

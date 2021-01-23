@@ -307,7 +307,7 @@ namespace ResearchPal
                 // Log.Debug( "Normalized position: {0}", relPos );
 
                 // update zoom level
-                ZoomLevel += Event.current.delta.y * ZoomStep * ZoomLevel;
+                ZoomLevel += Event.current.delta.y * ZoomStep * ZoomLevel * Settings.zoomingSpeedMultiplier;
 
                 // we want to keep the _normalized_ relative position the same as before zooming
                 _scrollPosition = absPos - relPos * ZoomLevel;
@@ -344,7 +344,7 @@ namespace ResearchPal
             }
             // scroll wheel vertical, switch to horizontal with alt
             if (Event.current.isScrollWheel && !Event.current.shift) {
-                float delta = Event.current.delta.y * 15;
+                float delta = Event.current.delta.y * 15 * Settings.scrollingSpeedMultiplier;
                 if (Event.current.alt) {
                     _scrollPosition.x += delta;
                 } else {
@@ -424,7 +424,7 @@ namespace ResearchPal
                 evt.Use();
             }
             if (DraggingSource() == Painter.Tree) {
-                if (DraggingTime() > Constants.DraggingClickDelay) {
+                if (DraggingTime() > Settings.draggingDisplayDelay) {
                     var pos = absoluteMousePos;
                     pos.x -= NodeSize.x * 0.5f;
                     pos.y -= NodeSize.y * 0.5f;

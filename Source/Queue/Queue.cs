@@ -579,6 +579,33 @@ namespace ResearchPal
             return r;
         }
 
+        List<ResearchNode> temporaryQueue = new List<ResearchNode>();
+
+        private void DrawNodes(Rect visibleRect) {
+            temporaryQueue.Clear();
+            // when handling event in nodes, the queue itself may change
+            // so using a temporary queue to avoid the unmatching DrawAt and SetRect
+            foreach (var node in _queue) {
+                temporaryQueue.Add(node);
+            }
+            for (int i = 0; i < temporaryQueue.Count(); ++i) {
+                if (currentPositions[i] == -1) {
+                    continue;
+                }
+                var pos = NodePos(currentPositions[i]);
+                var node = temporaryQueue[i];
+                node.DrawAt(pos, visibleRect, Painter.Queue, true);
+            }
+            if (Settings.showIndexOnQueue) {
+                DrawLabels(visibleRect);
+            }
+            foreach (var node in temporaryQueue) {
+                node.SetRects();
+            }
+            if (temporaryQueue.Count() != Count()) {
+                ResetNodePositions();
+            }
+        }
 
         public void Draw(Rect baseCanvas, bool interactible) {
 
@@ -605,21 +632,7 @@ namespace ResearchPal
             HandleDragReleaseInside(visibleRect);
             UpdateCurrentPosition(visibleRect);
 
-
-            for (var i = 0; i < CountS(); ++i) {
-                if (currentPositions[i] == -1) {
-                    continue;
-                } 
-                var pos = NodePos(currentPositions[i]);
-                var node = AtS(i);
-                node.DrawAt(pos, visibleRect, Painter.Queue, true);
-            }
-            if (Settings.showIndexOnQueue) {
-                DrawLabels(visibleRect);
-            }
-            foreach (var node in _queue) {
-                node.SetRects();
-            }
+            DrawNodes(visibleRect);
 
             Profiler.End();
             GUI.EndScrollView(false);
