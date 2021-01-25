@@ -548,7 +548,6 @@ namespace ResearchPal
                 }
                 fixedHighlightSets.Add(hl);
             }
-            Event.current.Use();
         }
 
         static bool ContinueHoverHighlight(Vector2 mouse) {
