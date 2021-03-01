@@ -169,7 +169,7 @@ namespace ResearchPal
             _dragging             = false;
             closeOnClickedOutside = false;
 
-            if (Queue.CountS() == 0 && Find.ResearchManager.currentProj != null)
+            if (Find.ResearchManager.currentProj != null)
                 Queue.AppendS(new ResearchNode(Find.ResearchManager.currentProj));
         }
 
