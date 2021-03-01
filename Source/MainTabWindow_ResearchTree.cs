@@ -168,10 +168,6 @@ namespace ResearchPal
 
             _dragging             = false;
             closeOnClickedOutside = false;
-
-            //update current queue in case currentProj changed
-            if (Find.ResearchManager.currentProj != null) 
-                Queue.AppendS(Find.ResearchManager.currentProj.ResearchNode());
         }
 
         private void SetRects()
