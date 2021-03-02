@@ -94,7 +94,7 @@ namespace ResearchPal
             }
         }
 
-        public bool CantResearch(ResearchNode node) {
+        static public bool CantResearch(ResearchNode node) {
             return !node.GetAvailable();
         }
 
@@ -171,6 +171,10 @@ namespace ResearchPal
             }
             finished.ForEach(n => _queue.Remove(n));
             unavailable.ForEach(n => Remove(n));
+            //
+            if (CountS() == 0 && Find.ResearchManager.currentProj != null)
+                ReplaceS(Find.ResearchManager.currentProj.ResearchNode());
+            //
             UpdateCurrentResearch();
         }
 
