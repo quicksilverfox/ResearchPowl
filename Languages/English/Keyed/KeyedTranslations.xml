@@ -60,7 +60,7 @@
 	<ResearchPal.ShowQueueIndexOnQueueTip>Display index icons on researches in the research queue.</ResearchPal.ShowQueueIndexOnQueueTip>
 	<ResearchPal.DontIgnoreHiddenPrerequisites>DON'T IGNORE HIDDEN PREREQUISITES</ResearchPal.DontIgnoreHiddenPrerequisites>
     <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prereqisites.
-You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
+You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (restart the game to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
 
 	<ResearchPal.ScrollSpeedMultiplier>Scrolling Speed Multiplier</ResearchPal.ScrollSpeedMultiplier>
@@ -69,6 +69,9 @@ You should always turn this option on for a more balanced gameplay. Being able t
 	<ResearchPal.ZoomingSpeedMultiplierTip>Control the zooming sensitivity of the main research tree</ResearchPal.ZoomingSpeedMultiplierTip>
 	<ResearchPal.DraggingDisplayDelay>Dragging Display Delay</ResearchPal.DraggingDisplayDelay>
 	<ResearchPal.DraggingDisplayDelayTip>The delay in second a dragged research node in research tree display as dragged. (doesn't affect dragging nodes in queue and the actual trigger of dragging)</ResearchPal.DraggingDisplayDelayTip>
+
+	<ResearchPal.VerboseLogging>Verbose Logging (WIP)</ResearchPal.VerboseLogging>
+	<ResearchPal.VerboseLoggingTip>Produce verbose debug logs in dev mode messages (WIP).</ResearchPal.VerboseLoggingTip>
 
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
 </LanguageData>

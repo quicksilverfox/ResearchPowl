@@ -193,6 +193,7 @@ namespace ResearchPal
         }
 
         public static void PositionAllLayers(IEnumerable<NodeLayers> layerss) {
+            Log.Debug("PotisionAllLayers: starting upper bound {0}", mainGraphUpperbound);
             float[] topBounds = new float[_layers.Count()];
             for (int i = 0; i < topBounds.Count(); ++i) {
                 topBounds[i] = mainGraphUpperbound;
@@ -228,6 +229,7 @@ namespace ResearchPal
         public static void InitializeLayout()
         {
             Initializing = true;
+            mainGraphUpperbound = 1;
 
             // actually a lot of the initialization are done by the call of
             // `Nodes()` and `ResearchNodes()`
@@ -239,17 +241,18 @@ namespace ResearchPal
             Tree.Size.z = (int) (Nodes().Max(n => n.Yf) + 0.01) + 1;
             Tree.Size.x = Nodes().Max(n => n.X);
 
-            Log.Message("Research layout initialized");
+            Log.Message("Research layout initialized", Tree.Size.x, Tree.Size.z);
+            Log.Debug("Layout Size: x = {0}, y = {1}", Tree.Size.x, Tree.Size.z);
             Initialized = true;
             Initializing = false;
         }
 
         private static void RemoveEmptyRows()
         {
-            Log.Debug( "Removing empty rows" );
             Profiler.Start();
             var z = Nodes().Max(n => n.Yf);
-            for (var y = 1; y < z;) {
+            var y = 1;
+            for (; y < z;) {
                 var row = Row( y );
                 if ( row.NullOrEmpty() ) {
                     var ns = Nodes().Where(n => n.Yf > y).ToList();
@@ -261,12 +264,10 @@ namespace ResearchPal
                 else
                     ++y;
             }
-
             Profiler.End();
         }
 
         static void HorizontalPositions(List<ResearchNode> nodes) {
-            Log.Debug("Assigning horizontal positions.");
             Profiler.Start();
 
             _shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
@@ -336,12 +337,9 @@ namespace ResearchPal
         }
 
         private static void NormalizeEdges(List<Edge<Node, Node>> edges, List<Node> nodes) {
-            Log.Debug( "Normalizing edges." );
             Profiler.Start();
             foreach (var edge in new List<Edge<Node, Node>>(edges.Where(e => e.Span > 1)))
             {
-                Log.Trace( "\tCreating dummy chain for {0}", edge );
-
                 // remove and decouple long edge
                 edges.Remove( edge );
                 edge.In.OutEdges.Remove( edge );
@@ -361,7 +359,6 @@ namespace ResearchPal
                     nodes.Add( dummy );
                     edges.Add( dummyEdge );
                     cur = dummy;
-                    Log.Trace( "\t\tCreated dummy {0}", dummy );
                 }
 
                 // hook up final dummy to out node
@@ -375,7 +372,6 @@ namespace ResearchPal
         }
         private static List<Edge<Node, Node>> CreateEdges(List<ResearchNode> nodes)
         {
-            Log.Debug( "Creating edges." );
             Profiler.Start();
             // create links between nodes
             var edges = new List<Edge<Node, Node>>();
@@ -393,7 +389,6 @@ namespace ResearchPal
                     edges.Add( edge );
                     node.InEdges.Add( edge );
                     prerequisiteNode.OutEdges.Add( edge );
-                    Log.Trace( "\tCreated edge {0}", edge );
                 }
             }
 
@@ -404,7 +399,6 @@ namespace ResearchPal
         private static void CheckPrerequisites(List<ResearchNode> nodes)
         {
             // check prerequisites
-            Log.Debug( "Checking prerequisites." );
             Profiler.Start();
 
             var nodesQueue = new Queue<ResearchNode>(nodes);
@@ -458,27 +452,32 @@ namespace ResearchPal
 
         private static void InitializeNodesStructures() {
             var nodes = PopulateNodes();
+            Log.Debug("{0} valid nodes found in def database", nodes.Count());
             var allNodes = nodes.OfType<Node>().ToList();
             CheckPrerequisites(nodes);
             var edges = CreateEdges(nodes);
+            Log.Debug("{0} edges created", edges.Count());
 
             HorizontalPositions(nodes);
             NormalizeEdges(edges, allNodes);
+            Log.Debug("{0} nodes after adding dummies", allNodes.Count());
 
             _nodes = allNodes;
             _researchNodes = nodes;
             _edges = edges;
         }
 
+        private static bool prerequisitesFixed = false;
+
         private static List<ResearchNode> PopulateNodes()
         {
-            Log.Debug( "Populating nodes." );
             Profiler.Start();
 
             var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
 
-            if (Settings.dontIgnoreHiddenPrerequisites) {
+            if (Settings.dontIgnoreHiddenPrerequisites && !prerequisitesFixed) {
                 projects.ForEach(FixPrerequisites);
+                prerequisitesFixed = true;
             }
 
             // find hidden nodes (nodes that have themselves as a prerequisite)
@@ -493,7 +492,6 @@ namespace ResearchPal
                 .Except( hidden )
                 .Except( locked )
                 .Select(def => new ResearchNode( def )));
-            Log.Debug( "\t{0} nodes", nodes.Count );
             Profiler.End();
             return nodes;
         }

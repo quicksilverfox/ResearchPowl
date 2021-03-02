@@ -31,9 +31,11 @@ namespace ResearchPal
                 Verse.Log.Error( _msg );
         }
 
-        [Conditional( "DEBUG" )]
         public static void Debug( string msg, params object[] args )
         {
+            if (! Settings.verboseDebug) {
+                return;
+            }
             Verse.Log.Message( Format( msg, args ) );
         }
 

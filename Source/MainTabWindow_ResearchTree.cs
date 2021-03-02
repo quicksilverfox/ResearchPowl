@@ -98,19 +98,22 @@ namespace ResearchPal
             }
         }
 
-        public Rect TreeRect
-        {
-            get
-            {
-                if ( _treeRect == default )
-                {
-                    var width  = Tree.Size.x * ( NodeSize.x + NodeMargins.x );
-                    var height = Tree.Size.z * ( NodeSize.y + NodeMargins.y );
-                    _treeRect = new Rect( 0f, 0f, width, height );
-                }
+        IntVec2 currentTreeSize = new IntVec2(0, 0);
 
+        public Rect TreeRect {
+            get {
+                if (currentTreeSize != Tree.Size) {
+                    ResetTreeRect();
+                    currentTreeSize = Tree.Size;
+                }
                 return _treeRect;
             }
+        }
+
+        private void ResetTreeRect() {
+            var width  = Tree.Size.x * ( NodeSize.x + NodeMargins.x );
+            var height = Tree.Size.z * ( NodeSize.y + NodeMargins.y );
+            _treeRect = new Rect( 0f, 0f, width, height );
         }
 
         public Rect VisibleRect =>
@@ -141,8 +144,6 @@ namespace ResearchPal
 
         public override void PreClose() {
             base.PreClose();
-            Log.Debug( "CloseOnClickedOutside: {0}", closeOnClickedOutside );
-            Log.Debug( StackTraceUtility.ExtractStackTrace() );
         }
 
         public override void PreOpen() {

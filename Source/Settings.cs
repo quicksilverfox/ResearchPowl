@@ -38,6 +38,8 @@ namespace ResearchPal
         public static float zoomingSpeedMultiplier = 1f;
         public static float draggingDisplayDelay = 0.25f;
 
+        public static bool verboseDebug = false;
+
         #endregion tuning parameters
 
         public static void DoSettingsWindowContents(Rect rect)
@@ -120,6 +122,13 @@ namespace ResearchPal
                     + string.Format(": {0:0.00}s", draggingDisplayDelay), -1,
                 "ResearchPal.DraggingDisplayDelayTip".Translate());
             draggingDisplayDelay = list.Slider(draggingDisplayDelay, 0, 1);
+
+            list.Gap();
+
+            list.CheckboxLabeled(
+                "ResearchPal.VerboseLogging".Translate(),
+                ref verboseDebug,
+                "ResearchPal.VerboseLoggingTip".Translate());
             list.End();
         }
 
@@ -140,7 +149,8 @@ namespace ResearchPal
             Scribe_Values.Look(ref dontIgnoreHiddenPrerequisites, "dontIgnoreHiddenPrerequisites", true);
             Scribe_Values.Look(ref scrollingSpeedMultiplier, "ScrollingSpeedMultiplier", 1);
             Scribe_Values.Look(ref zoomingSpeedMultiplier, "zoomingSpeedMultiplier", 1);
-            Scribe_Values.Look(ref draggingDisplayDelay, "zoomingSpeedMultiplier", 0.25f);
+            Scribe_Values.Look(ref draggingDisplayDelay, "draggingDisplayDelay", 0.25f);
+            Scribe_Values.Look(ref verboseDebug, "verboseLogging", false);
         }
     }
 }

@@ -178,7 +178,6 @@ namespace ResearchPal
                 if ( Math.Abs( _pos.x - value ) < Epsilon )
                     return;
 
-                Log.Trace( "\t" + this + " X: " + _pos.x + " -> " + value );
                 _pos.x = value;
 
                 // update caches
@@ -198,7 +197,6 @@ namespace ResearchPal
                 if ( Math.Abs( _pos.y - value ) < Epsilon )
                     return;
 
-                Log.Trace( "\t" + this + " Y: " + _pos.y + " -> " + value );
                 _pos.y = value;
 
                 // update caches
@@ -261,24 +259,6 @@ namespace ResearchPal
             X = depth;
             return depth;
         }
-
-        /// <summary>
-        ///     Prints debug information.
-        /// </summary>
-        public virtual void Debug()
-        {
-            var text = new StringBuilder();
-            text.AppendLine( Label + " (" + X + ", " + Y + "):" );
-            text.AppendLine( "- Parents" );
-            foreach ( var parent in InNodes ) text.AppendLine( "-- " + parent.Label );
-
-            text.AppendLine( "- Children" );
-            foreach ( var child in OutNodes ) text.AppendLine( "-- " + child.Label );
-
-            text.AppendLine( "" );
-            Log.Message( text.ToString() );
-        }
-
 
         public override string ToString()
         {

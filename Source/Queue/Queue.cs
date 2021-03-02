@@ -258,7 +258,6 @@ namespace ResearchPal
         public static void TryStartNext( ResearchProjectDef finished )
         {
             var current = CurrentS();
-            Log.Debug( "TryStartNext: current; {0}, finished; {1}", current?.Research, finished );
 
             var finishedNode = _instance._queue.Find(n => n.Research == finished);
             if (finishedNode == null) {
@@ -271,7 +270,6 @@ namespace ResearchPal
             var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
             DoCompletionLetter(current.Research, next);
-            Log.Debug( "TryStartNext: next; {0}", next );
         }
 
         private static void DoCompletionLetter( ResearchProjectDef current, ResearchProjectDef next )

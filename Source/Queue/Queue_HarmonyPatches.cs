@@ -18,7 +18,6 @@ namespace ResearchPal
             private static void Prefix( ResearchManager __instance, ref ResearchProjectDef __state )
             {
                 __state = __instance.currentProj;
-                Log.Debug( "{0} progress: {1}", __state.LabelCap, __state.ProgressPercent );
             }
 
             // private static void Postfix( ResearchProjectDef __state )
@@ -43,6 +42,7 @@ namespace ResearchPal
 
             private static void Postfix(ResearchProjectDef proj) {
                 if (proj.IsFinished) {
+                    Log.Debug("Patch of FinishProject: {0} finished", proj.label);
                     Queue.TryStartNext(proj);
                 }
             }
