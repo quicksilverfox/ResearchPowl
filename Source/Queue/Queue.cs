@@ -150,8 +150,12 @@ namespace ResearchPal
             }
         }
 
+        private ResearchProjectDef CurrentResearch() {
+            return _queue.FirstOrDefault()?.Research;
+        }
+
         private void UpdateCurrentResearch() {
-            Find.ResearchManager.currentProj = _queue.FirstOrDefault()?.Research;
+            Find.ResearchManager.currentProj = CurrentResearch();
         }
 
         static private void UpdateCurrentResearchS() {
@@ -171,10 +175,8 @@ namespace ResearchPal
             }
             finished.ForEach(n => _queue.Remove(n));
             unavailable.ForEach(n => Remove(n));
-            //
-            if (CountS() == 0 && Find.ResearchManager.currentProj != null)
-                ReplaceS(Find.ResearchManager.currentProj.ResearchNode());
-            //
+            if (Find.ResearchManager.currentProj != CurrentResearch())
+                Replace(Find.ResearchManager.currentProj.ResearchNode());
             UpdateCurrentResearch();
         }
 
