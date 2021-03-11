@@ -91,6 +91,7 @@
     <Compile Include="Extensions\ResearchProjectDef_Extensions.cs" />
     <Compile Include="Graph\Tree.cs" />
     <Compile Include="Queue\Queue_HarmonyPatches.cs" />
+    <Compile Include="Queue\Undo.cs" />
     <Compile Include="ResearchTree.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="ResourceBank.cs" />

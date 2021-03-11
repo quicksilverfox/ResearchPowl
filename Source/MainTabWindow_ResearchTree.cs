@@ -396,6 +396,7 @@ namespace ResearchPal
         }
 
         public void StartDragging(ResearchNode node, Painter painter) {
+            Log.Debug("Start dragging node: {0}", node.Research.label);
             draggedNode = node;
             draggingSource = painter;
             draggedPosition = UI.GUIToScreenPoint(node.Rect.position);
@@ -531,6 +532,9 @@ namespace ResearchPal
                 .Select( n => new {node = n, match = n.Matches( _curQuery )} )
                 .Where( result => result.match > 0 )
                 .OrderBy( result => result.match).Select(p => p.node).ToList();
+
+            Log.Debug("Search activate: {0}", _curQuery);
+            Log.Debug("Search result: {0}", Queue.DebugQueueSerialize(_searchResults));
 
             foreach (var result in _searchResults) {
                 result.isMatched = true;
