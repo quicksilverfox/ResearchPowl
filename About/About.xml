@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ModMetaData>
-  <packageId>VinaLx.ResearchPalForked</packageId>
-  <name>ResearchPal - Forked</name>
+  <packageId>VinaLx.ResearchPalForkedDev</packageId>
+  <name>ResearchPal - Forked (Dev)</name>
   <author>VinaLx</author>
   <url>https://github.com/VinaLx/RimWorld-ResearchPal</url>
   <supportedVersions>
@@ -24,11 +24,12 @@
  - Search functionality to quickly find research projects.
 
 # Credits:
-  Graph layout algorithm by VinaLx
-  Everything else (UI, compatibilities) by Fluffy, NotFood and Skyarkangel
+  Original mod by Fluffy, Not Food and Skyarkangel
+  Graph layout algorithm, quality of life update and various fixes by VinaLx.
   Templarr, Russian translation 
   Suh, Junmin: Korean translation
   rw-chaos, German translation
   53N4, Spanish translation
+  Qux, French translation
   </description>
 </ModMetaData>

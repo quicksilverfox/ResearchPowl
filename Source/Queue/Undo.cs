@@ -26,6 +26,11 @@ namespace ResearchPal {
             return undoMemory[++currentStateIndex];
         }
 
+        public void Clear() {
+            undoMemory.Clear();
+            currentStateIndex = -1;
+        }
+
         public bool NewState(S s) {
             if (currentStateIndex < undoMemory.Count() - 1) {
                 undoMemory.RemoveRange(

@@ -429,7 +429,7 @@ namespace ResearchPal
                     // warn and fix badly configured techlevels
                     if ( node.Research.prerequisites.Any( r => r.techLevel > node.Research.techLevel ) )
                     {
-                        Log.Warning( "\t{0} has a lower techlevel than (one of) it's prerequisites",
+                        Log.Warning( "\t{0} has a lower techlevel than (one of) its prerequisites",
                                      node.Research.label );
                         node.Research.techLevel = node.Research.prerequisites.Max( r => r.techLevel );
 

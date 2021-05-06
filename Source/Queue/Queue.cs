@@ -184,8 +184,10 @@ namespace ResearchPal
             }
             finished.ForEach(n => _queue.Remove(n));
             unavailable.ForEach(n => Remove(n));
-            if (Find.ResearchManager.currentProj != CurrentResearch())
+            var cur = Find.ResearchManager.currentProj;
+            if (cur != null && cur != CurrentResearch()) {
                 Replace(Find.ResearchManager.currentProj.ResearchNode());
+            }
             UpdateCurrentResearch();
         }
 
@@ -387,6 +389,7 @@ namespace ResearchPal
                         UnsafeAppend(node);
                     }
                 }
+                undoState.Clear();
                 NewUndoState();
                 UpdateCurrentResearch();
             }
