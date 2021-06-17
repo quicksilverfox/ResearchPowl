@@ -48,11 +48,8 @@ namespace ResearchPal
 
         public static void DoSettingsWindowContents(Rect windowRect)
         {
-            Rect scrollRegion = new Rect(0, 0, windowRect.width, 800);
-            Widgets.BeginScrollView(windowRect, ref currentScrollPosition, scrollRegion);
-
-            Rect rectLeftColumn = scrollRegion.LeftPart(0.46f).Rounded();
-            Rect rectRightColumn = scrollRegion.RightPart(0.46f).Rounded();
+            Rect rectLeftColumn = windowRect.LeftPart(0.46f).Rounded();
+            Rect rectRightColumn = windowRect.RightPart(0.46f).Rounded();
 
             Listing_Standard listLeft = new Listing_Standard(GameFont.Small);
             listLeft.ColumnWidth = rectLeftColumn.width;
@@ -154,8 +151,6 @@ namespace ResearchPal
             draggingDisplayDelay = listRight.Slider(draggingDisplayDelay, 0, 1);
 
             listRight.End();
-
-            Widgets.EndScrollView();
         }
 
         public override void ExposeData()
