@@ -6,7 +6,7 @@ using static ResearchPal.ResourceBank.String;
 
 namespace ResearchPal
 {
-  public class Settings : ModSettings
+    public class Settings : ModSettings
     {
         #region tuning parameters
 
@@ -40,15 +40,25 @@ namespace ResearchPal
 
         public static bool verboseDebug = false;
 
+        public static bool showVanillaResearchFinishedMessage = false;
+
         #endregion tuning parameters
 
-        public static void DoSettingsWindowContents(Rect rect)
-        {
-            Listing_Standard list = new Listing_Standard(GameFont.Small);
-            list.ColumnWidth = rect.width / 2;
-            list.Begin(rect);
+        private static Vector2 currentScrollPosition = new Vector2(0, 0);
 
-            if (list.ButtonText(ResetTreeLayout)) {
+        public static void DoSettingsWindowContents(Rect windowRect)
+        {
+            Rect scrollRegion = new Rect(0, 0, windowRect.width, 800);
+            Widgets.BeginScrollView(windowRect, ref currentScrollPosition, scrollRegion);
+
+            Rect rectLeftColumn = scrollRegion.LeftPart(0.46f).Rounded();
+            Rect rectRightColumn = scrollRegion.RightPart(0.46f).Rounded();
+
+            Listing_Standard listLeft = new Listing_Standard(GameFont.Small);
+            listLeft.ColumnWidth = rectLeftColumn.width;
+            listLeft.Begin(rectLeftColumn);
+
+            if (listLeft.ButtonText(ResetTreeLayout)) {
                 SoundDefOf.Click.PlayOneShotOnCamera();
                 if (Tree.ResetLayout()) {
                     Messages.Message(
@@ -56,80 +66,96 @@ namespace ResearchPal
                 }
             }
 
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                DontIgnoreHiddenPrerequisites,
                ref dontIgnoreHiddenPrerequisites,
                DontIgnoreHiddenPrerequisitesTip);
 
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 ShouldSeparateByTechLevels,
                 ref shouldSeparateByTechLevels,
                 ShouldSeparateByTechLevelsTip);
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 AlignCloserToAncestors,
                 ref alignToAncestors,
                 AlignCloserToAncestorsTip);
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 PlaceModTechSeparately,
                 ref placeModTechSeparately,
                 PlaceModTechSeparatelyTip);
             if (placeModTechSeparately) {
-                list.Label(MinimumSeparateModTech, -1, MinimumSeparateModTechTip);
+                listLeft.Label(MinimumSeparateModTech, -1, MinimumSeparateModTechTip);
                 string buffer = largeModTechCount.ToString();
-                list.IntEntry(ref largeModTechCount, ref buffer);
+                listLeft.IntEntry(ref largeModTechCount, ref buffer);
             }
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 SearchByDescription,
                 ref searchByDescription,
                 SearchByDescriptionTip);
-            list.Gap();
+            listLeft.Gap();
 
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 ShouldPauseOnOpen, ref shouldPause, ShouldPauseOnOpenTip);
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 ShouldResetOnOpen, ref shouldReset, ShouldResetOnOpenTip);
             if (!asyncLoadingOnStartup || delayLayoutGeneration) {
-                list.CheckboxLabeled(
+                listLeft.CheckboxLabeled(
                     DelayLayoutGeneration,
                     ref delayLayoutGeneration,
                     DelayLayoutGenerationTip);
             }
             if (!delayLayoutGeneration) {
-                list.CheckboxLabeled(
+                listLeft.CheckboxLabeled(
                     AsyncLoadingOnStartup,
                     ref asyncLoadingOnStartup,
                     AsyncLoadingOnStartupTip);
             }
-            list.Gap();
+            listLeft.Gap();
 
-            list.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);
-            list.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
-            list.CheckboxLabeled(ShowIndexOnQueue, ref showIndexOnQueue, ShowIndexOnQueueTip);
+            listLeft.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);
+            listLeft.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
+            listLeft.CheckboxLabeled(ShowIndexOnQueue, ref showIndexOnQueue, ShowIndexOnQueueTip);
 
-            list.Gap();
-            list.Label(
-                "ResearchPal.ScrollSpeedMultiplier".Translate()
-                    + string.Format(" {0:0.00}", scrollingSpeedMultiplier), -1,
-                "ResearchPal.ScrollSpeedMultiplierTip".Translate());
-            scrollingSpeedMultiplier = list.Slider(scrollingSpeedMultiplier, 0.1f, 5);
-            list.Label(
-                "ResearchPal.ZoomingSpeedMultiplier".Translate()
-                    + string.Format(" {0:0.00}", zoomingSpeedMultiplier), -1,
-                "ResearchPal.ZoomingSpeedMultiplierTip".Translate());
-            zoomingSpeedMultiplier = list.Slider(zoomingSpeedMultiplier, 0.1f, 5);
-            list.Label(
-                "ResearchPal.DraggingDisplayDelay".Translate()
-                    + string.Format(": {0:0.00}s", draggingDisplayDelay), -1,
-                "ResearchPal.DraggingDisplayDelayTip".Translate());
-            draggingDisplayDelay = list.Slider(draggingDisplayDelay, 0, 1);
+            listLeft.Gap();
 
-            list.Gap();
-
-            list.CheckboxLabeled(
+            listLeft.CheckboxLabeled(
                 "ResearchPal.VerboseLogging".Translate(),
                 ref verboseDebug,
                 "ResearchPal.VerboseLoggingTip".Translate());
-            list.End();
+
+            listLeft.Gap();
+
+            listLeft.CheckboxLabeled(
+                ShowVanillaResearchFinishedMessage,
+                ref showVanillaResearchFinishedMessage,
+                ShowVanillaResearchFinishedMessageTip);
+
+            listLeft.End();
+
+
+            Listing_Standard listRight = new Listing_Standard(GameFont.Small);
+            listRight.ColumnWidth = rectRightColumn.width;
+            listRight.Begin(rectRightColumn);
+
+            listRight.Label(
+                "ResearchPal.ScrollSpeedMultiplier".Translate()
+                    + string.Format(" {0:0.00}", scrollingSpeedMultiplier), -1,
+                "ResearchPal.ScrollSpeedMultiplierTip".Translate());
+            scrollingSpeedMultiplier = listRight.Slider(scrollingSpeedMultiplier, 0.1f, 5);
+            listRight.Label(
+                "ResearchPal.ZoomingSpeedMultiplier".Translate()
+                    + string.Format(" {0:0.00}", zoomingSpeedMultiplier), -1,
+                "ResearchPal.ZoomingSpeedMultiplierTip".Translate());
+            zoomingSpeedMultiplier = listRight.Slider(zoomingSpeedMultiplier, 0.1f, 5);
+            listRight.Label(
+                "ResearchPal.DraggingDisplayDelay".Translate()
+                    + string.Format(": {0:0.00}s", draggingDisplayDelay), -1,
+                "ResearchPal.DraggingDisplayDelayTip".Translate());
+            draggingDisplayDelay = listRight.Slider(draggingDisplayDelay, 0, 1);
+
+            listRight.End();
+
+            Widgets.EndScrollView();
         }
 
         public override void ExposeData()
@@ -151,6 +177,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref zoomingSpeedMultiplier, "zoomingSpeedMultiplier", 1);
             Scribe_Values.Look(ref draggingDisplayDelay, "draggingDisplayDelay", 0.25f);
             Scribe_Values.Look(ref verboseDebug, "verboseLogging", false);
+            Scribe_Values.Look(ref showVanillaResearchFinishedMessage, "ShowVanillaResearchFinishedMessage", false);
         }
     }
 }

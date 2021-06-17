@@ -73,5 +73,8 @@ You should always turn this option on for a more balanced gameplay. Being able t
 	<ResearchPal.VerboseLogging>Verbose Logging (WIP)</ResearchPal.VerboseLogging>
 	<ResearchPal.VerboseLoggingTip>Produce verbose debug logs in dev mode messages (WIP).</ResearchPal.VerboseLoggingTip>
 
+	<ResearchPal.ShowVanillaResearchFinishedMessage>Show vanilla "research finished" message</ResearchPal.ShowVanillaResearchFinishedMessage>
+	<ResearchPal.ShowVanillaResearchFinishedMessageTip>ResearchPal normally sends its own letter when research is finished, but this prevents any message at all from appearing when using other research mods like Semi Random Research.</ResearchPal.ShowVanillaResearchFinishedMessageTip>
+
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
 </LanguageData>
