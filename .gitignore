@@ -58,3 +58,5 @@ Source/BetterAnimalsTab/obj/Debug/BetterAnimalsTab.pdb
 *.cache
 *.pxd
 *.pdb
+/Assemblies/0Harmony.*
+/Assemblies/UnityEngine.*
