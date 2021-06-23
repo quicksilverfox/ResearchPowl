@@ -37,7 +37,7 @@ namespace ResearchPal
             // suppress vanilla completion dialog, we never want to show it.
             private static void Prefix( ref bool doCompletionDialog )
             {
-                doCompletionDialog = doCompletionDialog && Settings.showVanillaResearchFinishedMessage;
+                doCompletionDialog = doCompletionDialog && Settings.useVanillaResearchFinishedMessage;
             }
 
             private static void Postfix(ResearchProjectDef proj) {

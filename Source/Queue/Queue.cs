@@ -346,7 +346,10 @@ namespace ResearchPal
             }
             var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
-            DoCompletionLetter(current.Research, next);
+            if (! Settings.useVanillaResearchFinishedMessage) {
+                Log.Debug("\tSend completion letter for {0}, next is {1}", current.Research.label, next.label);
+                DoCompletionLetter(current.Research, next);
+            }
         }
 
         private static void DoCompletionLetter( ResearchProjectDef current, ResearchProjectDef next )

@@ -40,7 +40,7 @@ namespace ResearchPal
 
         public static bool verboseDebug = false;
 
-        public static bool showVanillaResearchFinishedMessage = false;
+        public static bool useVanillaResearchFinishedMessage = false;
 
         #endregion tuning parameters
 
@@ -123,9 +123,9 @@ namespace ResearchPal
             listLeft.Gap();
 
             listLeft.CheckboxLabeled(
-                ShowVanillaResearchFinishedMessage,
-                ref showVanillaResearchFinishedMessage,
-                ShowVanillaResearchFinishedMessageTip);
+                ResourceBank.String.useVanillaResearchFinishedMessage,
+                ref useVanillaResearchFinishedMessage,
+                useVanillaResearchFinishedMessageTip);
 
             listLeft.End();
 
@@ -172,7 +172,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref zoomingSpeedMultiplier, "zoomingSpeedMultiplier", 1);
             Scribe_Values.Look(ref draggingDisplayDelay, "draggingDisplayDelay", 0.25f);
             Scribe_Values.Look(ref verboseDebug, "verboseLogging", false);
-            Scribe_Values.Look(ref showVanillaResearchFinishedMessage, "ShowVanillaResearchFinishedMessage", false);
+            Scribe_Values.Look(ref useVanillaResearchFinishedMessage, "useVanillaResearchFinishedMessage", false);
         }
     }
 }

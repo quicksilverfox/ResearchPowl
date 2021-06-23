@@ -413,8 +413,8 @@ namespace ResearchPal
                 var redundant = ancestors.Intersect( node.Research.prerequisites );
                 if ( redundant.Any() )
                 {
-                    // Log.Warning( "\tredundant prerequisites for {0}: {1}", node.Research.LabelCap,
-                                //  string.Join( ", ", redundant.Select( r => r.LabelCap ).ToArray() ) );
+                    Log.Debug( "\tRedundant prerequisites for {0}: {1}", node.Research.LabelCap,
+                                 string.Join( ", ", redundant.Select( r => r.LabelCap ).ToArray() ) );
                     foreach ( var redundantPrerequisite in redundant )
                         node.Research.prerequisites.Remove( redundantPrerequisite );
                 }
@@ -429,7 +429,7 @@ namespace ResearchPal
                     // warn and fix badly configured techlevels
                     if ( node.Research.prerequisites.Any( r => r.techLevel > node.Research.techLevel ) )
                     {
-                        Log.Warning( "\t{0} has a lower techlevel than (one of) its prerequisites",
+                        Log.Debug( "\t{0} has a lower techlevel than (one of) its prerequisites",
                                      node.Research.label );
                         node.Research.techLevel = node.Research.prerequisites.Max( r => r.techLevel );
 
