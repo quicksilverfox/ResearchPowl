@@ -540,7 +540,7 @@ namespace ResearchPal
                 result.isMatched = true;
                 options.Add(new FloatMenuOption(
                     result.Label, () => CenterOn(result),
-                    MenuOptionPriority.Default, () => CenterOn(result)));
+                    MenuOptionPriority.Default, rect => CenterOn(result)));
             }
 
             if ( !options.Any() )

@@ -399,7 +399,7 @@ namespace ResearchPal
                     }
                 } else if (Mouse.IsOver(iconRect)) {
                     Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
-                    link.OpenDialog();
+                    link.ActivateHyperlink();
                     Event.current.Use();
                     break;
                 }
@@ -512,7 +512,7 @@ namespace ResearchPal
                 Texture2D icon = def.IconTexture();
                 Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
              
-                options.Add(new FloatMenuOption(def.label, () => hyperlink.OpenDialog(), icon, def.IconColor()));
+                options.Add(new FloatMenuOption(def.label, () => hyperlink.ActivateHyperlink(), icon, def.IconColor()));
             }
             return new FloatMenu(options);
         }

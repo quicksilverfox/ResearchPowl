@@ -243,7 +243,9 @@ namespace ResearchPal
                     Log.Debug("Research {0} does not belong to any mod?", n.Label);
                 }
                 var name = n.Research.modContentPack?.Name ?? "__Vanilla";
-                if (name == "Royalty" || name == "Core") {
+                if (  name == ModContentPack.IdeologyModPackageId
+                   || name == ModContentPack.CoreModPackageId
+                   || name == ModContentPack.RoyaltyModPackageId) {
                     return "__Vanilla";
                 } else if (
                        (new Regex("^Vanilla (.*)Expanded( - .*)?$")).IsMatch(name)
