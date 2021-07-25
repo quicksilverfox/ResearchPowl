@@ -17,6 +17,9 @@
       <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
     </li>
   </modDependencies>
+  <loadAfter>
+    <li>mlie.RemoveIndustrialStuff</li>
+  </loadAfter>
   <description>Forked smooth painless research
 # Features
  - Dynamically generated to maximize readability. 

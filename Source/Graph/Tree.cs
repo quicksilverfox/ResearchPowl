@@ -535,10 +535,12 @@ namespace ResearchPal
 
         public static void HandleFixedHighlight(ResearchNode node) {
             var i = fixedHighlightSets.FirstIndexOf(s => s.Causer() == node);
-            if (i < fixedHighlightSets.Count()) {
+            Log.Debug("Fixed highlight index: {0}", i);
+            if (i >= 0 && i < fixedHighlightSets.Count()) {
                 fixedHighlightSets[i].Stop();
                 fixedHighlightSets.RemoveAt(i);
             } else {
+                Log.Debug("Add fixed highlight caused by {0}", node.Research.label);
                 var hl = RelatedNodeHighlightSet.FixHighlight(node);
                 hl.Start();
                 if (!Event.current.shift) {
