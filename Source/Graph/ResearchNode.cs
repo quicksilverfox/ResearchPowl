@@ -41,7 +41,7 @@ namespace ResearchPal
 
         private bool _available = false;
 
-        private List<Pair<Def, string>> _unlocks;
+        private List<Def> _unlocks;
 
         private Painter _currentPainter;
 
@@ -49,9 +49,10 @@ namespace ResearchPal
             return p == _currentPainter;
         }
 
-        private List<Pair<Def, string>> Unlocks() {
+        private List<Def> Unlocks() {
             if (_unlocks == null) {
-                _unlocks = Research.GetUnlockDefsAndDescs();
+                // _unlocks = Research.GetUnlockDefsAndDescs();
+                _unlocks = Research.GetUnlockDefs();
             }
             return _unlocks;
         }
@@ -216,8 +217,8 @@ namespace ResearchPal
 
             if ( Research.LabelCap.RawText.ToLower( culture ).Contains( query ) )
                 return 1;
-            if (Research.GetUnlockDefsAndDescs()
-                         .Any( unlock => unlock.First.LabelCap.RawText.ToLower( culture ).Contains( query )))
+            if (Unlocks().Any(
+                unlock => unlock.LabelCap.RawText.ToLower( culture ).Contains( query )))
                 return 2;
             if ((Research.modContentPack?.Name.ToLower(culture) ?? "").Contains(query) ) {
                 return 3;
@@ -348,11 +349,85 @@ namespace ResearchPal
                             MissingFacilities().Select( td => td.LabelCap )
                                 .ToArray())));
             }
+            if (!PassCustomUnlockRequirements(Research)) {
+                var prompts = CustomUnlockRequirementPrompts(Research);
+                foreach (var prompt in prompts) {
+                    TooltipHandler.TipRegion(Rect, prompt);
+                }
+            }
             TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
 
             if (Settings.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished) {
                 TooltipHandler.TipRegion(Rect, string.Format("Progress: {0}", ProgressString()));
             }
+        }
+
+        private IEnumerable<ResearchProjectDef> OtherLockedPrerequisites(
+            IEnumerable<ResearchProjectDef> ps) {
+            if (ps == null) {
+                return new List<ResearchProjectDef>();
+            }
+            return ps.Where(p => !p.IsFinished && p != Research);
+        }
+        
+        private string OtherPrereqTooltip(List<ResearchProjectDef> ps) {
+            if (ps.NullOrEmpty()) {
+                return "";
+            }
+            return ResourceBank.String.OtherPrerequisites(
+                String.Join(", ", ps.Distinct().Select (p => p.LabelCap)));
+        }
+
+        private string UnlockItemTooltip(Def def) {
+            string unlockTooltip = "";
+            string otherPrereqTooltip = "";
+            if (def is TerrainDef) {
+                unlockTooltip += ResourceBank.String.AllowsBuildingX(def.LabelCap);
+                otherPrereqTooltip +=
+                    OtherPrereqTooltip(OtherLockedPrerequisites(
+                        (def as TerrainDef).researchPrerequisites).ToList());
+            } else if (def is RecipeDef) {
+                unlockTooltip += ResourceBank.String.AllowsCraftingX(def.LabelCap);
+                otherPrereqTooltip +=
+                    OtherPrereqTooltip(OtherLockedPrerequisites(
+                        (def as RecipeDef).researchPrerequisites).ToList());
+            } else if (def is ThingDef) {
+                ThingDef thing = def as ThingDef;
+                List<ResearchProjectDef> plantPrerequisites =
+                    thing.plant?.sowResearchPrerequisites ?? new List<ResearchProjectDef>();
+                if (plantPrerequisites.Contains(Research)) {
+                    unlockTooltip += ResourceBank.String.AllowsPlantingX(def.LabelCap);
+                    otherPrereqTooltip +=
+                        OtherPrereqTooltip(
+                            OtherLockedPrerequisites(plantPrerequisites).ToList());
+                } else {
+                    unlockTooltip += ResourceBank.String.AllowsBuildingX(def.LabelCap);
+                    OtherPrereqTooltip(OtherLockedPrerequisites(
+                        (def as BuildableDef).researchPrerequisites).ToList());
+                }
+            } else {
+                unlockTooltip += ResourceBank.String.AllowGeneralX(def.LabelCap);
+            }
+            string tooltip = otherPrereqTooltip == ""
+                ? unlockTooltip
+                : unlockTooltip + "\n\n" + otherPrereqTooltip;
+            return tooltip;
+        }
+
+        private FloatMenu MakeInfoMenuFromDefs(IEnumerable<Def> defs) {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+            foreach (var def in defs) {
+                Texture2D icon = def.IconTexture();
+                Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
+             
+                options.Add(new FloatMenuOption(
+                    def.label, () => hyperlink.ActivateHyperlink(), icon, def.IconColor(),
+                    MenuOptionPriority.Default,
+                    rect => TooltipHandler.TipRegion(
+                        rect, () => UnlockItemTooltip(def),
+                        def.GetHashCode() + Research.GetHashCode())));
+            }
+            return new FloatMenu(options);
         }
 
         private void IconActions(bool draw) {
@@ -378,24 +453,26 @@ namespace ResearchPal
                         if (!PainterIs(Painter.Drag)) {
                             var tip = string.Join(
                                 "\n",
-                                unlocks.GetRange(i, unlocks.Count - i).Select(p => p.Second).ToArray());
+                                unlocks.GetRange(i, unlocks.Count - i).Select(p => p.LabelCap).ToArray());
                             TooltipHandler.TipRegion( iconRect, tip );
                         }
                     } else if
                         (!draw && Mouse.IsOver(iconRect)
                         && Find.WindowStack.FloatMenu == null) {
-                        var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i).Select(p => p.First));
+                        var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i));
                         Find.WindowStack.Add(floatMenu);
                         Event.current.Use();
                     }
                     break;
                 }
-                var def = unlocks[i].First;
+                var def = unlocks[i];
 
                 if (draw) {
                     def.DrawColouredIcon( iconRect );
                     if (! PainterIs(Painter.Drag)) {
-                        TooltipHandler.TipRegion( iconRect, unlocks[i].Second );
+                        TooltipHandler.TipRegion(
+                            iconRect, () => UnlockItemTooltip(def),
+                            def.GetHashCode() + Research.GetHashCode());
                     }
                 } else if (Mouse.IsOver(iconRect)) {
                     Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
@@ -504,17 +581,6 @@ namespace ResearchPal
 
         public static bool RightClick(Rect rect) {
             return Input.GetMouseButton(1) && Mouse.IsOver(rect);
-        }
-
-        private static FloatMenu MakeInfoMenuFromDefs(IEnumerable<Def> defs) {
-            List<FloatMenuOption> options = new List<FloatMenuOption>();
-            foreach (var def in defs) {
-                Texture2D icon = def.IconTexture();
-                Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
-             
-                options.Add(new FloatMenuOption(def.label, () => hyperlink.ActivateHyperlink(), icon, def.IconColor()));
-            }
-            return new FloatMenu(options);
         }
 
         public bool MouseOver() {
@@ -661,8 +727,10 @@ namespace ResearchPal
 
         public List<ResearchNode> MissingPrerequisites() {
             List<ResearchNode> result = new List<ResearchNode>();
-            foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished)) {
-                n.MissingPrerequitesRec(result);
+            if (!Research.PrerequisitesCompleted) {
+                foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished)) {
+                    n.MissingPrerequitesRec(result);
+                }
             }
             return result;
         }
@@ -679,8 +747,10 @@ namespace ResearchPal
             if (acc.Contains(this)) {
                 return;
             }
-            foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished)) {
-                n.MissingPrerequitesRec(acc);
+            if (!Research.PrerequisitesCompleted) {
+                foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished)) {
+                    n.MissingPrerequitesRec(acc);
+                }
             }
             acc.Add(this);
         }
@@ -689,9 +759,25 @@ namespace ResearchPal
             return Research.IsFinished;
         }
 
+        // For modders to patch,
+        // Returns true if research project p passes the custom unlock requirements, if any.
+        public static bool PassCustomUnlockRequirements(ResearchProjectDef p) {
+            return true;
+        }
+
+        // For modders to patch
+        // Returns a list containing information users need to understand the custom unlock requirements
+        public static List<string> CustomUnlockRequirementPrompts(ResearchProjectDef p) {
+            return new List<string>();
+        }
+
         public bool GetAvailable() {
             return !Research.IsFinished &&
-                (DebugSettings.godMode || (BuildingPresent() && TechprintAvailable() && MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel)));
+                (DebugSettings.godMode
+                    || (BuildingPresent()
+                    && TechprintAvailable()
+                    && MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel)
+                    && PassCustomUnlockRequirements(Research)));
         }
 
         public bool Available() {

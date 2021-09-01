@@ -10,8 +10,8 @@ namespace ResearchPal
 {
     public static class ResearchProjectDef_Extensions
     {
-        private static readonly Dictionary<Def, List<Pair<Def, string>>> _unlocksCache =
-            new Dictionary<Def, List<Pair<Def, string>>>();
+        private static readonly Dictionary<Def, List<Def>> _unlocksCache =
+            new Dictionary<Def, List<Def>>();
 
         public static List<ResearchProjectDef> Descendants( this ResearchProjectDef research )
         {
@@ -79,18 +79,21 @@ namespace ResearchPal
         {
             // recipe directly locked behind research
             var direct =
-                DefDatabase<RecipeDef>.AllDefsListForReading.Where( rd => rd.researchPrerequisite == research );
+                DefDatabase<RecipeDef>.AllDefs.Where(rd =>
+                    rd.researchPrerequisite == research ||
+                    rd.researchPrerequisites != null && rd.researchPrerequisites.Contains(research));
 
             // recipe building locked behind research
-            var building = DefDatabase<ThingDef>.AllDefsListForReading
-                                                .Where(
-                                                     td => ( td.researchPrerequisites?.Contains( research ) ?? false )
-                                                        && !td.AllRecipes.NullOrEmpty() )
-                                                .SelectMany( td => td.AllRecipes )
-                                                .Where( rd => rd.researchPrerequisite == null );
+            // var building = DefDatabase<ThingDef>.AllDefsListForReading
+            //     .Where(
+            //          td => ( td.researchPrerequisites?.Contains( research ) ?? false )
+            //             && !td.AllRecipes.NullOrEmpty() )
+            //     .SelectMany( td => td.AllRecipes )
+            //     .Where( rd => rd.researchPrerequisite == null );
 
             // return union of these two sets
-            return direct.Concat( building ).Distinct();
+            return direct;
+            // return direct.Concat( building ).Distinct();
         }
 
         public static IEnumerable<TerrainDef> GetTerrainUnlocked( this ResearchProjectDef research )
@@ -105,42 +108,22 @@ namespace ResearchPal
                                         .Where( td => td.researchPrerequisites?.Contains( research ) ?? false );
         }
 
-        public static List<Pair<Def, string>> GetUnlockDefsAndDescs( this ResearchProjectDef research, bool dedupe = true )
+        public static List<Def> GetUnlockDefs(this ResearchProjectDef research)
         {
             if ( _unlocksCache.ContainsKey( research ) )
                 return _unlocksCache[research];
 
-            var unlocks = new List<Pair<Def, string>>();
+            var unlocks = new List<Def>();
 
-            unlocks.AddRange( research.GetThingsUnlocked()
-                                      .Where( d => d.IconTexture() != null )
-                                      .Select( d => new Pair<Def, string>( d, ResourceBank.String.AllowsBuildingX( d.LabelCap ) ) ) );
-                                              
-            unlocks.AddRange( research.GetTerrainUnlocked()
-                                      .Where( d => d.IconTexture() != null )
-                                      .Select( d => new Pair<Def, string>( d, ResourceBank.String.AllowsBuildingX( d.LabelCap ) ) ) );
-                                              
-            unlocks.AddRange( research.GetRecipesUnlocked()
-                                      .Where( d => d.IconTexture() != null )
-                                      .Select( d => new Pair<Def, string>( d, ResourceBank.String.AllowsCraftingX( d.LabelCap ) ) ) );
-                                              
-            unlocks.AddRange( research.GetPlantsUnlocked()
-                                      .Where( d => d.IconTexture() != null )
-                                      .Select( d => new Pair<Def, string>( d, ResourceBank.String.AllowsPlantingX( d.LabelCap ) ) ) );
+            unlocks.AddRange(research.GetThingsUnlocked().Where(d => d.IconTexture() != null));
 
-                                              
+            unlocks.AddRange(research.GetTerrainUnlocked().Where(d => d.IconTexture() != null));
+
+            unlocks.AddRange(research.GetRecipesUnlocked().Where(d => d.IconTexture() != null));
+
+            unlocks.AddRange(research.GetPlantsUnlocked().Where(d => d.IconTexture() != null));
 
             // get unlocks for all descendant research, and remove duplicates.
-            var descendants = research.Descendants();
-            if ( dedupe && descendants.Any() )
-            {
-                var descendantUnlocks = descendants
-                                                .SelectMany( c => c.GetUnlockDefsAndDescs( false ).Select( u => u.First ) )
-                                                .Distinct()
-                                                .ToList();
-                unlocks = unlocks.Where( u => !descendantUnlocks.Contains( u.First ) ).ToList();
-            }
-
             _unlocksCache.Add( research, unlocks );
             return unlocks;
         }

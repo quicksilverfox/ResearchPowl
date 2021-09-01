@@ -347,7 +347,9 @@ namespace ResearchPal
             var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
             if (! Settings.useVanillaResearchFinishedMessage) {
-                Log.Debug("\tSend completion letter for {0}, next is {1}", current.Research.label, next.label);
+                Log.Debug(
+                    "Send completion letter for {0}, next is {1}",
+                    current.Research.label, next?.label ?? "NONE");
                 DoCompletionLetter(current.Research, next);
             }
         }

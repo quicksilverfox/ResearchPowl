@@ -3,10 +3,12 @@
 
 	<ResearchPal>ResearchPal - Forked</ResearchPal>
 
-	<ResearchPal.AllowsBuildingX>Enables construction {0}</ResearchPal.AllowsBuildingX>
-	<ResearchPal.AllowsCraftingX>Enables recipe {0}</ResearchPal.AllowsCraftingX>
-	<ResearchPal.AllowsSowingXinY>Enables planting {0} in {1}</ResearchPal.AllowsSowingXinY>
-	<ResearchPal.AllowsPlantingX>Enables growing {0}</ResearchPal.AllowsPlantingX>
+	<ResearchPal.AllowsBuildingX>Unlock construction {0}</ResearchPal.AllowsBuildingX>
+	<ResearchPal.AllowsCraftingX>Unlock recipe {0}</ResearchPal.AllowsCraftingX>
+	<ResearchPal.AllowsSowingXinY>Unlock planting {0} in {1}</ResearchPal.AllowsSowingXinY>
+	<ResearchPal.AllowsPlantingX>Unlock growing {0}</ResearchPal.AllowsPlantingX>
+	<ResearchPal.AllowGeneralX>Unlock {0}</ResearchPal.AllowGeneralX>
+	<ResearchPal.OtherPrerequisites>Other prerequisites: {0}</ResearchPal.OtherPrerequisites>
 
 	<ResearchPal.LClickReplaceQueue>Left-Click to replace queue</ResearchPal.LClickReplaceQueue>
 	<ResearchPal.LClickRemoveFromQueue>Left-Click to remove from queue</ResearchPal.LClickRemoveFromQueue>

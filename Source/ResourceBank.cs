@@ -68,6 +68,10 @@ namespace ResearchPal
             public static string AllowsCraftingX(string x) => TL("AllowsCraftingX", x);
             public static string AllowsSowingXinY(string x, string y) => TL("AllowsSowingXinY", x, y);
             public static string AllowsPlantingX(string x) => TL("AllowsPlantingX", x);
+
+            public static string OtherPrerequisites(string x) => TL("OtherPrerequisites", x);
+
+            public static string AllowGeneralX(string x) => TL("AllowGeneralX", x);
             #endregion
 
             #region ResearchNode
