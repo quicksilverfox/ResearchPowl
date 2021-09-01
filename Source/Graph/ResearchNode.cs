@@ -337,10 +337,16 @@ namespace ResearchPal
                 return;
             }
             Text.WordWrap = true;
+
+
+            if (!Settings.disableShortcutManual) {
+                TooltipHandler.TipRegion(Rect, ShortcutManualTooltip, Research.GetHashCode() + 2);
+            }
                 // attach description and further info to a tooltip
             if (!TechprintAvailable()) {
                 TooltipHandler.TipRegion(Rect,
-                    ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
+                    "InsufficientTechprintsApplied".Translate(Research.TechprintsApplied, Research.TechprintCount));
+                    // ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
             }
             if ( !BuildingPresent() ) {
                 TooltipHandler.TipRegion( Rect,
@@ -355,11 +361,48 @@ namespace ResearchPal
                     TooltipHandler.TipRegion(Rect, prompt);
                 }
             }
-            TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
+            if (Research.techLevel > Faction.OfPlayer.def.techLevel) {
+                TooltipHandler.TipRegion(
+                    Rect, TechLevelTooLowTooltip, Research.GetHashCode() + 3);
+            }
+            TooltipHandler.TipRegion(
+                Rect, GetResearchTooltipString, Research.GetHashCode());
 
             if (Settings.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished) {
                 TooltipHandler.TipRegion(Rect, string.Format("Progress: {0}", ProgressString()));
             }
+        }
+
+        private string ShortcutManualTooltip() {
+            if (Event.current.shift) {
+                StringBuilder builder = new StringBuilder();
+                if (PainterIs(Painter.Queue)) {
+                    builder.AppendLine(ResourceBank.String.LClickRemoveFromQueue);
+                } else {
+                    if (Available()) {
+                        builder.AppendLine(ResourceBank.String.LClickReplaceQueue);
+                        builder.AppendLine(ResourceBank.String.SLClickAddToQueue);
+                        builder.AppendLine(ResourceBank.String.ALClickAddToQueue);
+                    }
+                    if (DebugSettings.godMode) {
+                        builder.AppendLine(ResourceBank.String.CLClickDebugInstant);
+                    }
+                }
+                if (Available()) {
+                    builder.AppendLine(ResourceBank.String.Drag);
+                }
+                builder.AppendLine(ResourceBank.String.RClickHighlight);
+                builder.AppendLine(ResourceBank.String.RClickIcon);
+                return builder.ToString();
+            } else {
+                return ResourceBank.String.ShiftForShortcutManual;
+            }
+        }
+
+        private string TechLevelTooLowTooltip() {
+            var techlevel = Faction.OfPlayer.def.techLevel;
+            return ResourceBank.String.TechLevelTooLow(
+                techlevel, Research.CostFactor(techlevel), (int) Research.baseCost);
         }
 
         private IEnumerable<ResearchProjectDef> OtherLockedPrerequisites(
@@ -375,7 +418,7 @@ namespace ResearchPal
                 return "";
             }
             return ResourceBank.String.OtherPrerequisites(
-                String.Join(", ", ps.Distinct().Select (p => p.LabelCap)));
+                String.Join(", ", ps.Distinct().Select(p => p.LabelCap)));
         }
 
         private string UnlockItemTooltip(Def def) {
@@ -799,13 +842,8 @@ namespace ResearchPal
             var text = new StringBuilder();
             text.AppendLine(Research.description);
             text.AppendLine();
-
-            text.AppendLine(ResourceBank.String.SLClickAddToQueue);
-            text.AppendLine(ResourceBank.String.ALClickAddToQueue);
-
-            if (DebugSettings.godMode) {
-                text.AppendLine(ResourceBank.String.CLClickDebugInstant);
-            }
+            text.Append(ResourceBank.String.TechLevelOfResearch
+                + Research.techLevel.ToStringHuman().CapitalizeFirst());
 
             return text.ToString();
         }

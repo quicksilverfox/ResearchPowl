@@ -34,6 +34,8 @@ namespace ResearchPal
 
         public static bool showIndexOnQueue = false;
 
+        public static bool disableShortcutManual = false;
+
         public static float scrollingSpeedMultiplier = 1f;
         public static float zoomingSpeedMultiplier = 1f;
         public static float draggingDisplayDelay = 0.25f;
@@ -112,6 +114,7 @@ namespace ResearchPal
             listLeft.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);
             listLeft.CheckboxLabeled(AlwaysDisplayProgress, ref alwaysDisplayProgress, AlwaysDisplayProgressTip);
             listLeft.CheckboxLabeled(ShowIndexOnQueue, ref showIndexOnQueue, ShowIndexOnQueueTip);
+            listLeft.CheckboxLabeled(DisableShortcutManual, ref disableShortcutManual);
 
             listLeft.Gap();
 
@@ -167,6 +170,7 @@ namespace ResearchPal
             Scribe_Values.Look(ref progressTooltip, "ProgressTooltip", false);
             Scribe_Values.Look(ref alwaysDisplayProgress, "AlwaysDisplayProgress", false);
             Scribe_Values.Look(ref showIndexOnQueue, "ShowQueuePositionOnQueue", false);
+            Scribe_Values.Look(ref disableShortcutManual, "DisableShortcutManual", false);
             Scribe_Values.Look(ref dontIgnoreHiddenPrerequisites, "dontIgnoreHiddenPrerequisites", true);
             Scribe_Values.Look(ref scrollingSpeedMultiplier, "ScrollingSpeedMultiplier", 1);
             Scribe_Values.Look(ref zoomingSpeedMultiplier, "zoomingSpeedMultiplier", 1);

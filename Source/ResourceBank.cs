@@ -1,4 +1,5 @@
 ﻿using Verse;
+using RimWorld;
 
 namespace ResearchPal
 {
@@ -9,7 +10,7 @@ namespace ResearchPal
             const string PREFIX = "ResearchPal.";
 
             static string TL(string s) => (PREFIX + s).Translate();
-            static string TL(string s, params object[] args) => (PREFIX + s).Translate(args);
+            static string TL(string s, params NamedArgument[] args) => (PREFIX + s).Translate(args);
 
             #region Settings
             public static readonly string ShowNotificationPopup = TL("ShowNotificationPopup");
@@ -54,6 +55,8 @@ namespace ResearchPal
             public static readonly string ShowIndexOnQueue = TL("ShowQueueIndexOnQueue");
             public static readonly string ShowIndexOnQueueTip = TL("ShowQueueIndexOnQueueTip");
 
+            public static readonly string DisableShortcutManual = TL("DisableShortcutManual");
+
             public static readonly string DontIgnoreHiddenPrerequisites = TL("DontIgnoreHiddenPrerequisites");
             public static readonly string DontIgnoreHiddenPrerequisitesTip = TL("DontIgnoreHiddenPrerequisitesTip");
             public static readonly string DebugResearch = TL("DebugResearch");
@@ -81,9 +84,22 @@ namespace ResearchPal
             public static readonly string ALClickAddToQueue = TL("ALClickAddToQueue");
             public static readonly string CLClickDebugInstant = TL("CLClickDebugInstant");
 
+            public static readonly string RClickHighlight = TL("RightClickNode");
+            public static readonly string RClickIcon = TL("RightClickIcon");
+            public static readonly string Drag = TL("Drag");
+
+            public static readonly string ShiftForShortcutManual = TL("ShortcutManual");
+
             public static string MissingFacilities(string list) => TL("MissingFacilities", list);
-            public static string MissingTechprints(int techprintsApplied, int techprintCount) => TL("MissingTechprints", techprintsApplied, techprintCount);
+            // public static string MissingTechprints(int techprintsApplied, int techprintCount) => TL("MissingTechprints", techprintsApplied, techprintCount);
             public static string FinishedResearch(string label) => TL("ResearchFinished", label);
+
+            public static readonly string TechLevelOfResearch = TL("TechLevel");
+
+            public static string TechLevelTooLow(
+              TechLevel techlevel, float multiplier, int baseCost) {
+              return TL("TechLevelTooLow", techlevel.ToStringHuman(), multiplier, baseCost);
+            }
             #endregion
 
             #region MainTabWindow_ResearchTree

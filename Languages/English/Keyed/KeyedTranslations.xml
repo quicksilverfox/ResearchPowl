@@ -10,15 +10,21 @@
 	<ResearchPal.AllowGeneralX>Unlock {0}</ResearchPal.AllowGeneralX>
 	<ResearchPal.OtherPrerequisites>Other prerequisites: {0}</ResearchPal.OtherPrerequisites>
 
-	<ResearchPal.LClickReplaceQueue>Left-Click to replace queue</ResearchPal.LClickReplaceQueue>
-	<ResearchPal.LClickRemoveFromQueue>Left-Click to remove from queue</ResearchPal.LClickRemoveFromQueue>
-	<ResearchPal.SLClickAddToQueue>Shift-Left-Click to append to queue</ResearchPal.SLClickAddToQueue>
-	<ResearchPal.ALClickAddToQueue>Alt-Left-Click to prepend to queue</ResearchPal.ALClickAddToQueue>
-	<ResearchPal.CLClickDebugInstant>(DEBUG) Ctrl-Left-Click to instantly complete</ResearchPal.CLClickDebugInstant>
+	<ResearchPal.LClickReplaceQueue>Left-click to replace queue.</ResearchPal.LClickReplaceQueue>
+	<ResearchPal.LClickRemoveFromQueue>Left-click to remove from queue.</ResearchPal.LClickRemoveFromQueue>
+	<ResearchPal.SLClickAddToQueue>Shift + Left-click to append to queue.</ResearchPal.SLClickAddToQueue>
+	<ResearchPal.ALClickAddToQueue>Alt + Left-click to prepend to queue.</ResearchPal.ALClickAddToQueue>
+	<ResearchPal.CLClickDebugInstant>(DEBUG) Ctrl + Left-click to instantly complete.</ResearchPal.CLClickDebugInstant>
+	<ResearchPal.RightClickNode>Right-click for continuous highlight.</ResearchPal.RightClickNode>
+	<ResearchPal.RightClickIcon>Right-click item icon (or dots icon) to show detail information.</ResearchPal.RightClickIcon>
+	<ResearchPal.Drag>Drag to interact with research queue.</ResearchPal.Drag>
+	<ResearchPal.ShortcutManual>Press shift to display shortcut manual.</ResearchPal.ShortcutManual>
 
+	<ResearchPal.TechLevel>Tech Level: </ResearchPal.TechLevel>
 	<ResearchPal.Requires>Requires</ResearchPal.Requires>
 	<ResearchPal.LeadsTo>Leads to</ResearchPal.LeadsTo>
 	<ResearchPal.None>none</ResearchPal.None>
+	<ResearchPal.TechLevelTooLow>Because your faction tech level is too low ({0}), research cost is multiplied by {1} (from {2}).</ResearchPal.TechLevelTooLow>
 
 	<ResearchPal.QueuedNode>Already queued node</ResearchPal.QueuedNode>
 	<ResearchPal.MissingFacilities>Missing {0}</ResearchPal.MissingFacilities>
@@ -64,6 +70,7 @@
     <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prereqisites.
 You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (restart the game to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
+	<ResearchPal.DisableShortcutManual>Disable Shortcut Manual</ResearchPal.DisableShortcutManual>
 
 	<ResearchPal.ScrollSpeedMultiplier>Scrolling Speed Multiplier</ResearchPal.ScrollSpeedMultiplier>
 	<ResearchPal.ScrollSpeedMultiplierTip>Control horizontal and vertical scrolling speed of the main research tree</ResearchPal.ScrollSpeedMultiplierTip>
