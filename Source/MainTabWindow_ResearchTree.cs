@@ -153,9 +153,7 @@ namespace ResearchPal
 
             SetRects();
 
-            if (Settings.shouldPause) {
-                forcePause = Settings.shouldPause;
-            }
+            forcePause = Settings.shouldPause;
 
             if (Settings.shouldReset) {
                 ResetSearch();

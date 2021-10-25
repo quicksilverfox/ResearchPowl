@@ -355,8 +355,11 @@ namespace ResearchPal
                             MissingFacilities().Select( td => td.LabelCap )
                                 .ToArray())));
             }
-            if (!PassCustomUnlockRequirements(Research)) {
+            if (! PassCustomUnlockRequirements(Research)
+               || CompatibilityHooks.PassCustomUnlockRequirements(Research)) {
                 var prompts = CustomUnlockRequirementPrompts(Research);
+                prompts.AddRange(CompatibilityHooks.
+                    CustomUnlockRequirementPrompts(Research));
                 foreach (var prompt in prompts) {
                     TooltipHandler.TipRegion(Rect, prompt);
                 }
@@ -802,15 +805,16 @@ namespace ResearchPal
             return Research.IsFinished;
         }
 
-        // For modders to patch,
-        // Returns true if research project p passes the custom unlock requirements, if any.
+        // deprecated
+        // patch `CompatibilityHooks.PassCustomUnlockRequirements` instead
         public static bool PassCustomUnlockRequirements(ResearchProjectDef p) {
             return true;
         }
 
-        // For modders to patch
-        // Returns a list containing information users need to understand the custom unlock requirements
-        public static List<string> CustomUnlockRequirementPrompts(ResearchProjectDef p) {
+        // deprecated
+        // patch `CompatibilityHooks.CustomUnlockRequirementPrompts` instead
+        public static List<string>
+        CustomUnlockRequirementPrompts(ResearchProjectDef p) {
             return new List<string>();
         }
 
@@ -819,8 +823,11 @@ namespace ResearchPal
                 (DebugSettings.godMode
                     || (BuildingPresent()
                     && TechprintAvailable()
-                    && MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel)
-                    && PassCustomUnlockRequirements(Research)));
+                    && MainTabWindow_ResearchTree.AllowedTechlevel(
+                        Research.techLevel)
+                    && PassCustomUnlockRequirements(Research)
+                    && CompatibilityHooks.PassCustomUnlockRequirements(
+                        Research)));
         }
 
         public bool Available() {
