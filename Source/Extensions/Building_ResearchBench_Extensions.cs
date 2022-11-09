@@ -5,7 +5,7 @@ using System.Linq;
 using RimWorld;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class Building_ResearchBench_Extensions
     {

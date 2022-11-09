@@ -5,11 +5,11 @@ using RimWorld;
 using Verse;
 using System.Text.RegularExpressions;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class NodeLayers
     {
-        private List<NodeLayer> _layers;
+        public List<NodeLayer> _layers;
 
         private void InitializeWithLists(List<List<Node>> layers) {
             _layers = layers.Select((layer, idx) => new NodeLayer(idx, layer, this)).ToList();
@@ -59,31 +59,33 @@ namespace ResearchPal
         }
 
         private void NLevelBCPhase1(int maxIter) {
+            var layerCount = LayerCount();
             for (int n = 0; n < maxIter; ++n) {
-                for (int i = 1; i < LayerCount(); ++i) {
-                    Layer(i).SortByUpperBarycenter();
+                for (int i = 1; i < layerCount; ++i) {
+                    _layers[i].SortByUpperBarycenter();
                 }
-                for (int i = LayerCount() - 2; i >= 0; --i) {
-                    Layer(i).SortByLowerBarycenter();
+                for (int i = layerCount - 2; i >= 0; --i) {
+                    _layers[i].SortByLowerBarycenter();
                 }
             }
         }
 
         private void NLevelBCMethod(int maxIter1, int maxIter2) {
             NLevelBCPhase1(maxIter1);
+            var layerCount = LayerCount();
             for (int k = 0; k < maxIter2; ++k) {
-                for (int i = LayerCount() - 2; i >= 0; --i) {
-                    if ( Layer(i).ReverseLowerBarycenterTies()
+                for (int i = layerCount - 2; i >= 0; --i) {
+                    if ( _layers[i].ReverseLowerBarycenterTies()
                         && ! MathUtil.Ascending(
-                            Layer(i + 1).Nodes().Select(
+                            _layers[i + 1].Nodes().Select(
                                 n => n.UpperBarycenter()))) {
                         NLevelBCPhase1(maxIter1);
                     }
                 }
-                for (int i = 1; i < LayerCount(); ++i) {
-                    if ( Layer(i).ReverseUpperBarycenterTies()
+                for (int i = 1; i < layerCount; ++i) {
+                    if ( _layers[i].ReverseUpperBarycenterTies()
                         && ! MathUtil.Ascending(
-                            Layer(i - 1).Nodes().Select(
+                            _layers[i - 1].Nodes().Select(
                                 n => n.LowerBarycenter()))) {
                         NLevelBCPhase1(maxIter1);
                     }
@@ -92,14 +94,16 @@ namespace ResearchPal
         }
 
         private void BruteforceSwapping(int maxIter) {
+            int layerCount = LayerCount();
             for (int k = 0; k < maxIter; ++k) {
-                for (int i = 1; i < LayerCount(); ++i) {
-                    Layer(i).UnsafeBruteforceSwapping();
+                for (int i = 1; i < layerCount; ++i) {
+                    _layers[i].UnsafeBruteforceSwapping();
                 }
-                for (int i = _layers.Count() - 2; i >= 0; --i) {
-                    Layer(i).UnsafeBruteforceSwapping();
+                for (int i = layerCount - 2; i >= 0; --i) {
+                    _layers[i].UnsafeBruteforceSwapping();
                 }
             }
+
             foreach (var layer in _layers) {
                 layer.RearrangeOrder();
             }
@@ -118,19 +122,21 @@ namespace ResearchPal
         }
 
         public void ImproveNodePositionsInLayers() {
-            _layers.ForEach(layer => layer.AssignPositionPriorities());
-            for (int i = 1; i < LayerCount(); ++i) {
-                Layer(i).ImprovePositionAccordingToUpper();
+            foreach (var layer in _layers) layer.AssignPositionPriorities();
+
+            var length = LayerCount();
+            for (int i = 1; i < length; ++i) {
+                _layers[i].ImprovePositionAccordingToUpper();
             }
-            for (int i = LayerCount() - 2; i >= 0; --i) {
-                Layer(i).ImprovePositionAccordingToLower();
+            for (int i = length - 2; i >= 0; --i) {
+                _layers[i].ImprovePositionAccordingToLower();
             }
-            for (int i = 1; i < LayerCount(); ++i) {
-                Layer(i).ImprovePositionAccordingToUpper();
+            for (int i = 1; i < length; ++i) {
+                _layers[i].ImprovePositionAccordingToUpper();
             }
-            if (! Settings.alignToAncestors) {
+            if (! ModSettings_ResearchPowl.alignToAncestors) {
                 for (int i = LayerCount() - 2; i >= 0; --i) {
-                    Layer(i).ImprovePositionAccordingToLower();
+                    _layers[i].ImprovePositionAccordingToLower();
                 }
             }
             AlignSegments(3);
@@ -224,7 +230,7 @@ namespace ResearchPal
 
         public void AlignSegments(int maxIter) {
             for (int n = 0; n < maxIter; ++n) {
-                if (Settings.alignToAncestors) {
+                if (ModSettings_ResearchPowl.alignToAncestors) {
                     for (int i = 0; i < LayerCount(); ++i) {
                         Layer(i).Nodes().ForEach(AlignNode);
                     }
@@ -263,11 +269,12 @@ namespace ResearchPal
             var result = new List<List<List<Node>>>();
             var vanilla = EmptyNewLayers(LayerCount());
             result.Add(vanilla);
-            foreach (var group in AllNodes().GroupBy(n => GroupingByMods(n))) {
+            var list = AllNodes().GroupBy(n => GroupingByMods(n)).ToList();
+            foreach (var group in list) {
                 var ns = group.ToList();
                 var techCount = ns.OfType<ResearchNode>().Count();
                 if (  group.Key == "__Vanilla"
-                   || techCount < Settings.largeModTechCount) {
+                   || techCount < ModSettings_ResearchPowl.largeModTechCount) {
                     MergeDataFromTo(ns, vanilla);
                 } else {
                     var newMod = EmptyNewLayers(LayerCount());
@@ -321,7 +328,8 @@ namespace ResearchPal
 
         public bool AdjustY() {
             bool changed = false;
-            for (int i = 0; i < _nodes.Count(); ++i) {
+            var length = _nodes.Count();
+            for (int i = 0; i < length; ++i) {
                 changed = changed || _nodes[i].ly != i;
                 _nodes[i].ly = i;
             }
@@ -337,10 +345,13 @@ namespace ResearchPal
             if (IsBottomLayer())
                 return 0;
             int sum = 0;
-            for (int i = 0; i < _nodes.Count() - 1; ++i) {
-                for (int j = i + 1; j < _nodes.Count(); ++j) {
-                    foreach (var ni in _nodes[i].OutNodes.Where(n => n.layer == LowerLayer())) {
-                        foreach (var nj in _nodes[j].OutNodes.Where(n => n.layer == LowerLayer())) {
+            var length = _nodes.Count();
+            for (int i = 0; i < length - 1; ++i) {
+                var list = _nodes[i].OutNodes.Where(n => n.layer == LowerLayer()).ToList();
+                for (int j = i + 1; j < length; ++j) {
+                    var list2 = _nodes[j].OutNodes.Where(n => n.layer == LowerLayer()).ToList();
+                    foreach (var ni in list) {
+                        foreach (var nj in list2) {
                             if (ni.ly > nj.ly) ++sum;
                         }
                     }
@@ -353,10 +364,13 @@ namespace ResearchPal
             if (IsTopLayer())
                 return 0;
             int sum = 0;
-            for (int i = 0; i < _nodes.Count() - 1; ++i) {
-                for (int j = i + 1; j < _nodes.Count(); ++j) {
-                    foreach (var ni in _nodes[i].InNodes.Where(n => n.layer == UpperLayer())) {
-                        foreach (var nj in _nodes[j].InNodes.Where(n => n.layer == UpperLayer())) {
+            var lenght = _nodes.Count();
+            for (int i = 0; i < lenght - 1; ++i) {
+                var list = _nodes[i].InNodes.Where(n => n.layer == UpperLayer()).ToList();
+                for (int j = i + 1; j < lenght; ++j) {
+                    var list2 = _nodes[j].InNodes.Where(n => n.layer == UpperLayer()).ToList();
+                    foreach (var ni in list) {
+                        foreach (var nj in list2) {
                             if (ni.ly > nj.ly) ++sum;
                         }
                     }
@@ -372,8 +386,9 @@ namespace ResearchPal
         }
 
         public void UnsafeBruteforceSwapping() {
-            for (int i = 0; i < Count() - 1; ++i) {
-                for (int j = i + 1; j < Count(); ++j) {
+            int nodes = Count();
+            for (int i = 0; i < nodes - 1; ++i) {
+                for (int j = i + 1; j < nodes; ++j) {
                     Node ni = _nodes[i], nj = _nodes[j];
                     int c1 = ni.Crossings() + nj.Crossings();
                     int l1 = ni.EdgeLengthSquare() + nj.EdgeLengthSquare();
@@ -418,10 +433,11 @@ namespace ResearchPal
         }
 
         public bool ReverseLowerBarycenterTies() {
-            for (int i = 0; i < _nodes.Count() - 1; ) {
+            var length = _nodes.Count();
+            for (int i = 0; i < length - 1; ) {
                 var bi = _nodes[i].LowerBarycenter();
                 int j = i + 1;
-                for (; j < _nodes.Count()
+                for (; j < length
                      && MathUtil.FloatEqual(bi, _nodes[j].LowerBarycenter())
                      ; ++j) continue;
                 ReverseSegment(i, j);
@@ -431,10 +447,11 @@ namespace ResearchPal
         }
 
         public bool ReverseUpperBarycenterTies() {
-            for (int i = 0; i < _nodes.Count() - 1; ) {
+            var length = _nodes.Count();
+            for (int i = 0; i < length - 1; ) {
                 var bi = _nodes[i].UpperBarycenter();
                 int j = i + 1;
-                for (; j < _nodes.Count()
+                for (; j < length
                      && MathUtil.FloatEqual(bi, _nodes[j].UpperBarycenter())
                      ; ++j) continue;
                 ReverseSegment(i, j);
@@ -444,7 +461,8 @@ namespace ResearchPal
         }
 
         public void ApplyGridCoordinates() {
-            for (int i = 0; i < Count(); ++i) {
+            var length = Count();
+            for (int i = 0; i < length; ++i) {
                 var n = _nodes[i];
                 n.X = _layer + 1;
                 n.Y = i + 1;
@@ -453,13 +471,15 @@ namespace ResearchPal
 
         public void AssignPositionPriorities() {
             List<Node> ordering = _nodes.OrderBy(n => n.DefaultPriority()).ToList();
-            for (int i = 0; i < ordering.Count(); ++i) {
+            var length = ordering.Count();
+            for (int i = 0; i < length; ++i) {
                 ordering[i].assignedPriority = i;
             }
         }
 
         public void ImprovePositionAccordingToLower() {
-            foreach (var n in _nodes.OrderByDescending(n => n.LayoutPriority())) {
+            var list = _nodes.OrderByDescending(n => n.LayoutPriority()).ToList();
+            foreach (var n in list) {
                 float c = (float) Math.Round(n.LowerPositionBarycenter());
                 if (MathUtil.FloatEqual(c, n.Yf)) {
                     continue;
@@ -472,7 +492,8 @@ namespace ResearchPal
             }
         }
         public void ImprovePositionAccordingToUpper() {
-            foreach (var n in _nodes.OrderByDescending(n => n.LayoutPriority())) {
+            var list = _nodes.OrderByDescending(n => n.LayoutPriority()).ToList();
+            foreach (var n in list) {
                 float c = (float) Math.Round(n.UpperPositionBarycenter());
                 if (MathUtil.FloatEqual(c, n.Yf)) {
                     continue;
@@ -531,9 +552,12 @@ namespace ResearchPal
 
         public static int LowerCrossings(this Node n1) {
             int sum = 0;
-            foreach (var n2 in n1.layer.Nodes().Where(n => n != n1)) {
-                foreach (var m1 in n1.LocalOutNodes()) {
-                    foreach (var m2 in n2.LocalOutNodes()) {
+            var list1 = n1.layer.Nodes().Where(n => n != n1).ToList();
+            var list2 = n1.LocalOutNodes().ToList();
+            foreach (var n2 in list1) {
+                var list3 = n2.LocalOutNodes();
+                foreach (var m1 in list2) {
+                    foreach (var m2 in list3) {
                         if (MathUtil.SignDiff(n1.ly - n2.ly, m1.ly - m2.ly)) ++sum;
                     }
                 }
@@ -543,9 +567,12 @@ namespace ResearchPal
 
         public static int UpperCrossings(this Node n1) {
             int sum = 0;
-            foreach (var n2 in n1.layer.Nodes().Where(n => n != n1)) {
-                foreach (var m1 in n1.LocalInNodes()) {
-                    foreach (var m2 in n2.LocalInNodes()) {
+            var list1 = n1.layer.Nodes().Where(n => n != n1).ToList();
+            var list2 = n1.LocalInNodes().ToList();
+            foreach (var n2 in list1) {
+                var list3 = n2.LocalInNodes().ToList();
+                foreach (var m1 in list2) {
+                    foreach (var m2 in list3) {
                         if (MathUtil.SignDiff(n1.ly - n2.ly, m1.ly - m2.ly)) ++sum;
                     }
                 }
@@ -554,10 +581,26 @@ namespace ResearchPal
         }
 
         public static int UpperEdgeLengthSquare(this Node node) {
-            return node.LocalInNodes().Select(n => (node.ly - n.ly) * (node.ly - n.ly)).Sum();
+            var tmp = node.LocalInNodes().ToList();
+            var length = tmp.Count();
+            int sum = 0;
+            for (int i = 0; i < length; ++i)
+            {
+                var tmp2 = tmp[i];
+                sum += (node.ly - tmp2.ly) * (node.ly - tmp2.ly);
+            };
+            return sum;
         }
         public static int LowerEdgeLengthSquare(this Node node) {
-            return node.LocalOutNodes().Select(n => (node.ly - n.ly) * (node.ly - n.ly)).Sum();
+            var tmp = node.LocalOutNodes().ToList();
+            var length = tmp.Count();
+            int sum = 0;
+            for (int i = 0; i < length; ++i)
+            {
+                var tmp2 = tmp[i];
+                sum += (node.ly - tmp2.ly) * (node.ly - tmp2.ly);
+            };
+            return sum;
         }
 
         public static int EdgeLengthSquare(this Node node) {
@@ -654,9 +697,17 @@ namespace ResearchPal
         }
 
         public static IEnumerable<Node> LocalOutNodes(this Node node) {
-            return node.OutNodes.Where(n => {
-                return n.layer == node.layer.LowerLayer();
-            });
+            
+            var list = node.OutNodes.ToList();
+            var length = list.Count();
+            for (int i = 0; i < length; i++)
+            {
+                var tmp = list[i];
+                if (tmp.layer == node.layer.LowerLayer()) {
+                    yield return tmp;
+                }
+            }
+            //yield return null;
         }
         public static IEnumerable<Node> LocalInNodes(this Node node) {
             return node.InNodes.Where(n => {

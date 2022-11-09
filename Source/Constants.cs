@@ -3,7 +3,7 @@
 
 using UnityEngine;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class Constants
     {
@@ -18,7 +18,7 @@ namespace ResearchPal
         public const           float   ZoomStep                    = .05f;
         public static readonly Vector2 IconSize                    = new Vector2( 18f, 18f );
         public static readonly Vector2 NodeMargins                 = new Vector2( 50f, 10f );
-        public static readonly Vector2 NodeSize                    = new Vector2( 200f, 50f );
+        public static readonly Vector2 NodeSize                    = new Vector2( 200f, 58f );
         public static readonly float   TopBarHeight                = NodeSize.y + 2 * Margin;
         public static readonly Vector2 TechLevelLabelSize          = new Vector2( 200f, 30f );
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <LanguageData>
 
-	<ResearchPal>ResearchPal - Forked</ResearchPal>
+	<ResearchPal>ResearchPowl</ResearchPal>
 
 	<ResearchPal.AllowsBuildingX>Unlock construction {0}</ResearchPal.AllowsBuildingX>
 	<ResearchPal.AllowsCraftingX>Unlock recipe {0}</ResearchPal.AllowsCraftingX>
@@ -71,6 +71,8 @@
 You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (restart the game to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
 	<ResearchPal.DisableShortcutManual>Disable Shortcut Manual</ResearchPal.DisableShortcutManual>
+	<ResearchPal.SwapZoomMode>Swap the scroll wheel behavior</ResearchPal.SwapZoomMode>
+	<ResearchPal.SwapZoomModeTip>If enabled, shift+scroll wheel will vertical-scroll instead of zoom.</ResearchPal.SwapZoomModeTip>
 
 	<ResearchPal.ScrollSpeedMultiplier>Scrolling Speed Multiplier</ResearchPal.ScrollSpeedMultiplier>
 	<ResearchPal.ScrollSpeedMultiplierTip>Control horizontal and vertical scrolling speed of the main research tree</ResearchPal.ScrollSpeedMultiplierTip>
@@ -86,4 +88,8 @@ You should always turn this option on for a more balanced gameplay. Being able t
 	<ResearchPal.ShowVanillaResearchFinishedMessageTip>ResearchPal normally sends its own letter when research is finished, this option restore the vanilla research completion message, a compatibility workaround for mods like Semi Random Research.</ResearchPal.ShowVanillaResearchFinishedMessageTip>
 
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
+	
+	<ResearchPal.MaxAllowedTechLvl>Max tech tier override: {0}</ResearchPal.MaxAllowedTechLvl>
+	<ResearchPal.MaxAllowedTechLvlTip>If you are using a mod that caps the research, and the cap is not working correctly, you can override it here manually.\n\nYou may need to regenerate the tech tree if you change this.</ResearchPal.MaxAllowedTechLvlTip>
+	<ResearchPal.DontShowUnallowedTech>Don't show unallowed tech</ResearchPal.DontShowUnallowedTech>
 </LanguageData>

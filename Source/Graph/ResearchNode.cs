@@ -10,9 +10,9 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
-using static ResearchPal.Constants;
+using static ResearchPowl.Constants;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public enum Painter {
         Tree = 0,
@@ -170,39 +170,27 @@ namespace ResearchPal
 
         public override string Label => Research.LabelCap;
 
+        /*
         public static bool BuildingPresent( ResearchNode node )
         {
             var research = node.Research;
-            if ( DebugSettings.godMode && Prefs.DevMode )
-                return true;
+            if (DebugSettings.godMode && Prefs.DevMode) return true;
 
             // try get from cache
             bool result;
-            if ( _buildingPresentCache.TryGetValue( research, out result ) )
-                return result;
+            if (_buildingPresentCache.TryGetValue(research, out result )) return result;
 
             // do the work manually
-            if ( research.requiredResearchBuilding == null ) {
-                result = true;
-            } else {
-                result = Find.Maps.SelectMany(map => map.listerBuildings.allBuildingsColonist)
-                             .OfType<Building_ResearchBench>()
-                             .Any(b => research.CanBeResearchedAt(b, true));
-            }
+            if (research.requiredResearchBuilding == null) result = true;
+            else result = Find.Maps.SelectMany(map => map.listerBuildings.allBuildingsColonist).OfType<Building_ResearchBench>().Any(b => research.CanBeResearchedAt(b, true));
 
-            if ( result ) {
-                result = node.MissingPrerequisites().All(BuildingPresent);
-            }
+            if ( result ) result = node.MissingPrerequisites().All(BuildingPresent);
 
             // update cache
             _buildingPresentCache.Add( research, result );
             return result;
         }
-
-        public static bool TechprintAvailable( ResearchProjectDef research )
-        {
-            return research.TechprintRequirementMet;
-        }
+        */
 
         public static void ClearCaches()
         {
@@ -223,7 +211,7 @@ namespace ResearchPal
             if ((Research.modContentPack?.Name.ToLower(culture) ?? "").Contains(query) ) {
                 return 3;
             }
-            if (Settings.searchByDescription) {
+            if (ModSettings_ResearchPowl.searchByDescription) {
                 if (Research.description.ToLower(culture).Contains(query))
                     return 4;
             }
@@ -271,15 +259,12 @@ namespace ResearchPal
             return missing;
         }
 
+        /*
         public bool BuildingPresent()
         {
             return BuildingPresent(this);
         }
-        
-        public bool TechprintAvailable()
-        {
-            return TechprintAvailable( Research );
-        }
+        */
 
         public override int DefaultPriority()
         {
@@ -306,19 +291,22 @@ namespace ResearchPal
         }
 
         private void DrawProgressBarImpl(Rect rect) {
-            GUI.color            =  Assets.ColorAvailable[Research.techLevel];
+            //GUI.color = Assets.ColorAvailable[Research.techLevel];
             rect.xMin += Research.ProgressPercent * rect.width;
-            GUI.DrawTexture(rect, BaseContent.WhiteTex);
+            //GUI.DrawTexture(rect, BaseContent.WhiteTex);
+            FastGUI.DrawTextureFast(rect, BaseContent.WhiteTex, Assets.ColorAvailable[Research.techLevel]);
         }
 
         private void DrawBackground(bool mouseOver) {
             // researches that are completed or could be started immediately, and that have the required building(s) available
-            GUI.color = Color;
+            //GUI.color = Color;
 
             if (mouseOver)
-                GUI.DrawTexture(Rect, Assets.ButtonActive);
+                //GUI.DrawTexture(Rect, Assets.ButtonActive);
+                FastGUI.DrawTextureFast(Rect, Assets.ButtonActive, Color);
             else
-                GUI.DrawTexture(Rect, Assets.Button);
+                //GUI.DrawTexture(Rect, Assets.Button);
+                FastGUI.DrawTextureFast(Rect, Assets.Button, Color);
         }
 
         private void DrawProgressBar() {
@@ -333,45 +321,49 @@ namespace ResearchPal
         }
 
         private void HandleTooltips() {
-            if (PainterIs(Painter.Drag)) {
-                return;
-            }
+            if (PainterIs(Painter.Drag)) return;
             Text.WordWrap = true;
 
-
-            if (!Settings.disableShortcutManual) {
+            if (!ModSettings_ResearchPowl.disableShortcutManual)
+            {
                 TooltipHandler.TipRegion(Rect, ShortcutManualTooltip, Research.GetHashCode() + 2);
             }
-                // attach description and further info to a tooltip
-            if (!TechprintAvailable()) {
-                TooltipHandler.TipRegion(Rect,
-                    "InsufficientTechprintsApplied".Translate(Research.TechprintsApplied, Research.TechprintCount));
-                    // ResourceBank.String.MissingTechprints(Research.TechprintsApplied, Research.techprintCount));
+            // attach description and further info to a tooltip
+            if (!Research.TechprintRequirementMet)
+            {
+                TooltipHandler.TipRegion(Rect, "InsufficientTechprintsApplied".Translate(Research.TechprintsApplied, Research.TechprintCount));
             }
-            if ( !BuildingPresent() ) {
-                TooltipHandler.TipRegion( Rect,
-                   ResourceBank.String.MissingFacilities(
-                        string.Join(", ",
-                            MissingFacilities().Select( td => td.LabelCap )
-                                .ToArray())));
+            if (!Research.PlayerHasAnyAppropriateResearchBench)
+            {
+                TooltipHandler.TipRegion(Rect, ResourceBank.String.MissingFacilities( string.Join(", ", MissingFacilities().Select( td => td.LabelCap ).ToArray())));
             }
-            if (! PassCustomUnlockRequirements(Research)
-               || CompatibilityHooks.PassCustomUnlockRequirements(Research)) {
-                var prompts = CustomUnlockRequirementPrompts(Research);
-                prompts.AddRange(CompatibilityHooks.
-                    CustomUnlockRequirementPrompts(Research));
-                foreach (var prompt in prompts) {
+            if (!CompatibilityHooks.PassCustomUnlockRequirements(Research))
+            {
+                foreach (var prompt in CompatibilityHooks.CustomUnlockRequirementPrompts(Research))
+                {
                     TooltipHandler.TipRegion(Rect, prompt);
                 }
             }
-            if (Research.techLevel > Faction.OfPlayer.def.techLevel) {
-                TooltipHandler.TipRegion(
-                    Rect, TechLevelTooLowTooltip, Research.GetHashCode() + 3);
+            if (Research.techLevel > Faction.OfPlayer.def.techLevel)
+            {
+                TooltipHandler.TipRegion(Rect, TechLevelTooLowTooltip, Research.GetHashCode() + 3);
             }
-            TooltipHandler.TipRegion(
-                Rect, GetResearchTooltipString, Research.GetHashCode());
 
-            if (Settings.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished) {
+            if (!Research.PlayerMechanitorRequirementMet)
+            {
+                var tmp = "MissingRequiredMechanitor".Translate();
+                TooltipHandler.TipRegion(Rect, tmp);
+            }
+            if (!Research.StudiedThingsRequirementsMet)
+            {
+                var tmp = (from t in Research.requiredStudied select "NotStudied".Translate(t.LabelCap).ToString()).ToLineList("", false);
+                TooltipHandler.TipRegion(Rect, tmp);
+            }
+
+            TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
+
+            if (ModSettings_ResearchPowl.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished)
+            {
                 TooltipHandler.TipRegion(Rect, string.Format("Progress: {0}", ProgressString()));
             }
         }
@@ -495,7 +487,8 @@ namespace ResearchPal
                     iconRect.x = IconsRect.x + 4f;
 
                     if (draw) {
-                        GUI.DrawTexture(iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit);
+                        FastGUI.DrawTextureFast(iconRect, Assets.MoreIcon, ResourceBank.colorWhite);
+                        //GUI.DrawTexture(iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit);
                         if (!PainterIs(Painter.Drag)) {
                             var tip = string.Join(
                                 "\n",
@@ -535,15 +528,13 @@ namespace ResearchPal
             Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
             Widgets.Label( LabelRect, Research.LabelCap );
 
-            GUI.DrawTexture(
-                CostIconRect,
-                !Completed() && !Available() ? Assets.Lock : Assets.ResearchIcon,
-                ScaleMode.ScaleToFit);
+            FastGUI.DrawTextureFast(CostIconRect, !Completed() && !Available() ? Assets.Lock : Assets.ResearchIcon, ResourceBank.colorWhite);
+            //GUI.DrawTexture(CostIconRect, !Completed() && !Available() ? Assets.Lock : Assets.ResearchIcon, ScaleMode.ScaleToFit);
 
             Color savedColor = GUI.color;
             Color numberColor;
             float numberToDraw;
-            if (Settings.alwaysDisplayProgress && ProgressWorthDisplaying() || SwitchToProgress()) {
+            if (ModSettings_ResearchPowl.alwaysDisplayProgress && ProgressWorthDisplaying() || SwitchToProgress()) {
                 if (Research.IsFinished) {
                     numberColor = Color.cyan;
                     numberToDraw = 0;
@@ -600,23 +591,17 @@ namespace ResearchPal
         }
 
         private void DrawNode(bool detailedMode, bool mouseOver) {
-            // TryModifySharedState(painter, mouseOver);
             HandleTooltips();
 
             DrawBackground(mouseOver);
             DrawProgressBar();
 
             // draw the research label
-            if (ShouldGreyOutText())
-                GUI.color = Color.grey;
-            else
-                GUI.color = Color.white;
+            if (ShouldGreyOutText()) GUI.color = Color.grey;
+            else GUI.color = Color.white;
 
-            if (detailedMode) {
-                DrawNodeDetailMode(mouseOver);
-            } else {
-                DrawNodeZoomedOut(mouseOver);
-            }
+            if (detailedMode) DrawNodeDetailMode(mouseOver);
+            else DrawNodeZoomedOut(mouseOver);
             Text.WordWrap = true;
         }
 
@@ -685,10 +670,6 @@ namespace ResearchPal
         public override void Draw(Rect visibleRect, Painter painter)
         {
             _currentPainter = painter;
-            // Call site should ensure this condition
-            // if (!IsVisible(visibleRect)) {
-            //     return;
-            // }
             var mouseOver = Mouse.IsOver(Rect);
 
             if (Event.current.type == EventType.Repaint) {
@@ -696,39 +677,15 @@ namespace ResearchPal
                 DrawNode(DetailMode(), mouseOver);
             }
 
-
-            // Tool tip debugging fail attempt
-            // var curOver = Mouse.IsOver(Rect);
-            // if (prevOver && !curOver) {
-            //     var w = Find.WindowStack.GetWindowAt(UI.GUIToScreenPoint(Event.current.mousePosition)); 
-            //     var w2 = Find.WindowStack[Find.WindowStack.Count - 1];
-            //     var ms = UI.GUIToScreenPoint(Event.current.mousePosition);
-            //     // var w = Find.WindowStack[Find.WindowStack.Count - 1];
-            //     // bool curOver = Rect.Contains(Event.current.mousePosition) && ! (b1 && ! b2 || (b3 || b4));
-            //     Log.Message("LEAVING {0}, immediate: {1}, rect: {2}, {7} pos: {9} => {3} => {10},  rect2 : {4}, {8} w: {5} h: {6}",
-            //         Research.label,
-            //         w is ImmediateWindow, w?.windowRect, ms, w2.windowRect,
-            //         UI.screenWidth, UI.screenHeight, w.windowRect.Contains(ms),
-            //         w2.windowRect.Contains(ms), Event.current.mousePosition,
-            //         GenUI.GetMouseAttachedWindowPos(w2.windowRect.width, w2.windowRect.height));
-            // }
-            // prevOver = curOver;
-            if (PainterIs(Painter.Drag)) {
-                return;
-            }
-            if (DetailMode()) {
-                IconActions(false);
-            }
+            if (PainterIs(Painter.Drag)) return;
+            if (DetailMode()) IconActions(false);
             HandleDragging(mouseOver);
 
             // if clicked and not yet finished, queue up this research and all prereqs.
-            if (  !MainTabWindow_ResearchTree.Instance.DraggingNode()
-               && Widgets.ButtonInvisible(Rect)) {
-                if (Event.current.button == 0) {
-                    LeftClick();
-                } else if (Event.current.button == 1) {
-                    RightClick();
-                }
+            if (  !MainTabWindow_ResearchTree.Instance.DraggingNode() && Widgets.ButtonInvisible(Rect))
+            {
+                if (Event.current.button == 0) LeftClick();
+                else if (Event.current.button == 1) RightClick();
             }
         }
 
@@ -771,30 +728,35 @@ namespace ResearchPal
             return result;
         }
 
-        public List<ResearchNode> MissingPrerequisites() {
+        public List<ResearchNode> MissingPrerequisites()
+        {
             List<ResearchNode> result = new List<ResearchNode>();
-            if (!Research.PrerequisitesCompleted) {
-                foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished)) {
+            if (!Research.PrerequisitesCompleted)
+            {
+                foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished))
+                {
                     n.MissingPrerequitesRec(result);
                 }
             }
             return result;
         }
 
-        public IEnumerable<ResearchNode> DirectPrerequisites() {
-            return InEdges.Select(e => e.InResearch());
+        public IEnumerable<ResearchNode> DirectPrerequisites()
+        {
+            foreach (var n in InEdges) yield return n.InResearch();
         }
-        public IEnumerable<ResearchNode> DirectChildren() {
-            return OutEdges.Select(e => e.OutResearch());
+        public IEnumerable<ResearchNode> DirectChildren()
+        {
+            foreach (var n in OutEdges) yield return n.OutResearch();
         }
 
 
         private void MissingPrerequitesRec(List<ResearchNode> acc) {
-            if (acc.Contains(this)) {
-                return;
-            }
-            if (!Research.PrerequisitesCompleted) {
-                foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished)) {
+            if (acc.Contains(this)) return;
+            if (!Research.PrerequisitesCompleted)
+            {
+                foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished))
+                {
                     n.MissingPrerequitesRec(acc);
                 }
             }
@@ -805,29 +767,16 @@ namespace ResearchPal
             return Research.IsFinished;
         }
 
-        // deprecated
-        // patch `CompatibilityHooks.PassCustomUnlockRequirements` instead
-        public static bool PassCustomUnlockRequirements(ResearchProjectDef p) {
-            return true;
-        }
-
-        // deprecated
-        // patch `CompatibilityHooks.CustomUnlockRequirementPrompts` instead
-        public static List<string>
-        CustomUnlockRequirementPrompts(ResearchProjectDef p) {
-            return new List<string>();
-        }
-
-        public bool GetAvailable() {
-            return !Research.IsFinished &&
-                (DebugSettings.godMode
-                    || (BuildingPresent()
-                    && TechprintAvailable()
-                    && MainTabWindow_ResearchTree.AllowedTechlevel(
-                        Research.techLevel)
-                    && PassCustomUnlockRequirements(Research)
-                    && CompatibilityHooks.PassCustomUnlockRequirements(
-                        Research)));
+        public bool GetAvailable()
+        {
+            return !Research.IsFinished && (DebugSettings.godMode || (
+                (Research.requiredResearchBuilding == null || Research.PlayerHasAnyAppropriateResearchBench) && 
+                Research.TechprintRequirementMet && 
+                Research.PlayerMechanitorRequirementMet && 
+                Research.StudiedThingsRequirementsMet && 
+                MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel) && 
+                CompatibilityHooks.PassCustomUnlockRequirements(Research)
+            ));
         }
 
         public bool Available() {
@@ -849,22 +798,16 @@ namespace ResearchPal
             var text = new StringBuilder();
             text.AppendLine(Research.description);
             text.AppendLine();
-            text.Append(ResourceBank.String.TechLevelOfResearch
-                + Research.techLevel.ToStringHuman().CapitalizeFirst());
+            text.Append(ResourceBank.String.TechLevelOfResearch + Research.techLevel.ToStringHuman().CapitalizeFirst());
 
             return text.ToString();
         }
 
-        public void DrawAt(
-            Vector2 pos, Rect visibleRect, Painter painter, bool deferRectReset = false)
+        public void DrawAt(Vector2 pos, Rect visibleRect, Painter painter, bool deferRectReset = false)
         {
-            SetRects( pos );
-            if (IsVisible(visibleRect)) {
-                Draw(visibleRect, painter);
-            }
-            if (! deferRectReset) {
-                SetRects();
-            }
+            SetRects(pos);
+            if (IsVisible(visibleRect)) Draw(visibleRect, painter);
+            if (!deferRectReset) SetRects();
         }
     }
 }

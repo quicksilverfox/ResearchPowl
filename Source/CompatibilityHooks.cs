@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     /* Currently Does not work */
 

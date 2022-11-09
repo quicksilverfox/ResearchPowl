@@ -5,7 +5,7 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class HarmonyPatches_Queue
     {
@@ -19,16 +19,6 @@ namespace ResearchPal
             {
                 __state = __instance.currentProj;
             }
-
-            // private static void Postfix( ResearchProjectDef __state )
-            // {
-            //     Log.Debug( "{0} finished?: {1}", __state, __state?.IsFinished );
-            //     if ( __state?.IsFinished ?? false )
-            //     {
-            //         Log.Debug( "{0} finished", __state.LabelCap );
-            //         Queue.TryStartNext( __state );
-            //     }
-            // }
         }
 
         [HarmonyPatch( typeof( ResearchManager ), "FinishProject" )]
@@ -37,7 +27,7 @@ namespace ResearchPal
             // suppress vanilla completion dialog, we never want to show it.
             private static void Prefix( ref bool doCompletionDialog )
             {
-                doCompletionDialog = doCompletionDialog && Settings.useVanillaResearchFinishedMessage;
+                doCompletionDialog = doCompletionDialog && ModSettings_ResearchPowl.useVanillaResearchFinishedMessage;
             }
 
             private static void Postfix(ResearchProjectDef proj) {

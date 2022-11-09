@@ -10,9 +10,9 @@ using System.Text;
 using RimWorld;
 using UnityEngine;
 using Verse;
-using static ResearchPal.Constants;
+using static ResearchPowl.Constants;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class Tree
     {
@@ -154,10 +154,9 @@ namespace ResearchPal
 
         public static void MainAlgorithm(List<List<Node>> data) {
             NodeLayers layers = new NodeLayers(data);
-            // var layerss = new List<NodeLayers>();
-            // layerss.Add(layers);
             List<NodeLayers> modsSplit = null;
-            if (Settings.placeModTechSeparately) {
+            			
+            if (ModSettings_ResearchPowl.placeModTechSeparately) {
                 modsSplit = layers.SplitLargeMods();
             } else {
                 modsSplit = new List<NodeLayers>();
@@ -171,11 +170,13 @@ namespace ResearchPal
                         .SplitConnectiveComponents()
                         .OrderBy(l => l.NodeCount()))
                 .ToList();
-            allLayers.ForEach(l => OrgainzeLayers(l));
+
+            foreach (var layer in allLayers) OrganizeLayers(layer);
+            
             PositionAllLayers(allLayers);
         }
 
-        public static void OrgainzeLayers(NodeLayers layers) {
+        public static void OrganizeLayers(NodeLayers layers) {
             layers.MinimizeCrossings();
             layers.ApplyGridCoordinates();
             layers.ImproveNodePositionsInLayers();
@@ -206,9 +207,9 @@ namespace ResearchPal
 
         public static void WaitForInitialization() {
             if (! Tree.Initialized) {
-                if (Settings.delayLayoutGeneration) {
+                if (ModSettings_ResearchPowl.delayLayoutGeneration) {
                     Tree.InitializeLayout();
-                } else if (Settings.asyncLoadingOnStartup) {
+                } else if (ModSettings_ResearchPowl.asyncLoadingOnStartup) {
                     while (! Tree.Initialized) continue;
                 }
             }
@@ -228,6 +229,8 @@ namespace ResearchPal
 
         public static void InitializeLayout()
         {
+            var timer = new System.Diagnostics.Stopwatch();
+  			timer.Start();
             Initializing = true;
             mainGraphUpperbound = 1;
 
@@ -236,8 +239,8 @@ namespace ResearchPal
 
             LegacyPreprocessing();
             MainAlgorithm(_layers);
-
             RemoveEmptyRows();
+
             Tree.Size.z = (int) (Nodes().Max(n => n.Yf) + 0.01) + 1;
             Tree.Size.x = Nodes().Max(n => n.X);
 
@@ -245,11 +248,13 @@ namespace ResearchPal
             Log.Debug("Layout Size: x = {0}, y = {1}", Tree.Size.x, Tree.Size.z);
             Initialized = true;
             Initializing = false;
+            timer.Stop();
+			var timeTaken = timer.Elapsed;
+            if (Prefs.DevMode) Log.Message("[ResearchPowl] Processed in " + timeTaken.ToString(@"ss\.fffff"));
         }
 
         private static void RemoveEmptyRows()
         {
-            Profiler.Start();
             var z = Nodes().Max(n => n.Yf);
             var y = 1;
             for (; y < z;) {
@@ -264,21 +269,14 @@ namespace ResearchPal
                 else
                     ++y;
             }
-            Profiler.End();
         }
 
-        static void HorizontalPositions(List<ResearchNode> nodes) {
-            Profiler.Start();
+        static void HorizontalPositions(List<ResearchNode> nodes)
+        {
+            _shouldSeparateByTechLevels = ModSettings_ResearchPowl.shouldSeparateByTechLevels;
 
-            _shouldSeparateByTechLevels = Settings.shouldSeparateByTechLevels;
-
-            if (_shouldSeparateByTechLevels) {
-                HorizontalPositionsByTechLevels(nodes);
-            } else {
-                HorizontalPositionsByDensity(nodes);
-            }
-
-            Profiler.End();
+            if (_shouldSeparateByTechLevels) HorizontalPositionsByTechLevels(nodes);
+            else HorizontalPositionsByDensity(nodes);
         }
 
         static void HorizontalPositionsByTechLevels(List<ResearchNode> nodes) {
@@ -298,28 +296,26 @@ namespace ResearchPal
             }
         }
 
-        static void HorizontalPositionsByDensity(List<ResearchNode> nodes) {
+        static void HorizontalPositionsByDensity(List<ResearchNode> nodes)
+        {
             var updateOrder = TopologicalSort(nodes);
-            foreach (var node in updateOrder) {
-                node.SetDepth(1);
-            }
+            foreach (var node in updateOrder) node.SetDepth(1);
         }
         
-        static private List<ResearchNode> TopologicalSort(IEnumerable<ResearchNode> nodes) {
+        static private List<ResearchNode> TopologicalSort(IEnumerable<ResearchNode> nodes)
+        {
             return FilteredTopoSort(nodes, n => true);
         }
 
-        static private List<ResearchNode> FilteredTopoSort(
-            IEnumerable<ResearchNode> nodes, Func<ResearchNode, bool> p) {
+        static private List<ResearchNode> FilteredTopoSort(IEnumerable<ResearchNode> nodes, Func<ResearchNode, bool> p)
+        {
             List<ResearchNode> result = new List<ResearchNode>();
             HashSet<ResearchNode> visited = new HashSet<ResearchNode>();
-            foreach (var node in nodes) {
-                if (node.OutNodes.OfType<ResearchNode>().Where(p).Any()) {
-                    continue;
-                }
+            foreach (var node in nodes)
+            {
+                if (node.OutNodes.OfType<ResearchNode>().Where(p).Any()) continue;
                 FilteredTopoSortRec(node, p, result, visited);
             }
-            // result.Reverse();
             return result;
         }
 
@@ -337,7 +333,6 @@ namespace ResearchPal
         }
 
         private static void NormalizeEdges(List<Edge<Node, Node>> edges, List<Node> nodes) {
-            Profiler.Start();
             foreach (var edge in new List<Edge<Node, Node>>(edges.Where(e => e.Span > 1)))
             {
                 // remove and decouple long edge
@@ -367,12 +362,9 @@ namespace ResearchPal
                 edge.Out.InEdges.Add( finalEdge );
                 edges.Add( finalEdge );
             }
-
-            Profiler.End();
         }
         private static List<Edge<Node, Node>> CreateEdges(List<ResearchNode> nodes)
         {
-            Profiler.Start();
             // create links between nodes
             var edges = new List<Edge<Node, Node>>();
 
@@ -392,15 +384,11 @@ namespace ResearchPal
                 }
             }
 
-            Profiler.End();
             return edges;
         }
 
         private static void CheckPrerequisites(List<ResearchNode> nodes)
         {
-            // check prerequisites
-            Profiler.Start();
-
             var nodesQueue = new Queue<ResearchNode>(nodes);
             // remove redundant prerequisites
             while ( nodesQueue.Count > 0 )
@@ -438,16 +426,12 @@ namespace ResearchPal
                             nodesQueue.Enqueue( descendant );
                     }
             }
-
-            Profiler.End();
         }
 
-        private static void FixPrerequisites(ResearchProjectDef d) {
-            if (d.prerequisites == null) {
-                d.prerequisites = d.hiddenPrerequisites;
-            } else if (d.hiddenPrerequisites != null) {
-                d.prerequisites = d.prerequisites.Concat(d.hiddenPrerequisites).ToList();
-            }
+        private static void FixPrerequisites(ResearchProjectDef d)
+        {
+            if (d.prerequisites == null) d.prerequisites = d.hiddenPrerequisites;
+            else if (d.hiddenPrerequisites != null) d.prerequisites = d.prerequisites.Concat(d.hiddenPrerequisites).ToList();
         }
 
         private static void InitializeNodesStructures() {
@@ -471,20 +455,27 @@ namespace ResearchPal
 
         private static List<ResearchNode> PopulateNodes()
         {
-            Profiler.Start();
-
             var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
 
-            if (Settings.dontIgnoreHiddenPrerequisites && !prerequisitesFixed) {
-                projects.ForEach(FixPrerequisites);
+            if (ModSettings_ResearchPowl.dontIgnoreHiddenPrerequisites && !prerequisitesFixed)
+            {
+                foreach (var n in projects) FixPrerequisites(n);
                 prerequisitesFixed = true;
             }
 
             // find hidden nodes (nodes that have themselves as a prerequisite)
-            var hidden = projects.Where( p => p.prerequisites?.Contains( p ) ?? false );
+            var hidden = projects.Where( p => p.prerequisites?.Contains( p ) ?? false ).ToList();
 
             // find locked nodes (nodes that have a hidden node as a prerequisite)
             var locked = projects.Where( p => p.Ancestors().Intersect( hidden ).Any() );
+
+            if (ModSettings_ResearchPowl.dontShowUnallowedTech)
+            {
+                foreach (var n in projects)
+                {
+                    if ((int)n.techLevel > ModSettings_ResearchPowl.maxAllowedTechLvl) hidden.Add(n);
+                }
+            }
 
             // populate all nodes
             var nodes = new List<ResearchNode>(DefDatabase<ResearchProjectDef>
@@ -492,7 +483,6 @@ namespace ResearchPal
                 .Except( hidden )
                 .Except( locked )
                 .Select(def => new ResearchNode( def )));
-            Profiler.End();
             return nodes;
         }
 
@@ -505,32 +495,31 @@ namespace ResearchPal
         }
 
         private static RelatedNodeHighlightSet hoverHighlightSet;
-        private static List<RelatedNodeHighlightSet> fixedHighlightSets =
-            new List<RelatedNodeHighlightSet>();
+        private static List<RelatedNodeHighlightSet> fixedHighlightSets = new List<RelatedNodeHighlightSet>();
 
-        static public bool StopFixedHighlights() {
+        static public bool StopFixedHighlights()
+        {
             bool success = fixedHighlightSets.Any();
-            fixedHighlightSets.ForEach(s => s.Stop());
+            foreach (var n in fixedHighlightSets) n.Stop();
             fixedHighlightSets.Clear();
             return success;
         }
 
-        static List<ResearchNode> FindHighlightsFrom(ResearchNode node) {
-            return node.MissingPrerequisites()
-                .Concat(node.Children.Where(c => !c.Completed()))
-                .ToList();
+        static List<ResearchNode> FindHighlightsFrom(ResearchNode node)
+        {
+            return node.MissingPrerequisites().Concat(node.Children.Where(c => !c.Completed())).ToList();
         }
 
-        static void OverrideHighlight(ResearchNode node) {
+        static void OverrideHighlight(ResearchNode node)
+        {
             hoverHighlightSet?.Stop();
             hoverHighlightSet = RelatedNodeHighlightSet.HoverOn(node);
             hoverHighlightSet.Start();
         }
 
-        static void HandleHoverHighlight(ResearchNode node, Vector2 mousePos) {
-            if (node.MouseOver(mousePos)) {
-                OverrideHighlight(node);
-            }
+        static void HandleHoverHighlight(ResearchNode node, Vector2 mousePos)
+        {
+            if (node.MouseOver(mousePos)) OverrideHighlight(node);
         }
 
         public static void HandleFixedHighlight(ResearchNode node) {
@@ -551,9 +540,7 @@ namespace ResearchPal
         }
 
         static bool ContinueHoverHighlight(Vector2 mouse) {
-            if (hoverHighlightSet == null) {
-                return false;
-            }
+            if (hoverHighlightSet == null) return false;
             if (hoverHighlightSet.TryStop(mouse)) {
                 hoverHighlightSet = null;
                 return false;
@@ -563,62 +550,41 @@ namespace ResearchPal
 
         public static void Draw( Rect visibleRect )
         {
-            Profiler.Start( "Tree.Draw" );
-            if (_shouldSeparateByTechLevels)
-            {
-                Profiler.Start("techlevels");
-                foreach (var techlevel in RelevantTechLevels)
-                    DrawTechLevel(techlevel, visibleRect);
-                Profiler.End();
-            }
+            if (_shouldSeparateByTechLevels) foreach (var techlevel in RelevantTechLevels) DrawTechLevel(techlevel, visibleRect);
 
-            Profiler.Start( "edges" );
-            foreach ( var edge in Edges.OrderBy( e => e.DrawOrder ) )
-                edge.Draw( visibleRect );
-            Profiler.End();
+            var list = Edges.OrderBy( e => e.DrawOrder ).ToList();
+            foreach (var edge in list) edge.Draw(visibleRect);
 
             TryModifySharedState();
 
-            Profiler.Start( "nodes" );
             var evt = new Event(Event.current);
-            var drawnNodes = ResearchNodes().Where(n => n.IsVisible(visibleRect));
+            var drawnNodes = ResearchNodes().Where(n => n.IsVisible(visibleRect)).ToList();
             bool hoverHighlight = ContinueHoverHighlight(evt.mousePosition);
-            foreach (var node in drawnNodes) {
-                if (! hoverHighlight) {
-                    HandleHoverHighlight(node, evt.mousePosition);
-                }
+            foreach (var node in drawnNodes)
+            {
+                if (!hoverHighlight) HandleHoverHighlight(node, evt.mousePosition);
                 node.Draw(visibleRect, Painter.Tree);
             }
-            Profiler.End();
         }
         private static void TryModifySharedState() {
-            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) {
-                DisplayProgressState = true;
-            } else if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift)) {
-                DisplayProgressState = false;
-            }
-            // if (Event.current.type == EventType.KeyDown) {
-            //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
-            //         DisplayProgressState = true;
-            //     }
-            // } else if (Event.current.type == EventType.KeyUp) {
-            //     if (Event.current.keyCode == KeyCode.LeftShift || Event.current.keyCode == KeyCode.RightShift) {
-            //         DisplayProgressState = false;
-            //     }
-            // }
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) DisplayProgressState = true;
+            else if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift)) DisplayProgressState = false;
         }
 
         public static void DrawTechLevel( TechLevel techlevel, Rect visibleRect )
         {
+            if (ModSettings_ResearchPowl.dontShowUnallowedTech && (int)techlevel > ModSettings_ResearchPowl.maxAllowedTechLvl) return;
+
             // determine positions
-            var xMin = ( NodeSize.x + NodeMargins.x ) * TechLevelBounds[techlevel].min - NodeMargins.x / 2f;
-            var xMax = ( NodeSize.x + NodeMargins.x ) * TechLevelBounds[techlevel].max - NodeMargins.x / 2f;
+            if (TechLevelBounds.TryGetValue(techlevel, out IntRange bounds) == false) return;
+            var xMin = ( NodeSize.x + NodeMargins.x ) * bounds.min - NodeMargins.x / 2f;
+            var xMax = ( NodeSize.x + NodeMargins.x ) * bounds.max - NodeMargins.x / 2f;
 
             GUI.color   = Assets.TechLevelColor;
             Text.Anchor = TextAnchor.MiddleCenter;
 
             // lower bound
-            if ( TechLevelBounds[techlevel].min > 0 && xMin > visibleRect.xMin && xMin < visibleRect.xMax )
+            if ( bounds.min > 0 && xMin > visibleRect.xMin && xMin < visibleRect.xMax )
             {
                 // line
                 Widgets.DrawLine( new Vector2( xMin, visibleRect.yMin ), new Vector2( xMin, visibleRect.yMax ),
@@ -635,7 +601,7 @@ namespace ResearchPal
             }
 
             // upper bound
-            if ( TechLevelBounds[techlevel].max < Size.x && xMax > visibleRect.xMin && xMax < visibleRect.xMax )
+            if ( bounds.max < Size.x && xMax > visibleRect.xMin && xMax < visibleRect.xMax )
             {
                 // label
                 var labelRect = new Rect(
@@ -687,7 +653,8 @@ namespace ResearchPal
         {
             var text = new StringBuilder();
 
-            for ( var l = 1; l <= Nodes().Max( n => n.X ); l++ )
+            var length = Nodes().Max( n => n.X );
+            for ( var l = 1; l <= length; l++ )
             {
                 text.AppendLine( $"Layer {l}:" );
                 var layer = Layer( l, true );
@@ -695,10 +662,8 @@ namespace ResearchPal
                 foreach ( var n in layer )
                 {
                     text.AppendLine( $"\t{n}" );
-                    text.AppendLine( "\t\tAbove: " +
-                                     string.Join( ", ", n.InNodes.Select( a => a.ToString() ).ToArray() ) );
-                    text.AppendLine( "\t\tBelow: " +
-                                     string.Join( ", ", n.OutNodes.Select( b => b.ToString() ).ToArray() ) );
+                    text.AppendLine( "\t\tAbove: " + string.Join( ", ", n.InNodes.Select( a => a.ToString() ).ToArray() ) );
+                    text.AppendLine( "\t\tBelow: " + string.Join( ", ", n.OutNodes.Select( b => b.ToString() ).ToArray() ) );
                 }
             }
 

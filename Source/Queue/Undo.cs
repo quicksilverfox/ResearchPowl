@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RimWorld;
 
-namespace ResearchPal {
+namespace ResearchPowl {
     public class UndoStateHandler<S> {
         private List<S> undoMemory = new List<S>();
         private int currentStateIndex = -1;

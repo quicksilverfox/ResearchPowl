@@ -3,10 +3,10 @@
 
 using System;
 using UnityEngine;
-using static ResearchPal.Assets;
-using static ResearchPal.Constants;
+using static ResearchPowl.Assets;
+using static ResearchPowl.Constants;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class Edge<T1, T2> where T1 : Node where T2 : Node
     {
@@ -91,8 +91,7 @@ namespace ResearchPal
         }
 
         public void Draw(Rect visibleRect) {
-            var color = Out.InEdgeColor(InResearch());
-            GUI.color = color;
+            GUI.color = Out.InEdgeColor(InResearch());
             DrawLines(visibleRect);
             GUI.color = Color.white;
         }
@@ -103,6 +102,7 @@ namespace ResearchPal
                 var through = new Rect(right.x, right.y - 2, NodeSize.x, 4f);
                 if (RectVisible(visibleRect, through)) {
                     GUI.DrawTexture( through, Lines.EW );
+                    //FastGUI.DrawTextureFast(through, Lines.EW, colorCache);
                 }
                 return;
             }
@@ -110,6 +110,7 @@ namespace ResearchPal
             var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
             if (RectVisible(visibleRect, end)) {
                 GUI.DrawTexture( end, Lines.End );
+                //FastGUI.DrawTextureFast(end, Lines.End, colorCache);
             }
         }
 
@@ -122,75 +123,57 @@ namespace ResearchPal
             var bottom = yMax - NodeMargins.x / 4f;
 
             // if too far off, just skip
-            if (! RectVisible(visibleRect, new Rect(left.x, yMin, right.x - left.x, yMax - yMin))) {
-                return;
-            }
+            if (!RectVisible(visibleRect, new Rect(left.x, yMin, right.x - left.x, yMax - yMin))) return;
 
             // straight bits
             // left to curve
-            var leftToCurve = new Rect(
-                left.x,
-                left.y - 2f,
-                NodeMargins.x / 4f,
-                4f );
+            var leftToCurve = new Rect(left.x, left.y - 2f, NodeMargins.x / 4f, 4f );
             if (RectVisible(visibleRect, leftToCurve)) {
                 GUI.DrawTexture( leftToCurve, Lines.EW );
+                //FastGUI.DrawTextureFast(leftToCurve, Lines.EW, colorCache);
             }
 
             // curve to curve
-            var curveToCurve = new Rect(
-                left.x + NodeMargins.x / 2f - 2f,
-                top,
-                4f,
-                bottom - top );
+            var curveToCurve = new Rect( left.x + NodeMargins.x / 2f - 2f, top, 4f, bottom - top );
             if (RectVisible(visibleRect, curveToCurve)) {
                 GUI.DrawTexture( curveToCurve, Lines.NS );
+                //FastGUI.DrawTextureFast(leftToCurve, Lines.NS, colorCache);
             }
 
             // curve to right
-            var curveToRight = new Rect(
-                left.x           + NodeMargins.x / 4f * 3,
-                right.y          - 2f,
-                right.x - left.x - NodeMargins.x / 4f * 3,
-                4f );
-            if (RectVisible(visibleRect, curveToRight)) {
+            var curveToRight = new Rect( left.x + NodeMargins.x / 4f * 3 + 1f, right.y - 2f, right.x - left.x - NodeMargins.x / 4f * 3, 4f );
+            if (RectVisible(visibleRect, curveToRight))
+            {
                 GUI.DrawTexture( curveToRight, Lines.EW );
+                //FastGUI.DrawTextureFast(curveToRight, Lines.EW, colorCache);
             }
 
             // curve positions
-            var curveLeft = new Rect(
-                left.x + NodeMargins.x / 4f,
-                left.y - NodeMargins.x / 4f,
-                NodeMargins.x / 2f,
-                NodeMargins.x / 2f );
-            var curveRight = new Rect(
-                left.x  + NodeMargins.x / 4f,
-                right.y - NodeMargins.x / 4f,
-                NodeMargins.x / 2f,
-                NodeMargins.x / 2f );
+            var curveLeft = new Rect(left.x + NodeMargins.x / 4f, left.y - NodeMargins.x / 4f, NodeMargins.x / 2f, NodeMargins.x / 2f );
+            var curveRight = new Rect(left.x + NodeMargins.x / 4f + 1f, right.y - NodeMargins.x / 4f, NodeMargins.x / 2f, NodeMargins.x / 2f );
 
             // going down
             if ( left.y < right.y ) {
                 if (RectVisible(visibleRect, curveLeft)) {
-                    GUI.DrawTextureWithTexCoords(
-                        curveLeft, Lines.Circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
+                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords( curveLeft, Lines.Circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
                 }
                 if (RectVisible(visibleRect, curveRight)) {
-                    GUI.DrawTextureWithTexCoords(
-                        curveRight, Lines.Circle, new Rect(0f, 0f, 0.5f, 0.5f));
+                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0f, 0f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveRight, Lines.Circle, new Rect(0f, 0f, 0.5f, 0.5f));
                 }
                 // bottom right quadrant
                 // top left quadrant
             } else {
                 // going up
                 if (RectVisible(visibleRect, curveLeft)) {
-                    GUI.DrawTextureWithTexCoords(
-                        curveLeft, Lines.Circle, new Rect(0.5f, 0f, 0.5f, 0.5f));
+                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0.5f, 0f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveLeft, Lines.Circle, new Rect(0.5f, 0f, 0.5f, 0.5f));
                 }
                 // top right quadrant
                 if (RectVisible(visibleRect, curveRight)) {
-                    GUI.DrawTextureWithTexCoords(
-                        curveRight, Lines.Circle, new Rect(0f, 0.5f, 0.5f, 0.5f));
+                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0f, 0.5f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveRight, Lines.Circle, new Rect(0f, 0.5f, 0.5f, 0.5f));
                 }
                 // bottom left quadrant
             }
@@ -206,6 +189,8 @@ namespace ResearchPal
                 var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
                 if (RectVisible(visibleRect, line)) {
                     GUI.DrawTexture( line, Lines.EW );
+                    //FastGUI.DrawTextureFast(line, Lines.EW, colorCache);
+                    
                 }
             } else {
                 DrawComplicatedSegments(visibleRect, left, right);

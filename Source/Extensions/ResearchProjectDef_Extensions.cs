@@ -6,7 +6,7 @@ using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class ResearchProjectDef_Extensions
     {

@@ -5,7 +5,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class MainButtonWorker_ResearchTree : MainButtonWorker_ToggleResearchTab
     {

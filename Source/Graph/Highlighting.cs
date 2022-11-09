@@ -5,7 +5,7 @@ using RimWorld;
 using Verse;
 using UnityEngine;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
 
 public static class Highlighting {

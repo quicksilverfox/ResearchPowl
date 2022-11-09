@@ -7,7 +7,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class Def_Extensions
     {
@@ -20,8 +20,9 @@ namespace ResearchPal
 
         public static void DrawColouredIcon( this Def def, Rect canvas )
         {
-            GUI.color = def.IconColor();
-            GUI.DrawTexture( canvas, def.IconTexture(), ScaleMode.ScaleToFit );
+            //GUI.color = def.IconColor();
+            //GUI.DrawTexture( canvas, def.IconTexture(), ScaleMode.ScaleToFit );
+            FastGUI.DrawTextureFast(canvas, def.IconTexture(), ResourceBank.colorWhite);
             GUI.color = Color.white;
         }
 

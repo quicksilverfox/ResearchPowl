@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
 
-  <ResearchPal>ResearchPal</ResearchPal>
+  <ResearchPal>ResearchPowl</ResearchPal>
 
   <ResearchPal.AllowsBuildingX>解鎖建築：{0}</ResearchPal.AllowsBuildingX>
   <ResearchPal.AllowsCraftingX>解鎖配方：{0}</ResearchPal.AllowsCraftingX>

@@ -4,12 +4,12 @@
 using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
-using static ResearchPal.Assets;
-using static ResearchPal.Constants;
+using static ResearchPowl.Assets;
+using static ResearchPowl.Constants;
 using Verse;
 using RimWorld;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class DummyNode : Node
     {

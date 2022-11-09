@@ -6,7 +6,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     [StaticConstructorOnStartup]
     public static class Assets

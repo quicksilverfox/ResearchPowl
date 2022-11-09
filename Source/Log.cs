@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public static class Log
     {
@@ -19,7 +19,7 @@ namespace ResearchPal
 
         private static string Format( string msg, params object[] args )
         {
-            return "ResearchPal :: " + string.Format( msg, args );
+            return "ResearchPowl :: " + string.Format( msg, args );
         }
 
         public static void Error( string msg, bool once, params object[] args )
@@ -33,9 +33,7 @@ namespace ResearchPal
 
         public static void Debug( string msg, params object[] args )
         {
-            if (! Settings.verboseDebug) {
-                return;
-            }
+            if (!ModSettings_ResearchPowl.verboseDebug) return;
             Verse.Log.Message( Format( msg, args ) );
         }
 

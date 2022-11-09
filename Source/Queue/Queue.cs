@@ -8,10 +8,10 @@ using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 using System;
-using static ResearchPal.Assets;
-using static ResearchPal.Constants;
+using static ResearchPowl.Assets;
+using static ResearchPowl.Constants;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class Queue : WorldComponent
     {
@@ -35,7 +35,6 @@ namespace ResearchPal
 
         public static void DrawLabels( Rect visibleRect )
         {
-            Profiler.Start( "Queue.DrawLabels" );
             var i = 1;
             foreach ( var node in _instance._queue )
             {
@@ -48,36 +47,30 @@ namespace ResearchPal
 
                 i++;
             }
-
-            Profiler.End();
         }
 
         public static void DrawLabel( Rect canvas, Color main, Color background, int label )
         {
             // draw coloured tag
-            GUI.color = main;
-            GUI.DrawTexture( canvas, CircleFill );
+            FastGUI.DrawTextureFast(canvas, CircleFill, main);
 
             // if this is not first in line, grey out centre of tag
-            if ( background != main )
+            if (background != main)
             {
-                GUI.color = background;
-                GUI.DrawTexture( canvas.ContractedBy( 2f ), CircleFill );
+                FastGUI.DrawTextureFast(canvas.ContractedBy(2f), CircleFill, background);
             }
 
             // draw queue number
-            GUI.color   = Color.white;
             Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label( canvas, label.ToString() );
+            Widgets.Label(canvas, label.ToString());
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
         // Require the input to be topologically ordered
         private void UnsafeConcat(IEnumerable<ResearchNode> nodes) {
-            foreach (var n in nodes) {
-                if (!_queue.Contains(n)) {
-                    _queue.Add(n);
-                }
+            foreach (var n in nodes)
+            {
+                if (!_queue.Contains(n)) _queue.Add(n);
             }
         }
 
@@ -88,10 +81,9 @@ namespace ResearchPal
 
         private void UnsafeInsert(IEnumerable<ResearchNode> nodes, int pos) {
             int i = pos;
-            foreach (var n in nodes) {
-                if (_queue.IndexOf(n, 0, pos) != -1) {
-                    continue;
-                }
+            foreach (var n in nodes)
+            {
+                if (_queue.IndexOf(n, 0, pos) != -1) continue;
                 _queue.Remove(n);
                 _queue.Insert(i++, n);
             }
@@ -107,17 +99,13 @@ namespace ResearchPal
         }
 
         public bool Append(ResearchNode node) {
-            if (_queue.Contains(node) || CantResearch(node)) {
-                return false;
-            }
+            if (_queue.Contains(node) || CantResearch(node)) return false;
             UnsafeAppend(node);
             return true;
         }
 
         public bool Prepend(ResearchNode node) {
-            if (CantResearch(node)) {
-                return false;
-            }
+            if (CantResearch(node)) return false;
             UnsafeConcatFront(node.MissingPrerequisitesInc());
             UpdateCurrentResearch();
             return true;
@@ -149,13 +137,11 @@ namespace ResearchPal
         private void MarkShouldRemove(int index, List<ResearchNode> shouldRemove) {
             var node = _queue[index];
             shouldRemove.Add(node);
-            for (int i = index + 1; i < _queue.Count(); ++i) {
-                if (shouldRemove.Contains(_queue[i])) {
-                    continue;
-                }
-                if (_queue[i].MissingPrerequisites().Contains(node)) {
-                    MarkShouldRemove(i, shouldRemove);
-                }
+            var length = _queue.Count();
+            for (int i = index + 1; i < length; ++i) {
+                if (shouldRemove.Contains(_queue[i])) continue;
+
+                if (_queue[i].MissingPrerequisites().Contains(node)) MarkShouldRemove(i, shouldRemove);
             }
         }
 
@@ -175,19 +161,16 @@ namespace ResearchPal
             List<ResearchNode> finished = new List<ResearchNode>();
             List<ResearchNode> unavailable = new List<ResearchNode>();
 
-            foreach (var n in _queue) {
-                if (n.Research.IsFinished) {
-                    finished.Add(n);
-                } else if (!n.GetAvailable()) {
-                    unavailable.Add(n);
-                }
+            foreach (var n in _queue)
+            {
+                if (n.Research.IsFinished) finished.Add(n);
+                else if (!n.GetAvailable()) unavailable.Add(n);
             }
-            finished.ForEach(n => _queue.Remove(n));
-            unavailable.ForEach(n => Remove(n));
+            foreach (var n in finished) _queue.Remove(n);
+            foreach (var n in unavailable) Remove(n);
+            
             var cur = Find.ResearchManager.currentProj;
-            if (cur != null && cur != CurrentResearch()) {
-                Replace(Find.ResearchManager.currentProj.ResearchNode());
-            }
+            if (cur != null && cur != CurrentResearch()) Replace(Find.ResearchManager.currentProj.ResearchNode());
             UpdateCurrentResearch();
         }
 
@@ -269,7 +252,7 @@ namespace ResearchPal
         }
 
         public static String DebugQueueSerialize(IEnumerable<ResearchNode> nodes) {
-            if (Settings.verboseDebug) {
+            if (ModSettings_ResearchPowl.verboseDebug) {
                 return string.Join(", ", nodes.Select(n => n.Research.label));
             }
             return "";
@@ -346,7 +329,7 @@ namespace ResearchPal
             }
             var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
-            if (! Settings.useVanillaResearchFinishedMessage) {
+            if (! ModSettings_ResearchPowl.useVanillaResearchFinishedMessage) {
                 Log.Debug(
                     "Send completion letter for {0}, next is {1}",
                     current.Research.label, next?.label ?? "NONE");
@@ -383,7 +366,7 @@ namespace ResearchPal
             Scribe_Collections.Look( ref _saveableQueue, "Queue", LookMode.Def );
 
             if ( Scribe.mode == LoadSaveMode.PostLoadInit ) {
-                if (Settings.asyncLoadingOnStartup) {
+                if (ModSettings_ResearchPowl.asyncLoadingOnStartup) {
                     Tree.WaitForResearchNodes();
                 }
                 foreach (var research in _saveableQueue) {
@@ -450,7 +433,7 @@ namespace ResearchPal
 
         static private float Width() {
             var original = DisplayQueueLength() * (NodeSize.x + Margin) - Margin;
-            if (Settings.showIndexOnQueue) {
+            if (ModSettings_ResearchPowl.showIndexOnQueue) {
                 return original + Constants.QueueLabelSize * 0.5f;
             }
             return original;
@@ -682,7 +665,7 @@ namespace ResearchPal
                 var node = temporaryQueue[i];
                 node.DrawAt(pos, visibleRect, Painter.Queue, true);
             }
-            if (Settings.showIndexOnQueue) {
+            if (ModSettings_ResearchPowl.showIndexOnQueue) {
                 DrawLabels(visibleRect);
             }
             foreach (var node in temporaryQueue) {
@@ -712,8 +695,6 @@ namespace ResearchPal
 
             _scroll_pos = GUI.BeginScrollView(
                 canvas, _scroll_pos, ViewRect(canvas), GUIStyle.none, GUIStyle.none);
-            Profiler.Start("Queue.DrawQueue");
-
 
             var visibleRect = VisibleRect(canvas);
             HandleDragReleaseInside(visibleRect);
@@ -721,7 +702,6 @@ namespace ResearchPal
 
             DrawNodes(visibleRect);
 
-            Profiler.End();
             GUI.EndScrollView(false);
         }
 

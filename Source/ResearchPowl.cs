@@ -8,26 +8,20 @@ using RimWorld;
 using Verse;
 using System.Threading;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
-    public class ResearchTree : Mod
+    public class ResearchPowl : Mod
     {
-        public ResearchTree( ModContentPack content ) : base( content )
+        public ResearchPowl( ModContentPack content ) : base( content )
         {
-            new Harmony("rimworld.ResearchPal").PatchAll();
+            new Harmony(this.Content.PackageIdPlayerFacing).PatchAll();
+			base.GetSettings<ModSettings_ResearchPowl>();
 
-            GetSettings<Settings>();
-
-            if (! Settings.delayLayoutGeneration) {
-                if (Settings.asyncLoadingOnStartup) {
-                    LongEventHandler.QueueLongEvent(
-                        StartLoadingWorker, "ResearchPal.BuildingResearchTreeAsync", false, null);
-                } else {
-                    LongEventHandler.QueueLongEvent(
-                        Tree.InitializeLayout, "ResearchPal.BuildingResearchTree", false, null);
-                }
+            if (!ModSettings_ResearchPowl.delayLayoutGeneration)
+            {
+                if (ModSettings_ResearchPowl.asyncLoadingOnStartup) LongEventHandler.QueueLongEvent(StartLoadingWorker, "ResearchPowl.BuildingResearchTreeAsync", false, null);
+                else LongEventHandler.QueueLongEvent(Tree.InitializeLayout, "ResearchPowl.BuildingResearchTree", false, null);
             }
-
 
             LongEventHandler.ExecuteWhenFinished(InitializeHelpSuport);
         }
@@ -40,14 +34,8 @@ namespace ResearchPal
             initializeWorker.Start();
         }
 
-        #region Overrides of Mod
-
         public override string SettingsCategory() { return "ResearchPal".Translate(); }
-        public override void DoSettingsWindowContents(UnityEngine.Rect inRect) { Settings.DoSettingsWindowContents(inRect); }
-
-        #endregion
-
-        #region HelpTree Support
+        public override void DoSettingsWindowContents(UnityEngine.Rect inRect) { ModSettings_ResearchPowl.DoSettingsWindowContents(inRect); }
 
         static MainButtonDef modHelp;
         static MethodInfo helpWindow_JumpTo;
@@ -80,7 +68,5 @@ namespace ResearchPal
                 return helpTreeLoaded;
             }
         }
-
-        #endregion
     }
 }

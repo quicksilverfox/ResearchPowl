@@ -9,9 +9,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Verse;
-using static ResearchPal.Constants;
+using static ResearchPowl.Constants;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class Node
     {

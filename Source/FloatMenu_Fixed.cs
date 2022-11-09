@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
-namespace ResearchPal
+namespace ResearchPowl
 {
     public class FloatMenu_Fixed : FloatMenu
     {
@@ -18,7 +18,7 @@ namespace ResearchPal
             focusWhenOpened      = focus;
         }
 
-        protected override void SetInitialSizeAndPosition()
+        public override void SetInitialSizeAndPosition()
         {
             var position                                                   = _position;
             if ( position.x + InitialSize.x > UI.screenWidth ) position.x  = UI.screenWidth  - InitialSize.x;
