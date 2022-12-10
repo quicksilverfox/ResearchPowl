@@ -178,22 +178,18 @@ namespace ResearchPowl
             _instance.SanityCheck();
         }
 
-        public bool Remove(ResearchNode node) {
-            if (node.Completed()) {
-                return _queue.Remove(node);
-            }
+        public bool Remove(ResearchNode node)
+        {
+            if (node.Research.IsFinished) return _queue.Remove(node);
+
             List<ResearchNode> shouldRemove = new List<ResearchNode>();
             var idx = _queue.IndexOf(node);
-            if (idx == -1) {
-                return false;
-            }
+            if (idx == -1) return false;
+
             MarkShouldRemove(idx, shouldRemove);
-            foreach (var n in shouldRemove) {
-                _queue.Remove(n);
-            }
-            if (idx == 0) {
-                UpdateCurrentResearch();
-            }
+            foreach (var n in shouldRemove) _queue.Remove(n);
+
+            if (idx == 0) UpdateCurrentResearch();
             return true;
         }
 
@@ -243,12 +239,8 @@ namespace ResearchPowl
             return _instance._queue.Contains(node);
         }
 
-        public int Count() {
-            return _queue.Count();
-        }
-
         public static int CountS() {
-            return _instance.Count();
+            return _instance._queue.Count;
         }
 
         public static String DebugQueueSerialize(IEnumerable<ResearchNode> nodes) {
@@ -385,62 +377,56 @@ namespace ResearchPowl
 
         private void DoMove(ResearchNode node, int from, int to) {
             List<ResearchNode> movingNodes = new List<ResearchNode>();
-            to = Math.Max(0, Math.Min(Count(), to));
-            if (to > from) {
+            to = Math.Max(0, Math.Min(_queue.Count, to));
+            if (to > from)
+            {
                 movingNodes.Add(node);
                 int dest = --to;
-                for (int i = from + 1; i <= to; ++i) {
-                    if (_queue[i].MissingPrerequisites().Contains(node)) {
+                for (int i = from + 1; i <= to; ++i)
+                {
+                    if (_queue[i].MissingPrerequisites().Contains(node))
+                    {
                         movingNodes.Add(_queue[i]);
                         --dest;
                     }
                 }
                 movingNodes.ForEach(n => _queue.Remove(n));
                 _queue.InsertRange(dest, movingNodes);
-            } else if (to < from) {
+            }
+            else if (to < from)
+            {
                 var prerequisites = node.MissingPrerequisites().ToList();
-                for (int i = to; i < from; ++i) {
-                    if (prerequisites.Contains(_queue[i])) {
-                        movingNodes.Add(_queue[i]);
-                    }
+                for (int i = to; i < from; ++i)
+                {
+                    if (prerequisites.Contains(_queue[i])) movingNodes.Add(_queue[i]);
                 }
                 movingNodes.Add(node);
                 UnsafeInsert(movingNodes, to);
             }
         }
 
-        public void Insert(ResearchNode node, int pos) {
-            if (CantResearch(node)) {
-                return;
-            }
-            pos = Math.Max(0, Math.Min(Count(), pos));
+        public void Insert(ResearchNode node, int pos)
+        {
+            if (CantResearch(node)) return;
+
+            pos = Math.Max(0, Math.Min(_queue.Count, pos));
             var idx = _queue.IndexOf(node);
             if (idx == pos) return;
-            if (idx != -1) {
-                DoMove(node, idx, pos);
-            } else {
-                UnsafeInsert(node.MissingPrerequisitesInc(), pos);
-            }
+
+            if (idx != -1) DoMove(node, idx, pos);
+            else UnsafeInsert(node.MissingPrerequisitesInc(), pos);
+
             UpdateCurrentResearch();
-        }
-        
-        public static void InsertS(ResearchNode node, int pos) {
-            _instance.Insert(node, pos);
-            NewUndoState();
         }
 
         static private Vector2 _scroll_pos = new Vector2(0, 0);
 
-        static private float Width() {
-            var original = DisplayQueueLength() * (NodeSize.x + Margin) - Margin;
-            if (ModSettings_ResearchPowl.showIndexOnQueue) {
-                return original + Constants.QueueLabelSize * 0.5f;
-            }
-            return original;
-        }
+        static private float Width()
+        {
+            //Get queue length and multiple by margins
+            var original = (DraggingNode() && !DraggingFromQueue()) ? CountS() + 1 : CountS() * (NodeSize.x + Margin) - Margin;
 
-        static private Rect ViewRect(Rect canvas) {
-            return new Rect(0, 0, Mathf.Max(Width(), canvas.width), canvas.height);
+            return ModSettings_ResearchPowl.showIndexOnQueue ? original + Constants.QueueLabelSize * 0.5f : original;
         }
 
         static private Vector2 NodePos(int i) {
@@ -452,29 +438,29 @@ namespace ResearchPowl
         }
 
         private static void ReleaseNodeAt(ResearchNode node, int dropIdx) {
-            if (dropIdx == -1) {
-                RemoveS(node);
-            }
+            if (dropIdx == -1) RemoveS(node);
+
             var tab = MainTabWindow_ResearchTree.Instance;
-            if (_instance._queue.IndexOf(node) == dropIdx) {
-                if (tab.DraggingTime() < 0.2f) {
-                    node.LeftClick();
-                }
-            } else {
-                if (DraggingFromQueue() && dropIdx > _instance._queue.IndexOf(node)) {
-                    ++dropIdx;
-                }
-                InsertS(node, dropIdx);
+            if (_instance._queue.IndexOf(node) == dropIdx)
+            {
+                if (tab.DraggingTime() < 0.2f) node.LeftClick();
+            }
+            else
+            {
+                if (DraggingFromQueue() && dropIdx > _instance._queue.IndexOf(node)) ++dropIdx;
+
+                _instance.Insert(node, dropIdx);
+                NewUndoState();
             }
         } 
 
-        static private bool ReleaseEvent() {
-            return DraggingNode()
-                && Event.current.type == EventType.MouseUp
-                && Event.current.button == 0;
+        static private bool ReleaseEvent()
+        {
+            return DraggingNode() && Event.current.type == EventType.MouseUp && Event.current.button == 0;
         }
 
-        static private void StopDragging() {
+        static private void StopDragging()
+        {
             MainTabWindow_ResearchTree.Instance.StopDragging();
         }
 
@@ -482,25 +468,19 @@ namespace ResearchPowl
             Rect relaxedRect = visibleRect;
             relaxedRect.yMin -= NodeSize.y * 0.3f;
             relaxedRect.height += NodeSize.y;
-            if (!visibleRect.Contains(dropPos)) {
-                return -1;
-            }
-            return VerticalPosToIdx(dropPos.x);
+
+            return (!visibleRect.Contains(dropPos)) ? -1 : (int)(dropPos.x / (Margin + NodeSize.x));
         }
 
-        private static void HandleDragReleaseInside(Rect visibleRect) {
-            if (ReleaseEvent()) {
-                ReleaseNodeAt(
-                    DraggedNode(),
-                    DropIndex(visibleRect, Event.current.mousePosition));
+        private static void HandleDragReleaseInside(Rect visibleRect)
+        {
+            if (ReleaseEvent())
+            {
+                ReleaseNodeAt(DraggedNode(), DropIndex(visibleRect, Event.current.mousePosition));
                 StopDragging();
                 ResetNodePositions();
                 Event.current.Use();
             }
-        }
-
-        private static int VerticalPosToIdx(float pos) {
-            return (int) (pos / (Margin + NodeSize.x));
         }
 
         static private List<int> NormalPositions(int n) {
@@ -538,35 +518,29 @@ namespace ResearchPowl
             return poss;
         }
 
-        private static void ResetNodePositions() {
+        static void ResetNodePositions() {
             currentPositions = NormalPositions(CountS());
         }
 
-        static private List<int> currentPositions = new List<int>();
+        static List<int> currentPositions = new List<int>();
+        static bool nodeDragged = false;
 
-        static private bool nodeDragged = false;
-
-        public void NotifyNodeDragged() {
+        static public void NotifyNodeDraggedS()
+        {
             nodeDragged = true;
         }
-        static public void NotifyNodeDraggedS() {
-            _instance.NotifyNodeDragged();
-        }
 
-        static private bool DraggingNode() {
-            return MainTabWindow_ResearchTree.Instance.DraggingNode();
+        static bool DraggingNode()
+        {
+            return MainTabWindow_ResearchTree.Instance.IsDraggingNode();
         }
-        static private bool DraggingFromQueue() {
-            return MainTabWindow_ResearchTree.Instance.DraggingSource() == Painter.Queue;
+        static bool DraggingFromQueue()
+        {
+            return MainTabWindow_ResearchTree.Instance.draggingSource == Painter.Queue;
         }
-        static private ResearchNode DraggedNode() {
-            return MainTabWindow_ResearchTree.Instance.DraggedNode();
-        }
-        static private int DisplayQueueLength() {
-            if (DraggingNode() && !DraggingFromQueue()) {
-                return CountS() + 1;
-            }
-            return CountS();
+        static ResearchNode DraggedNode()
+        {
+            return MainTabWindow_ResearchTree.Instance.draggedNode;
         }
 
         public static void UpdateCurrentPosition(Rect visibleRect) {
@@ -615,33 +589,27 @@ namespace ResearchPowl
             }
         }
         static private void HandleScroll(Rect canvas) {
-            if (Event.current.isScrollWheel && Mouse.IsOver(canvas)) {
+            if (Event.current.isScrollWheel && Mouse.IsOver(canvas))
+            {
                 _scroll_pos.x += Event.current.delta.y * 20;
                 Event.current.Use();
-            } else if (DraggingNode()) {
+            }
+            else if (DraggingNode())
+            {
                 var tab = MainTabWindow_ResearchTree.Instance;
-                var nodePos = tab.DraggedNodePos();
-                if (  nodePos.y <= canvas.yMin - NodeSize.y
-                   || nodePos.y >= canvas.yMax
-                   || (  nodePos.x >= canvas.xMin
-                      && nodePos.x <= canvas.xMax - NodeSize.x)) {
+                var nodePos = tab.draggedPosition;
+                if (  nodePos.y <= canvas.yMin - NodeSize.y || nodePos.y >= canvas.yMax || (  nodePos.x >= canvas.xMin && nodePos.x <= canvas.xMax - NodeSize.x))
+                {
                     return;
                 }
                 float baseScroll = 20;
-                if (nodePos.x < canvas.xMin) {
-                    _scroll_pos.x -= baseScroll * (canvas.xMin - nodePos.x) / NodeSize.x;
-                } else if (nodePos.x > canvas.xMax - NodeSize.x) {
-                    _scroll_pos.x += baseScroll * (nodePos.x + NodeSize.x - canvas.xMax) / NodeSize.x;
-                }
+                if (nodePos.x < canvas.xMin) _scroll_pos.x -= baseScroll * (canvas.xMin - nodePos.x) / NodeSize.x;
+                else if (nodePos.x > canvas.xMax - NodeSize.x) _scroll_pos.x += baseScroll * (nodePos.x + NodeSize.x - canvas.xMax) / NodeSize.x;
             }
         }
 
-        static private void DrawBackground(Rect baseCanvas) {
-            GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
-            GUI.DrawTexture(baseCanvas, BaseContent.GreyTex);
-        }
-
-        static private Rect CanvasFromBaseCanvas(Rect baseCanvas) {
+        static private Rect CanvasFromBaseCanvas(Rect baseCanvas)
+        {
             var r = baseCanvas.ContractedBy(Constants.Margin);
             r.xMin += Margin;
             r.xMax -= Margin;
@@ -654,35 +622,31 @@ namespace ResearchPowl
             temporaryQueue.Clear();
             // when handling event in nodes, the queue itself may change
             // so using a temporary queue to avoid the unmatching DrawAt and SetRect
-            foreach (var node in _instance._queue) {
-                temporaryQueue.Add(node);
+            foreach (var node in _instance._queue) temporaryQueue.Add(node);
+
+            var length = temporaryQueue.Count;
+            for (int i = 0; i < length; ++i)
+            {
+                if (currentPositions[i] == -1) continue;
+                temporaryQueue[i].DrawAt(NodePos(currentPositions[i]), visibleRect, Painter.Queue, true);
             }
-            for (int i = 0; i < temporaryQueue.Count(); ++i) {
-                if (currentPositions[i] == -1) {
-                    continue;
-                }
-                var pos = NodePos(currentPositions[i]);
-                var node = temporaryQueue[i];
-                node.DrawAt(pos, visibleRect, Painter.Queue, true);
-            }
-            if (ModSettings_ResearchPowl.showIndexOnQueue) {
-                DrawLabels(visibleRect);
-            }
-            foreach (var node in temporaryQueue) {
-                node.SetRects();
-            }
-            if (temporaryQueue.Count() != CountS()) {
-                ResetNodePositions();
-            }
+            if (ModSettings_ResearchPowl.showIndexOnQueue) DrawLabels(visibleRect);
+            foreach (var node in temporaryQueue) node.SetRects();
+
+            if (temporaryQueue.Count != CountS()) ResetNodePositions();
         }
 
         static public void DrawS(Rect baseCanvas, bool interactible) {
 
-            DrawBackground(baseCanvas);
+            //Draw background
+            GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+            GUI.DrawTexture(baseCanvas, BaseContent.GreyTex);
+
             HandleUndo();
             var canvas = CanvasFromBaseCanvas(baseCanvas);
 
-            if (CountS() == 0) {
+            if (CountS() == 0)
+            {
                 Text.Anchor = TextAnchor.MiddleCenter;
                 GUI.color   = Color.white;
                 Widgets.Label( canvas, ResourceBank.String.NothingQueued );
@@ -692,10 +656,8 @@ namespace ResearchPowl
             HandleReleaseOutside(canvas);
             HandleScroll(canvas);
 
-
-            _scroll_pos = GUI.BeginScrollView(
-                canvas, _scroll_pos, ViewRect(canvas), GUIStyle.none, GUIStyle.none);
-
+            _scroll_pos = GUI.BeginScrollView(canvas, _scroll_pos, new Rect(0, 0, Mathf.Max(Width(), canvas.width), canvas.height), GUIStyle.none, GUIStyle.none);
+            
             var visibleRect = VisibleRect(canvas);
             HandleDragReleaseInside(visibleRect);
             UpdateCurrentPosition(visibleRect);
@@ -708,8 +670,9 @@ namespace ResearchPowl
         public static void Notify_InstantFinished()
         {
             foreach (var node in new List<ResearchNode>(_instance._queue))
-                if (node.Research.IsFinished)
-                    _instance._queue.Remove(node);
+            {
+                if (node.Research.IsFinished) _instance._queue.Remove(node);
+            }
 
             Find.ResearchManager.currentProj = _instance._queue.FirstOrDefault()?.Research;
         }

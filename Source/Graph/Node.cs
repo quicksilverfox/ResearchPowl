@@ -145,9 +145,7 @@ namespace ResearchPowl
         {
             get
             {
-                if ( !_rectsSet )
-                    SetRects();
-
+                if (!_rectsSet) SetRects();
                 return _rect;
             }
         }
@@ -356,11 +354,12 @@ namespace ResearchPowl
 
         public virtual bool IsVisible( Rect visibleRect )
         {
+            var nodeRect = Rect;
             return !(
-                Rect.xMin > visibleRect.xMax ||
-                Rect.xMax < visibleRect.xMin ||
-                Rect.yMin > visibleRect.yMax ||
-                Rect.yMax < visibleRect.yMin );
+            nodeRect.m_XMin > visibleRect.xMax || 
+            nodeRect.xMax < visibleRect.m_XMin || 
+            nodeRect.m_YMin > visibleRect.yMax || 
+            nodeRect.yMax < visibleRect.m_YMin );
         }
 
         public virtual void Draw(Rect visibleRect, Painter painter)

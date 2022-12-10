@@ -22,7 +22,7 @@ namespace ResearchPowl
         {
             //GUI.color = def.IconColor();
             //GUI.DrawTexture( canvas, def.IconTexture(), ScaleMode.ScaleToFit );
-            FastGUI.DrawTextureFast(canvas, def.IconTexture(), ResourceBank.colorWhite);
+            FastGUI.DrawTextureFast(canvas, def.IconTexture(), Assets.colorWhite);
             GUI.color = Color.white;
         }
 

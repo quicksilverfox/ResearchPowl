@@ -40,7 +40,7 @@ namespace ResearchPowl
 
 		public static bool ButtonImageFast(Rect butRect, int controlID, Event current, EventType eventType, Texture2D tex)
 		{
-			DrawTextureFast(butRect, tex, ResourceBank.colorWhite);
+			DrawTextureFast(butRect, tex, Assets.colorWhite);
 
 			if (eventType == EventType.MouseDown)
 			{

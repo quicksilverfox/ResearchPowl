@@ -159,7 +159,7 @@ public class RelatedNodeHighlightSet {
     private static IEnumerable<ResearchNode> RelatedPrerequisites(ResearchNode node) {
         return node.DirectPrerequisites().Concat(
             node.DirectPrerequisites()
-                .Where(n => ! n.Completed())
+                .Where(n => ! n.Research.IsFinished)
                 .SelectMany(RelatedPrerequisites));
     }
 

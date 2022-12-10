@@ -4,8 +4,6 @@
 using System.Linq;
 using UnityEngine;
 using System.Collections.Generic;
-using static ResearchPowl.Assets;
-using static ResearchPowl.Constants;
 using Verse;
 using RimWorld;
 
@@ -42,24 +40,30 @@ namespace ResearchPowl
 
         #endregion
 
-        public List<ResearchNode> Parent
+        public List<ResearchNode> Parent()
         {
-            get
+            List<ResearchNode> workingList = new List<ResearchNode>();
+            List<Node> list = new List<Node>(InNodes);
+            var length = list.Count;
+            for (int i = 0; i < length; i++)
             {
-                return InNodes.OfType<ResearchNode>()
-                    .Concat(InNodes.OfType<DummyNode>()
-                        .SelectMany(n => n.Parent))
-                    .ToList();
+                var node = list[i];
+                if (node is DummyNode dNode) workingList.AddRange(dNode.Parent());
             }
+            return workingList;
         }
 
-        public List<ResearchNode> Child
+        public List<ResearchNode> Child()
         {
-            get
+            List<ResearchNode> workingList = new List<ResearchNode>();
+            List<Node> list = new List<Node>(OutNodes);
+            var length = list.Count;
+            for (int i = 0; i < length; i++)
             {
-                return OutNodes.OfType<ResearchNode>()
-                    .Concat(OutNodes.OfType<DummyNode>().SelectMany(n => n.Child)).ToList();
+                var node = list[i];
+                if (node is DummyNode dNode) workingList.AddRange(dNode.Child());
             }
+            return workingList;            
         }
         public override bool Highlighted() {
             return OutResearch().HighlightInEdge(InResearch());

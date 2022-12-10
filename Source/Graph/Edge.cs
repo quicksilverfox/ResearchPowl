@@ -48,12 +48,9 @@ namespace ResearchPowl
         {
             get
             {
-                if ( OutResearch().HighlightInEdge(InResearch()) )
-                    return 3;
-                if ( OutResearch().Completed() )
-                    return 2;
-                if ( OutResearch().Available() )
-                    return 1;
+                if ( OutResearch().HighlightInEdge(InResearch()) ) return 3;
+                if ( OutResearch().Research.IsFinished ) return 2;
+                if ( OutResearch().Available() ) return 1;
                 return 0;
             }
         }
@@ -61,28 +58,24 @@ namespace ResearchPowl
         private ResearchNode _inResearch;
         private ResearchNode _outResearch;
 
-        public ResearchNode InResearch() {
-            if (_inResearch == null) {
-                if (In is ResearchNode rn) {
-                    _inResearch = rn;
-                } else if (In is DummyNode dn) {
-                    _inResearch = dn.InResearch();
-                }
+        public ResearchNode InResearch()
+        {
+            if (_inResearch == null)
+            {
+                if (In is ResearchNode rn) _inResearch = rn;
+                else if (In is DummyNode dn) _inResearch = dn.InResearch();
             }
             return _inResearch;
         }
-
-        public ResearchNode OutResearch() {
-            if (_outResearch == null) {
-                if (Out is ResearchNode rn) {
-                    _outResearch = rn;
-                } else if (Out is DummyNode dn) {
-                    _outResearch = dn.OutResearch();
-                }
+        public ResearchNode OutResearch()
+        {
+            if (_outResearch == null)
+            {
+                if (Out is ResearchNode rn) _outResearch = rn;
+                else if (Out is DummyNode dn) _outResearch = dn.OutResearch();
             }
             return _outResearch;
         }
-
         static private bool RectVisible(Rect view, Rect test) {
             return ! ( view.xMin > test.xMax
                     || view.yMin > test.yMax
@@ -97,21 +90,16 @@ namespace ResearchPowl
         }
 
         public void DrawEnd(Rect visibleRect, Vector2 left, Vector2 right) {
-            if ( IsDummy ) {
+            if (IsDummy)
+            {
                 // or draw a line piece through the dummy
                 var through = new Rect(right.x, right.y - 2, NodeSize.x, 4f);
-                if (RectVisible(visibleRect, through)) {
-                    GUI.DrawTexture( through, Lines.EW );
-                    //FastGUI.DrawTextureFast(through, Lines.EW, colorCache);
-                }
+                if (RectVisible(visibleRect, through)) GUI.DrawTexture( through, Assets.LineEW );
                 return;
             }
             // draw the end arrow (if not dummy)
             var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
-            if (RectVisible(visibleRect, end)) {
-                GUI.DrawTexture( end, Lines.End );
-                //FastGUI.DrawTextureFast(end, Lines.End, colorCache);
-            }
+            if (RectVisible(visibleRect, end)) GUI.DrawTexture( end, Assets.LineEnd );
         }
 
         public void DrawComplicatedSegments(Rect visibleRect, Vector2 left, Vector2 right) {
@@ -129,23 +117,20 @@ namespace ResearchPowl
             // left to curve
             var leftToCurve = new Rect(left.x, left.y - 2f, NodeMargins.x / 4f, 4f );
             if (RectVisible(visibleRect, leftToCurve)) {
-                GUI.DrawTexture( leftToCurve, Lines.EW );
-                //FastGUI.DrawTextureFast(leftToCurve, Lines.EW, colorCache);
+                GUI.DrawTexture( leftToCurve, Assets.LineEW );
             }
 
             // curve to curve
             var curveToCurve = new Rect( left.x + NodeMargins.x / 2f - 2f, top, 4f, bottom - top );
             if (RectVisible(visibleRect, curveToCurve)) {
-                GUI.DrawTexture( curveToCurve, Lines.NS );
-                //FastGUI.DrawTextureFast(leftToCurve, Lines.NS, colorCache);
+                GUI.DrawTexture( curveToCurve, Assets.LineNS );
             }
 
             // curve to right
             var curveToRight = new Rect( left.x + NodeMargins.x / 4f * 3 + 1f, right.y - 2f, right.x - left.x - NodeMargins.x / 4f * 3, 4f );
             if (RectVisible(visibleRect, curveToRight))
             {
-                GUI.DrawTexture( curveToRight, Lines.EW );
-                //FastGUI.DrawTextureFast(curveToRight, Lines.EW, colorCache);
+                GUI.DrawTexture( curveToRight, Assets.LineEW );
             }
 
             // curve positions
@@ -155,25 +140,21 @@ namespace ResearchPowl
             // going down
             if ( left.y < right.y ) {
                 if (RectVisible(visibleRect, curveLeft)) {
-                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
-                    GUI.DrawTextureWithTexCoords( curveLeft, Lines.Circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords( curveLeft, Assets.LineCircle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
                 }
                 if (RectVisible(visibleRect, curveRight)) {
-                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0f, 0f, 0.5f, 0.5f));
-                    GUI.DrawTextureWithTexCoords(curveRight, Lines.Circle, new Rect(0f, 0f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveRight, Assets.LineCircle, new Rect(0f, 0f, 0.5f, 0.5f));
                 }
                 // bottom right quadrant
                 // top left quadrant
             } else {
                 // going up
                 if (RectVisible(visibleRect, curveLeft)) {
-                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0.5f, 0f, 0.5f, 0.5f));
-                    GUI.DrawTextureWithTexCoords(curveLeft, Lines.Circle, new Rect(0.5f, 0f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveLeft, Assets.LineCircle, new Rect(0.5f, 0f, 0.5f, 0.5f));
                 }
                 // top right quadrant
                 if (RectVisible(visibleRect, curveRight)) {
-                    //FastGUI.DrawTextureFastWithCoords(curveLeft, Lines.Circle, colorCache, new Rect(0f, 0.5f, 0.5f, 0.5f));
-                    GUI.DrawTextureWithTexCoords(curveRight, Lines.Circle, new Rect(0f, 0.5f, 0.5f, 0.5f));
+                    GUI.DrawTextureWithTexCoords(curveRight, Assets.LineCircle, new Rect(0f, 0.5f, 0.5f, 0.5f));
                 }
                 // bottom left quadrant
             }
@@ -185,16 +166,12 @@ namespace ResearchPowl
             var right = Out.Left;
 
             // if left and right are on the same level, just draw a straight line.
-            if (Math.Abs( left.y - right.y ) < Epsilon) {
+            if (Math.Abs( left.y - right.y ) < Epsilon)
+            {
                 var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
-                if (RectVisible(visibleRect, line)) {
-                    GUI.DrawTexture( line, Lines.EW );
-                    //FastGUI.DrawTextureFast(line, Lines.EW, colorCache);
-                    
-                }
-            } else {
-                DrawComplicatedSegments(visibleRect, left, right);
+                if (RectVisible(visibleRect, line)) GUI.DrawTexture( line, Assets.LineEW );
             }
+            else DrawComplicatedSegments(visibleRect, left, right);
             DrawEnd(visibleRect, left, right);
         }
 
