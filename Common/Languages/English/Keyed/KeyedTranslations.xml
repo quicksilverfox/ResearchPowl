@@ -34,62 +34,79 @@
 	<ResearchPal.NothingQueued>no research queued</ResearchPal.NothingQueued>
 	<ResearchPal.NextInQueue>Next in queue: {0}</ResearchPal.NextInQueue>
 
-	<ResearchPal.BuildingResearchTree>Building Research Tree</ResearchPal.BuildingResearchTree>
-	<ResearchPal.BuildingResearchTreeAsync>Start Building Research Tree on Background</ResearchPal.BuildingResearchTreeAsync>
+	<ResearchPal.BuildingResearchTree>Building research tree</ResearchPal.BuildingResearchTree>
+	<ResearchPal.BuildingResearchTreeAsync>Start building research tree on background</ResearchPal.BuildingResearchTreeAsync>
 
-	<ResearchPal.ResetLayout>Regenerate Research Tree Layout</ResearchPal.ResetLayout>
-	<ResearchPal.LayoutRegenerated>Research Tree Layout Regenerated</ResearchPal.LayoutRegenerated>
+	<ResearchPal.ResetLayout>Regenerate research tree layout</ResearchPal.ResetLayout>
+	<ResearchPal.LayoutRegenerated>Research tree layout regenerated</ResearchPal.LayoutRegenerated>
 
-	<ResearchPal.ShowNotificationPopup>Show Notification Popup</ResearchPal.ShowNotificationPopup>
+	<ResearchPal.ShowNotificationPopup>Show notification popup</ResearchPal.ShowNotificationPopup>
 	<ResearchPal.ShowNotificationPopupTip>Whenever you finish research, pause and show the default notification.</ResearchPal.ShowNotificationPopupTip>
-	<ResearchPal.ShouldSeparateByTechLevels>Group Researches by Tech Level</ResearchPal.ShouldSeparateByTechLevels>
-	<ResearchPal.ShouldSeparateByTechLevelsTip>Otherwise use a more dense layout (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.ShouldSeparateByTechLevelsTip>
-	<ResearchPal.ShouldPauseOnOpen>Pause on Display</ResearchPal.ShouldPauseOnOpen>
-	<ResearchPal.ShouldPauseOnOpenTip>Whenever the game should pause when the research tab is displayed.</ResearchPal.ShouldPauseOnOpenTip>
-	<ResearchPal.ShouldResetOnOpen>Reset on Display</ResearchPal.ShouldResetOnOpen>
+	
+	<ResearchPal.ShouldSeparateByTechLevels>Group research by tech level</ResearchPal.ShouldSeparateByTechLevels>
+	<ResearchPal.ShouldSeparateByTechLevelsTip>Divide the tree up into tech levels. Turn this off for a denser layout.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.ShouldSeparateByTechLevelsTip>
+	
+	<ResearchPal.ShouldPauseOnOpen>Pause on display</ResearchPal.ShouldPauseOnOpen>
+	<ResearchPal.ShouldPauseOnOpenTip>Pause the game when the research tab is displayed.</ResearchPal.ShouldPauseOnOpenTip>
+	
+	<ResearchPal.ShouldResetOnOpen>Reset on display</ResearchPal.ShouldResetOnOpen>
 	<ResearchPal.ShouldResetOnOpenTip>Clear filtering and reset scroll position.</ResearchPal.ShouldResetOnOpenTip>
-	<ResearchPal.AlignCloserToAncestors>Align Closer to Prerequisites</ResearchPal.AlignCloserToAncestors>
-	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.AlignCloserToAncestorsTip>
-	<ResearchPal.MinimumSeparateModTech>Minimum Separated Mod Researches Count</ResearchPal.MinimumSeparateModTech>
-	<ResearchPal.MinimumSeparateModTechTip>Minimum number of added techs for a mod to be placed separately from the main vanilla tech-tree. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.MinimumSeparateModTechTip>
-	<ResearchPal.GroupModTechs>Group Researches from Same Mods</ResearchPal.GroupModTechs>
-	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics. (Click "Regenerate Research Tree Layout" to apply)</ResearchPal.GroupModTechsTip>
-	<ResearchPal.SearchByDescription>Search by Descriptions</ResearchPal.SearchByDescription>
-	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance)</ResearchPal.SearchByDescriptionTip>
-	<ResearchPal.DelayLayoutGeneration>Delay Layout Generation</ResearchPal.DelayLayoutGeneration>
-	<ResearchPal.DelayLayoutGenerationTip>Generate layout at the first time the research tree is used, instead of when loading the game</ResearchPal.DelayLayoutGenerationTip>
-	<ResearchPal.AsyncLoadingOnStartup>Background Layout Generation</ResearchPal.AsyncLoadingOnStartup>
-	<ResearchPal.AsyncLoadingOnStartupTip>Generate layout on background when game loads</ResearchPal.AsyncLoadingOnStartupTip>
-	<ResearchPal.ProgressTooltip>Research Progress Tooltip</ResearchPal.ProgressTooltip>
-	<ResearchPal.ProgressTooltipTip>Display research progress in a tooltip for in-progress project (Warning: currently may not work properly)</ResearchPal.ProgressTooltipTip>
-	<ResearchPal.AlwaysDisplayProgress>Always Display Progress</ResearchPal.AlwaysDisplayProgress>
-	<ResearchPal.AlwaysDisplayProgressTip>Always display the rest of the points needed to complete a project, doesn't affect the display when zooming out</ResearchPal.AlwaysDisplayProgressTip>
-	<ResearchPal.ShowQueueIndexOnQueue>Display Indices on Research Queue</ResearchPal.ShowQueueIndexOnQueue>
+	
+	<ResearchPal.AlignCloserToAncestors>Align closer to prerequisites</ResearchPal.AlignCloserToAncestors>
+	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.AlignCloserToAncestorsTip>
+	
+	<ResearchPal.MinimumSeparateModTech>Minimum projects per mod</ResearchPal.MinimumSeparateModTech>
+	<ResearchPal.MinimumSeparateModTechTip>If a mod adds more than this number of research projects, they will be grouped together in the tree.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.MinimumSeparateModTechTip>
+	
+	<ResearchPal.GroupModTechs>Group research from the same mod</ResearchPal.GroupModTechs>
+	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.GroupModTechsTip>
+	
+	<ResearchPal.SearchByDescription>Search by descriptions</ResearchPal.SearchByDescription>
+	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance).</ResearchPal.SearchByDescriptionTip>
+	
+	<ResearchPal.DelayLayoutGeneration>Delay layout generation</ResearchPal.DelayLayoutGeneration>
+	<ResearchPal.DelayLayoutGenerationTip>Generate layout at the first time the research tree is used, instead of when loading the game.</ResearchPal.DelayLayoutGenerationTip>
+	
+	<ResearchPal.AsyncLoadingOnStartup>Background layout generation</ResearchPal.AsyncLoadingOnStartup>
+	<ResearchPal.AsyncLoadingOnStartupTip>Generate layout in background when game loads.</ResearchPal.AsyncLoadingOnStartupTip>
+	
+	<ResearchPal.ProgressTooltip>Research progress tooltip</ResearchPal.ProgressTooltip>
+	<ResearchPal.ProgressTooltipTip>Display research progress in a tooltip for in-progress project.</ResearchPal.ProgressTooltipTip>
+	
+	<ResearchPal.AlwaysDisplayProgress>Always display progress</ResearchPal.AlwaysDisplayProgress>
+	<ResearchPal.AlwaysDisplayProgressTip>Always display the rest of the points needed to complete a project.</ResearchPal.AlwaysDisplayProgressTip>
+	
+	<ResearchPal.ShowQueueIndexOnQueue>Display indices on research queue</ResearchPal.ShowQueueIndexOnQueue>
 	<ResearchPal.ShowQueueIndexOnQueueTip>Display index icons on researches in the research queue.</ResearchPal.ShowQueueIndexOnQueueTip>
-	<ResearchPal.DontIgnoreHiddenPrerequisites>DON'T IGNORE HIDDEN PREREQUISITES</ResearchPal.DontIgnoreHiddenPrerequisites>
-    <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Fix an old bug of the original ResearchPal that ignores hidden prereqisites.
-You should always turn this option on for a more balanced gameplay. Being able to turning off this option is for existing save game strategy compatibility. (restart the game to apply)</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
+	
+	<ResearchPal.DontIgnoreHiddenPrerequisites>Respect hidden prerequisites</ResearchPal.DontIgnoreHiddenPrerequisites>
+    <ResearchPal.DontIgnoreHiddenPrerequisitesTip>Leave enabled for balanced gameplay. Being able to turning off this option is for existing save game compatibility.\n\nRestart the game to apply.</ResearchPal.DontIgnoreHiddenPrerequisitesTip>
+	
 	<ResearchPal.NeedsRestart>Research settings changed, restart RimWorld to apply the change.</ResearchPal.NeedsRestart>
-	<ResearchPal.DisableShortcutManual>Disable Shortcut Manual</ResearchPal.DisableShortcutManual>
+	<ResearchPal.DisableShortcutManual>Disable shortcut manual</ResearchPal.DisableShortcutManual>
+	
 	<ResearchPal.SwapZoomMode>Swap the scroll wheel behavior</ResearchPal.SwapZoomMode>
 	<ResearchPal.SwapZoomModeTip>If enabled, shift+scroll wheel will vertical-scroll instead of zoom.</ResearchPal.SwapZoomModeTip>
 
-	<ResearchPal.ScrollSpeedMultiplier>Scrolling Speed Multiplier</ResearchPal.ScrollSpeedMultiplier>
+	<ResearchPal.ScrollSpeedMultiplier>Scrolling speed multiplier</ResearchPal.ScrollSpeedMultiplier>
 	<ResearchPal.ScrollSpeedMultiplierTip>Control horizontal and vertical scrolling speed of the main research tree</ResearchPal.ScrollSpeedMultiplierTip>
-	<ResearchPal.ZoomingSpeedMultiplier>Zooming Speed Multiplier</ResearchPal.ZoomingSpeedMultiplier>
+	
+	<ResearchPal.ZoomingSpeedMultiplier>Zooming speed multiplier</ResearchPal.ZoomingSpeedMultiplier>
 	<ResearchPal.ZoomingSpeedMultiplierTip>Control the zooming sensitivity of the main research tree</ResearchPal.ZoomingSpeedMultiplierTip>
-	<ResearchPal.DraggingDisplayDelay>Dragging Display Delay</ResearchPal.DraggingDisplayDelay>
+	
+	<ResearchPal.DraggingDisplayDelay>Dragging display delay</ResearchPal.DraggingDisplayDelay>
 	<ResearchPal.DraggingDisplayDelayTip>The delay in second a dragged research node in research tree display as dragged. (doesn't affect dragging nodes in queue and the actual trigger of dragging)</ResearchPal.DraggingDisplayDelayTip>
 
-	<ResearchPal.VerboseLogging>Verbose Logging (WIP)</ResearchPal.VerboseLogging>
-	<ResearchPal.VerboseLoggingTip>Produce verbose debug logs in dev mode messages (WIP).</ResearchPal.VerboseLoggingTip>
+	<ResearchPal.VerboseLogging>Verbose logging</ResearchPal.VerboseLogging>
+	<ResearchPal.VerboseLoggingTip>Produce verbose debug logs in dev mode messages.</ResearchPal.VerboseLoggingTip>
 
-	<ResearchPal.ShowVanillaResearchFinishedMessage>Use Vanilla "Research Finished" Message</ResearchPal.ShowVanillaResearchFinishedMessage>
-	<ResearchPal.ShowVanillaResearchFinishedMessageTip>ResearchPal normally sends its own letter when research is finished, this option restore the vanilla research completion message, a compatibility workaround for mods like Semi Random Research.</ResearchPal.ShowVanillaResearchFinishedMessageTip>
+	<ResearchPal.ShowVanillaResearchFinishedMessage>Use vanilla "Research Finished" message</ResearchPal.ShowVanillaResearchFinishedMessage>
+	<ResearchPal.ShowVanillaResearchFinishedMessageTip>This mod may send its own letter when research is finished, or the normal vanilla behavior may be used instead.</ResearchPal.ShowVanillaResearchFinishedMessageTip>
 
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
 	
 	<ResearchPal.MaxAllowedTechLvl>Max tech tier override: {0}</ResearchPal.MaxAllowedTechLvl>
 	<ResearchPal.MaxAllowedTechLvlTip>If you are using a mod that caps the research, and the cap is not working correctly, you can override it here manually.\n\nYou may need to regenerate the tech tree if you change this.</ResearchPal.MaxAllowedTechLvlTip>
-	<ResearchPal.DontShowUnallowedTech>Don't show unallowed tech</ResearchPal.DontShowUnallowedTech>
+	
+	<ResearchPal.DontShowUnallowedTech>Do not show unallowed tech</ResearchPal.DontShowUnallowedTech>
 </LanguageData>

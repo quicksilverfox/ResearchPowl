@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RimWorld;
+﻿using System.Collections.Generic;
 using Verse;
 
 namespace ResearchPowl
@@ -30,7 +25,8 @@ namespace ResearchPowl
         // tab.
         // if `IsHidden(research) == true`, then all the children node of
         // `research` will be hidden.
-        public static bool IsHidden(ResearchProjectDef r) {
+        public static bool IsHidden(ResearchProjectDef r)
+        {
             return false;
         }
 
@@ -39,8 +35,8 @@ namespace ResearchPowl
         // research facility and techprints).
         // The research node will be grayed out (just like lacking techprints)
         // if this function returns false on the according research.
-        public static bool PassCustomUnlockRequirements(
-            ResearchProjectDef p) {
+        public static bool PassCustomUnlockRequirements(ResearchProjectDef p)
+        {
             return true;
         }
 
@@ -48,8 +44,8 @@ namespace ResearchPowl
         // the tech is locked behind a modded requirement.
         // A tooltip will be displayed when hovering the locked techs
         // (and only the locked techs)
-        public static List<string> CustomUnlockRequirementPrompts(
-            ResearchProjectDef p) {
+        public static List<string> CustomUnlockRequirementPrompts(ResearchProjectDef p)
+        {
             return new List<string>();
         }
     }

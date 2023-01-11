@@ -1,12 +1,9 @@
 // Node.cs
 // Copyright Karel Kroeze, 2019-2020
 
-// #define TRACE_POS
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using Verse;
 using static ResearchPowl.Constants;
@@ -15,40 +12,32 @@ namespace ResearchPowl
 {
     public class Node
     {
-        protected const float                  Offset   = 2f;
-        protected       List<Edge<Node, Node>> _inEdges = new List<Edge<Node, Node>>();
-
-        protected bool                   _largeLabel;
-        protected List<Edge<Node, Node>> _outEdges = new List<Edge<Node, Node>>();
-
+        public List<Edge<Node, Node>> _inEdges = new List<Edge<Node, Node>>();
+        protected bool _largeLabel, _rectsSet;
+        public List<Edge<Node, Node>> _outEdges = new List<Edge<Node, Node>>();
         protected Vector2 _pos = Vector2.zero;
+        protected Rect _queueRect, _rect, _labelRect, _costLabelRect, _costIconRect, _iconsRect, _lockRect;
+        protected Vector2 _topLeft = Vector2.zero, _right = Vector2.zero, _left = Vector2.zero;
 
-        protected Rect
-            _queueRect,
-            _rect,
-            _labelRect,
-            _costLabelRect,
-            _costIconRect,
-            _iconsRect,
-            _lockRect;
-
-        protected bool _rectsSet;
-
-        protected Vector2 _topLeft = Vector2.zero,
-                          _right   = Vector2.zero,
-                          _left    = Vector2.zero;
-
-        public List<Node> Descendants
+        public List<Node> Descendants()
         {
-            get { return OutNodes.Concat( OutNodes.SelectMany( n => n.Descendants ) ).ToList(); }
+            List<Node> workingList = new List<Node>(OutNodes());
+            foreach (var item in OutNodes()) workingList.AddRange(item.Descendants());
+            return workingList;
         }
 
-        public List<Edge<Node, Node>> OutEdges => _outEdges;
-        public List<Node>             OutNodes => _outEdges.Select( e => e.Out ).ToList();
-        public List<Edge<Node, Node>> InEdges  => _inEdges;
-        public List<Node>             InNodes  => _inEdges.Select( e => e.In ).ToList();
-        public List<Edge<Node, Node>> Edges    => _inEdges.Concat( _outEdges ).ToList();
-        public List<Node>             Nodes    => InNodes.Concat( OutNodes ).ToList();
+        public List<Node> OutNodes()
+        {
+            var workingList = new List<Node>();
+            foreach (var item in _outEdges) workingList.Add(item._out);
+            return workingList;
+        }
+        public List<Node> InNodes()
+        {
+            var workingList = new List<Node>();
+            foreach (var item in _inEdges) workingList.Add(item._in);
+            return workingList;
+        }
 
         public Rect CostIconRect
         {
@@ -73,7 +62,8 @@ namespace ResearchPowl
         }
 
         public virtual Color Color     => Color.white;
-        public virtual Color InEdgeColor(ResearchNode from) {
+        public virtual Color InEdgeColor(ResearchNode from)
+        {
             return Color;
         }
 
@@ -81,9 +71,7 @@ namespace ResearchPowl
         {
             get
             {
-                if ( !_rectsSet )
-                    SetRects();
-
+                if (!_rectsSet) SetRects();
                 return _iconsRect;
             }
         }
@@ -223,23 +211,31 @@ namespace ResearchPowl
         }
 
         public virtual string Label { get; }
-        public virtual bool Highlighted() {
+        public virtual bool Highlighted()
+        {
             return false;
         }
 
-        public List<Node> MissingPrerequisiteNodes() {
+        public List<Node> MissingPrerequisiteNodes()
+        {
             List<Node> results = new List<Node>();
-            foreach (var n in InNodes) {
-                if (n is DummyNode dn) {
-                    var temp = dn.MissingPrerequisiteNodes();
-                    if (temp.Count() != 0) {
-                        results.Add(dn);
-                        results.AddRange(temp);
-                    }
-                } else if (n is ResearchNode rn) {
-                    if (! rn.Research.IsFinished) {
+            foreach (var n in InNodes())
+            {
+                if (n is ResearchNode rn)
+                {
+                    if (! rn.Research.IsFinished) 
+                    {
                         results.Add(n);
                         results.AddRange(n.MissingPrerequisiteNodes());
+                    }
+                }
+                else if (n is DummyNode dn)
+                {
+                    var temp = dn.MissingPrerequisiteNodes();
+                    if (temp.Count != 0)
+                    {
+                        results.Add(dn);
+                        results.AddRange(temp);
                     }
                 }
             }
@@ -249,8 +245,8 @@ namespace ResearchPowl
         protected internal virtual float SetDepth( int min = 1 )
         {
             // calculate desired position
-            var isRoot  = InNodes.NullOrEmpty();
-            var desired = isRoot ? 1 : InNodes.Max( n => n.X ) + 1;
+            var isRoot  = InNodes().NullOrEmpty();
+            var desired = isRoot ? 1 : InNodes().Max( n => n.X ) + 1;
             var depth   = Mathf.Max( desired, min );
 
             // update
@@ -356,10 +352,10 @@ namespace ResearchPowl
         {
             var nodeRect = Rect;
             return !(
-            nodeRect.m_XMin > visibleRect.xMax || 
-            nodeRect.xMax < visibleRect.m_XMin || 
-            nodeRect.m_YMin > visibleRect.yMax || 
-            nodeRect.yMax < visibleRect.m_YMin );
+            nodeRect.m_YMin > visibleRect.yMin + visibleRect.m_Height || 
+            visibleRect.yMin + visibleRect.m_Height < visibleRect.m_YMin ||
+            nodeRect.m_XMin > visibleRect.xMin + visibleRect.m_Width || 
+            visibleRect.xMin + visibleRect.m_Width < visibleRect.m_XMin);
         }
 
         public virtual void Draw(Rect visibleRect, Painter painter)

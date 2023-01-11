@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -18,12 +18,14 @@ namespace ResearchPowl
 	public class ResearchNode : Node
 	{
 		static readonly Dictionary<ResearchProjectDef, bool> _buildingPresentCache = new Dictionary<ResearchProjectDef, bool>();
-		static readonly Dictionary<ResearchProjectDef, List<ThingDef>> _missingFacilitiesCache = new Dictionary<ResearchProjectDef, List<ThingDef>>();
+		static Dictionary<ResearchProjectDef, string[]> _missingFacilitiesCache = new Dictionary<ResearchProjectDef, string[]>();
 		public bool isMatched, _available;
-		private List<Def> _unlocks;
-		private Painter _currentPainter;
-
 		public ResearchProjectDef Research;
+		List<Def> _unlocks;
+		Painter _currentPainter;
+		HighlightReasonSet _highlightReasons = new HighlightReasonSet();
+		public static readonly Dictionary<Def, List<Def>> _unlocksCache = new Dictionary<Def, List<Def>>();
+
 		public ResearchNode(ResearchProjectDef research)
 		{
 			Research = research;
@@ -35,20 +37,59 @@ namespace ResearchPowl
 		{
 			return p == _currentPainter;
 		}
-
-		private List<Def> Unlocks()
+		List<Def> Unlocks()
 		{
-			if (_unlocks == null) _unlocks = Research.GetUnlockDefs();
+			if (_unlocks == null) _unlocks = GetUnlockDefs(Research);
 			return _unlocks;
+
+			List<Def> GetUnlockDefs(ResearchProjectDef research)
+			{
+				if ( _unlocksCache.ContainsKey( research ) )
+					return _unlocksCache[research];
+
+				var unlocks = new List<Def>();
+
+				//Was GetThingsUnlocked()
+				var thingDefs = DefDatabase<ThingDef>.AllDefsListForReading;
+				var length = thingDefs.Count;
+				for (int i = 0; i < length; i++)
+				{
+					var def = thingDefs[i];
+					if (def.researchPrerequisites?.Contains(research) ?? false && def.IconTexture() != null) unlocks.Add(def);
+				}
+
+				//Was GetTerrainUnlocked()
+				var terrainDefs = DefDatabase<TerrainDef>.AllDefsListForReading;
+				length = terrainDefs.Count;
+				for (int i = 0; i < length; i++)
+				{
+					var def = terrainDefs[i];
+					if (def.researchPrerequisites?.Contains(research) ?? false && def.IconTexture() != null) unlocks.Add(def);
+				}
+
+				//Was GetRecipesUnlocked()
+				var recipeDefs = DefDatabase<RecipeDef>.AllDefsListForReading;
+				length = recipeDefs.Count;
+				for (int i = 0; i < length; i++)
+				{
+					var def = recipeDefs[i];
+					if ((def.researchPrerequisite == research || def.researchPrerequisites != null && def.researchPrerequisites.Contains(research)) && 
+						def.IconTexture() != null) unlocks.Add(def);
+				}
+
+				var plantDefs = DefDatabase<ThingDef>.AllDefsListForReading;
+				length = plantDefs.Count;
+				for (int i = 0; i < length; i++)
+				{
+					var def = plantDefs[i];
+					if (def.plant?.sowResearchPrerequisites?.Contains(research) ?? false && def.IconTexture() != null) unlocks.Add(def);
+				}
+
+				// get unlocks for all descendant research, and remove duplicates.
+				_unlocksCache.Add(research, unlocks);
+				return unlocks;
+			}
 		}
-
-		void UpdateAvailable()
-		{
-			_available = GetAvailable();
-		}
-
-		private HighlightReasonSet _highlightReasons = new HighlightReasonSet();
-
 		public override bool Highlighted()
 		{
 			return _highlightReasons.Highlighted();
@@ -66,7 +107,7 @@ namespace ResearchPowl
 		{
 			return _highlightReasons.Unhighlight(r);
 		}
-		public IEnumerable<Highlighting.Reason> HighlightReasons()
+		IEnumerable<Highlighting.Reason> HighlightReasons()
 		{
 			return _highlightReasons.Reasons();
 		}
@@ -74,30 +115,24 @@ namespace ResearchPowl
 		{
 			get
 			{
-				if (Research.IsFinished && (!IsUnmatchedInSearch() || Highlighted())) {
-					return Assets.ColorCompleted[Research.techLevel];
-				}
-				if (Highlighted()) {
-					return HighlightColor();
-				}
-				if (IsUnmatchedInSearch()) {
-					return Assets.ColorUnmatched[Research.techLevel];
-				}
-				if (Available()) {
-					return Assets.ColorCompleted[Research.techLevel];
-				}
+				bool isUnmatchedInSearch = IsUnmatchedInSearch();
+				bool highlighted = Highlighted();
+				
+				//Is it already researched and not being searched for?
+				if (Research.IsFinished && (!isUnmatchedInSearch || highlighted)) return Assets.ColorCompleted[Research.techLevel];
+				//Is it being highlighted?
+				if (highlighted) return HighlightColor();
+				//Is not what we're searching for?
+				if (isUnmatchedInSearch) return Assets.ColorUnmatched[Research.techLevel];
+				//Is it available for research?
+				if (_available) return Assets.ColorCompleted[Research.techLevel];
+				//Otherwise assume unavailable
 				return Assets.ColorUnavailable[Research.techLevel];
 			}
 		}
 		public bool IsUnmatchedInSearch()
 		{
-			// return highlightReasons.Contains(HL.Reason.SearchUnmatched);
-			return MainTabWindow_ResearchTree.Instance.SearchActive() && !isMatched;
-		}
-		public bool IsMatchedInSearch()
-		{
-			// return highlightReasons.Contains(HL.Reason.SearchMatched);
-			return MainTabWindow_ResearchTree.Instance.SearchActive() && isMatched;
+			return MainTabWindow_ResearchTree.Instance._searchActive && !isMatched;
 		}
 		public bool HighlightInEdge(ResearchNode from)
 		{
@@ -114,20 +149,18 @@ namespace ResearchPowl
 		{
 			if (HighlightInEdge(from))
 				return Assets.NormalHighlightColor;
-			if (MainTabWindow_ResearchTree.Instance.SearchActive())
+			if (MainTabWindow_ResearchTree.Instance._searchActive)
 			{
 				return Assets.ColorUnmatched[Research.techLevel];
 			}
-			if (Research.IsFinished)
-				return Assets.ColorEdgeCompleted[Research.techLevel];
-			if (Available())
-				return Assets.ColorAvailable[Research.techLevel];
+			if (Research.IsFinished) return Assets.ColorEdgeCompleted[Research.techLevel];
+			if (_available) return Assets.ColorAvailable[Research.techLevel];
 			return Assets.ColorUnavailable[Research.techLevel];
 		}
 		public List<ResearchNode> Children()
 		{
 			List<ResearchNode> workingList = new List<ResearchNode>();
-            List<Node> list = new List<Node>(OutNodes);
+            List<Node> list = new List<Node>(OutNodes());
             var length = list.Count;
             for (int i = 0; i < length; i++)
             {
@@ -161,80 +194,98 @@ namespace ResearchPowl
 			}
 			return 0;
 		}
-		public static List<ThingDef> MissingFacilities( ResearchProjectDef research )
+		string[] MissingFacilities(ResearchProjectDef research = null)
 		{
+			if (research == null) research = Research;
 			// try get from cache
-			List<ThingDef> missing;
-			if ( _missingFacilitiesCache.TryGetValue( research, out missing ) )
-				return missing;
+			if ( _missingFacilitiesCache.TryGetValue( research, out string[] missing ) ) return missing;
 
 			// get list of all researches required before this
-			var thisAndPrerequisites = research.Ancestors().Where( rpd => !rpd.IsFinished ).ToList();
-			thisAndPrerequisites.Add( research );
+			var thisAndPrerequisites = new List<ResearchProjectDef>();
+			foreach (var item in research.Ancestors()) if (item.IsFinished) thisAndPrerequisites.Add(item);
+			thisAndPrerequisites.Add(research);
 
 			// get list of all available research benches
-			var availableBenches = Find.Maps.SelectMany( map => map.listerBuildings.allBuildingsColonist )
-									   .OfType<Building_ResearchBench>();
-			var availableBenchDefs = availableBenches.Select( b => b.def ).Distinct();
-			missing = new List<ThingDef>();
+			List<Building_ResearchBench> availableBenches = new List<Building_ResearchBench>();
+			List<ThingDef> otherBenches = new List<ThingDef>();
+			List<ThingDef> availableBenchDefs = new List<ThingDef>();
+			foreach (var map in Find.Maps)
+			{
+				var length = map.listerBuildings.allBuildingsColonist.Count;
+				for (int i = 0; i < length; i++)
+				{
+					var building = map.listerBuildings.allBuildingsColonist[i];
+					if (building.def.thingClass == typeof(Building_ResearchBench))
+					{
+						availableBenches.Add(building as Building_ResearchBench);
+						if (!availableBenchDefs.Contains(building.def)) availableBenchDefs.Add(building.def);
+					}
+					else if (!otherBenches.Contains(building.def)) otherBenches.Add(building.def);
+				}
+			}
+			var workingList = new List<string>();
 
 			// check each for prerequisites
-			// TODO: We should really build this list recursively so we can re-use results for prerequisites.
-			foreach ( var rpd in thisAndPrerequisites )
+			foreach (var rpd in thisAndPrerequisites)
 			{
-				if ( rpd.requiredResearchBuilding == null )
+				//Does this research have any building or facilty requirements
+				if (rpd.requiredResearchBuilding == null && rpd.requiredResearchFacilities == null) continue;
+
+				if (rpd.requiredResearchBuilding != null && !availableBenchDefs.Contains(rpd.requiredResearchBuilding)) workingList.Add(rpd.requiredResearchBuilding.LabelCap);
+
+				//Any facilities?
+				if (rpd.requiredResearchFacilities.NullOrEmpty())
 					continue;
 
-				if ( !availableBenchDefs.Contains( rpd.requiredResearchBuilding ) )
-					missing.Add( rpd.requiredResearchBuilding );
-
-				if ( rpd.requiredResearchFacilities.NullOrEmpty() )
-					continue;
-
-				foreach ( var facility in rpd.requiredResearchFacilities )
-					if ( !availableBenches.Any( b => b.HasFacility( facility ) ) )
-						missing.Add( facility );
+				//Add missing facilities
+				foreach (var facility in rpd.requiredResearchFacilities)
+				{
+					//Is a research bench linked to the facility?
+					foreach (var bench in availableBenches) if (HasFacility(bench, facility)) goto facilityFound;
+					//Or is it a standalone facility?
+					foreach (var bench in otherBenches) if (bench == facility) goto facilityFound;
+					//Not found, add
+					workingList.Add(facility.LabelCap);
+					facilityFound:;
+				}
 			}
 
 			// add to cache
-			missing = missing.Distinct().ToList();
-			_missingFacilitiesCache.Add( research, missing );
-			return missing;
+			var missingFacilities = workingList.Distinct().ToArray();
+			_missingFacilitiesCache.Add( research, missingFacilities );
+			return missingFacilities;
+
+			bool HasFacility(Building_ResearchBench building, ThingDef facility )
+			{
+				var comp = building.GetComp<CompAffectedByFacilities>();
+				if ( comp == null )
+					return false;
+
+				if ( comp.LinkedFacilitiesListForReading.Select( f => f.def ).Contains( facility ) )
+					return true;
+
+				return false;
+			}
 		}
 		public override int DefaultPriority()
 		{
-			return InEdges.Count() + OutEdges.Count();
-		}
-		void DrawProgressBarImpl(Rect rect)
-		{
-			//GUI.color = Assets.ColorAvailable[Research.techLevel];
-			rect.xMin += Research.ProgressPercent * rect.width;
-			//GUI.DrawTexture(rect, BaseContent.WhiteTex);
-			FastGUI.DrawTextureFast(rect, BaseContent.WhiteTex, Assets.ColorAvailable[Research.techLevel]);
-		}
-		void DrawBackground(bool mouseOver)
-		{
-			// researches that are completed or could be started immediately, and that have the required building(s) available
-			//GUI.color = Color;
-
-			if (mouseOver)
-				//GUI.DrawTexture(Rect, Assets.ButtonActive);
-				FastGUI.DrawTextureFast(Rect, Assets.ButtonActive, Color);
-			else
-				//GUI.DrawTexture(Rect, Assets.Button);
-				FastGUI.DrawTextureFast(Rect, Assets.Button, Color);
+			return _inEdges.Count + _outEdges.Count;
 		}
 		void DrawProgressBar()
 		{
 			// grey out center to create a progress bar effect, completely greying out research not started.
-			if ( IsMatchedInSearch()
-			   || !IsUnmatchedInSearch() && _available
-			   || Highlighted())
+			if ( (MainTabWindow_ResearchTree.Instance._searchActive && isMatched) || !IsUnmatchedInSearch() && _available || Highlighted())
 			{
-				var progressBarRect = Rect.ContractedBy( 3f );
-				DrawProgressBarImpl(progressBarRect);
+				var progressBarRect = Rect.ContractedBy(3f);
+
+				//was DrawProgressBarImpl(progressBarRect);
+				progressBarRect.xMin += Research.ProgressPercent * progressBarRect.width;
+				FastGUI.DrawTextureFast(progressBarRect, BaseContent.WhiteTex, Assets.ColorAvailable[Research.techLevel]);
 			}
 		}
+		
+		bool hasFacilitiesCache = false;
+		int frames = 119;
 		void HandleTooltips()
 		{
 			if (PainterIs(Painter.Drag)) return;
@@ -242,16 +293,22 @@ namespace ResearchPowl
 
 			if (!ModSettings_ResearchPowl.disableShortcutManual)
 			{
-				TooltipHandler.TipRegion(Rect, ShortcutManualTooltip, Research.GetHashCode() + 2);
+				TooltipHandler.TipRegion(Rect, ShortcutManualTooltip, Research.shortHash + 2);
 			}
 			// attach description and further info to a tooltip
 			if (!Research.TechprintRequirementMet)
 			{
 				TooltipHandler.TipRegion(Rect, "InsufficientTechprintsApplied".Translate(Research.TechprintsApplied, Research.TechprintCount));
 			}
-			if (!Research.PlayerHasAnyAppropriateResearchBench)
+			if (++frames == 120)
 			{
-				TooltipHandler.TipRegion(Rect, ResourceBank.String.MissingFacilities( string.Join(", ", MissingFacilities().Select( td => td.LabelCap ).ToArray())));
+				frames = 0;
+				hasFacilitiesCache = Research.requiredResearchBuilding == null || Research.PlayerHasAnyAppropriateResearchBench;
+			}
+			if (!hasFacilitiesCache || (Research.requiredResearchFacilities != null && Research.requiredResearchBuilding == null))
+			{
+				var facilityString = MissingFacilities();
+				if (!facilityString.NullOrEmpty()) TooltipHandler.TipRegion(Rect, ResourceBank.String.MissingFacilities( string.Join(", ", facilityString)));
 			}
 			if (!CompatibilityHooks.PassCustomUnlockRequirements(Research))
 			{
@@ -260,11 +317,10 @@ namespace ResearchPowl
 					TooltipHandler.TipRegion(Rect, prompt);
 				}
 			}
-			if (Research.techLevel > Faction.OfPlayer.def.techLevel)
+			if (Research.techLevel > Current.gameInt.worldInt.factionManager.ofPlayer.def.techLevel)
 			{
-				TooltipHandler.TipRegion(Rect, TechLevelTooLowTooltip, Research.GetHashCode() + 3);
+				TooltipHandler.TipRegion(Rect, TechLevelTooLowTooltip, Research.shortHash + 3);
 			}
-
 			if (!Research.PlayerMechanitorRequirementMet)
 			{
 				var tmp = "MissingRequiredMechanitor".Translate();
@@ -272,11 +328,12 @@ namespace ResearchPowl
 			}
 			if (!Research.StudiedThingsRequirementsMet)
 			{
-				var tmp = (from t in Research.requiredStudied select "NotStudied".Translate(t.LabelCap).ToString()).ToLineList("", false);
-				TooltipHandler.TipRegion(Rect, tmp);
+				var workingList = new List<string>();
+				foreach (var item in Research.requiredStudied) workingList.Add("NotStudied".Translate(item.LabelCap).ToString());
+				TooltipHandler.TipRegion(Rect, workingList.ToLineList("", false));
 			}
 
-			TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.GetHashCode());
+			TooltipHandler.TipRegion(Rect, GetResearchTooltipString, Research.shortHash);
 
 			if (ModSettings_ResearchPowl.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished)
 			{
@@ -285,133 +342,133 @@ namespace ResearchPowl
 		}
 		string ShortcutManualTooltip()
 		{
-			if (Event.current.shift) {
+			if (Event.current.shift)
+			{
 				StringBuilder builder = new StringBuilder();
-				if (PainterIs(Painter.Queue)) {
-					builder.AppendLine(ResourceBank.String.LClickRemoveFromQueue);
-				} else {
-					if (Available()) {
+				if (PainterIs(Painter.Queue)) builder.AppendLine(ResourceBank.String.LClickRemoveFromQueue);
+				else
+				{
+					if (_available)
+					{
 						builder.AppendLine(ResourceBank.String.LClickReplaceQueue);
 						builder.AppendLine(ResourceBank.String.SLClickAddToQueue);
 						builder.AppendLine(ResourceBank.String.ALClickAddToQueue);
 					}
-					if (DebugSettings.godMode) {
-						builder.AppendLine(ResourceBank.String.CLClickDebugInstant);
-					}
+					if (DebugSettings.godMode) builder.AppendLine(ResourceBank.String.CLClickDebugInstant);
 				}
-				if (Available()) {
-					builder.AppendLine(ResourceBank.String.Drag);
-				}
+				if (_available) builder.AppendLine(ResourceBank.String.Drag);
+
 				builder.AppendLine(ResourceBank.String.RClickHighlight);
 				builder.AppendLine(ResourceBank.String.RClickIcon);
 				return builder.ToString();
-			} else {
-				return ResourceBank.String.ShiftForShortcutManual;
 			}
+			return ResourceBank.String.ShiftForShortcutManual;
 		}
 		string TechLevelTooLowTooltip()
 		{
 			var techlevel = Faction.OfPlayer.def.techLevel;
-			return ResourceBank.String.TechLevelTooLow(
-				techlevel, Research.CostFactor(techlevel), (int) Research.baseCost);
+			return ResourceBank.String.TechLevelTooLow(techlevel, Research.CostFactor(techlevel), (int) Research.baseCost);
 		}
-		IEnumerable<ResearchProjectDef> OtherLockedPrerequisites(IEnumerable<ResearchProjectDef> ps)
+		IEnumerable<ResearchProjectDef> OtherLockedPrerequisites(List<ResearchProjectDef> ps)
 		{
-			if (ps == null) return new List<ResearchProjectDef>();
-			return ps.Where(p => !p.IsFinished && p != Research);
+			if (ps == null) yield break;
+			foreach (var item in ps)
+			{
+				if (!item.IsFinished && item != Research) yield return item;
+			}
 		}
 		string OtherPrereqTooltip(List<ResearchProjectDef> ps)
 		{
-			if (ps.NullOrEmpty()) {
-				return "";
-			}
-			return ResourceBank.String.OtherPrerequisites(
-				String.Join(", ", ps.Distinct().Select(p => p.LabelCap)));
+			if (ps.NullOrEmpty()) return "";
+			return ResourceBank.String.OtherPrerequisites(String.Join(", ", ps.Distinct().Select(p => p.LabelCap)));
 		}
 		string UnlockItemTooltip(Def def)
 		{
 			string unlockTooltip = "";
 			string otherPrereqTooltip = "";
-			if (def is TerrainDef) {
+			if (def is TerrainDef terrainDef)
+			{
 				unlockTooltip += ResourceBank.String.AllowsBuildingX(def.LabelCap);
-				otherPrereqTooltip +=
-					OtherPrereqTooltip(OtherLockedPrerequisites(
-						(def as TerrainDef).researchPrerequisites).ToList());
-			} else if (def is RecipeDef) {
-				unlockTooltip += ResourceBank.String.AllowsCraftingX(def.LabelCap);
-				otherPrereqTooltip +=
-					OtherPrereqTooltip(OtherLockedPrerequisites(
-						(def as RecipeDef).researchPrerequisites).ToList());
-			} else if (def is ThingDef) {
-				ThingDef thing = def as ThingDef;
-				List<ResearchProjectDef> plantPrerequisites =
-					thing.plant?.sowResearchPrerequisites ?? new List<ResearchProjectDef>();
-				if (plantPrerequisites.Contains(Research)) {
-					unlockTooltip += ResourceBank.String.AllowsPlantingX(def.LabelCap);
-					otherPrereqTooltip +=
-						OtherPrereqTooltip(
-							OtherLockedPrerequisites(plantPrerequisites).ToList());
-				} else {
-					unlockTooltip += ResourceBank.String.AllowsBuildingX(def.LabelCap);
-					OtherPrereqTooltip(OtherLockedPrerequisites(
-						(def as BuildableDef).researchPrerequisites).ToList());
-				}
-			} else {
-				unlockTooltip += ResourceBank.String.AllowGeneralX(def.LabelCap);
+				otherPrereqTooltip += OtherPrereqTooltip(new List<ResearchProjectDef>(OtherLockedPrerequisites(terrainDef.researchPrerequisites)));
 			}
-			string tooltip = otherPrereqTooltip == ""
+			else if (def is RecipeDef recipeDef)
+			{
+				unlockTooltip += ResourceBank.String.AllowsCraftingX(def.LabelCap);
+				otherPrereqTooltip += OtherPrereqTooltip(new List<ResearchProjectDef>(OtherLockedPrerequisites(recipeDef.researchPrerequisites)));
+			}
+			else if (def is ThingDef thingDef)
+			{
+				List<ResearchProjectDef> plantPrerequisites = thingDef.plant?.sowResearchPrerequisites ?? new List<ResearchProjectDef>();
+				if (plantPrerequisites.Contains(Research))
+				{
+					unlockTooltip += ResourceBank.String.AllowsPlantingX(def.LabelCap);
+					otherPrereqTooltip += OtherPrereqTooltip(new List<ResearchProjectDef>(OtherLockedPrerequisites(plantPrerequisites)));
+				}
+				else
+				{
+					unlockTooltip += ResourceBank.String.AllowsBuildingX(def.LabelCap);
+					OtherPrereqTooltip(new List<ResearchProjectDef>(OtherLockedPrerequisites(((BuildableDef)def).researchPrerequisites)));
+				}
+			}
+			else unlockTooltip += ResourceBank.String.AllowGeneralX(def.LabelCap);
+			
+			return otherPrereqTooltip == ""
 				? unlockTooltip
 				: unlockTooltip + "\n\n" + otherPrereqTooltip;
-			return tooltip;
 		}
-		FloatMenu MakeInfoMenuFromDefs(IEnumerable<Def> defs)
+		FloatMenu MakeInfoMenuFromDefs(List<Def> defs, int skip = 0)
 		{
 			List<FloatMenuOption> options = new List<FloatMenuOption>();
-			foreach (var def in defs) {
+
+			var length = defs.Count;
+			for (int i = skip; i < length; i++)
+			{
+				var def = defs[i];
+			
 				Texture2D icon = def.IconTexture();
 				Dialog_InfoCard.Hyperlink hyperlink = new Dialog_InfoCard.Hyperlink(def);
 			 
 				options.Add(new FloatMenuOption(
 					def.label, () => hyperlink.ActivateHyperlink(), icon, def.IconColor(),
 					MenuOptionPriority.Default,
-					rect => TooltipHandler.TipRegion(
-						rect, () => UnlockItemTooltip(def),
-						def.GetHashCode() + Research.GetHashCode())));
+					rect => TooltipHandler.TipRegion(rect, () => UnlockItemTooltip(def), def.shortHash + Research.shortHash)));
 			}
 			return new FloatMenu(options);
 		}
 		void IconActions(bool draw)
 		{
 			// handle only right click
-			if (!draw && !(Event.current.type == EventType.MouseDown && Event.current.button == 1)) {
-				return;
-			}
+			if (!draw && !(Event.current.type == EventType.MouseDown && Event.current.button == 1)) return;
+
 			var unlocks = Unlocks();
-			for (var i = 0; i < unlocks.Count; ++i) {
+			var length = unlocks.Count;
+			for (var i = 0; i < length; ++i)
+			{
+				var thisIconRect = IconsRect;
 				var iconRect = new Rect(
-					IconsRect.xMax - ( i                + 1 )          * ( IconSize.x + 4f ),
-					IconsRect.yMin + ( IconsRect.height - IconSize.y ) / 2f,
+					thisIconRect.xMax - ( i + 1 ) * ( IconSize.x + 4f ),
+					thisIconRect.yMin + ( thisIconRect.height - IconSize.y ) / 2f,
 					IconSize.x,
 					IconSize.y );
 
-				if ( iconRect.xMin - IconSize.x < IconsRect.xMin
-				   &&   i          + 1          < unlocks.Count ) {
+				if (iconRect.xMin - IconSize.x < thisIconRect.xMin && i + 1 < unlocks.Count)
+				{
 					// stop the loop if we're about to overflow and have 2 or more unlocks yet to print.
-					iconRect.x = IconsRect.x + 4f;
+					iconRect.x = thisIconRect.x + 4f;
 
-					if (draw) {
+					if (draw)
+					{
 						FastGUI.DrawTextureFast(iconRect, Assets.MoreIcon, Assets.colorWhite);
-						//GUI.DrawTexture(iconRect, Assets.MoreIcon, ScaleMode.ScaleToFit);
-						if (!PainterIs(Painter.Drag)) {
-							var tip = string.Join(
-								"\n",
-								unlocks.GetRange(i, unlocks.Count - i).Select(p => p.LabelCap).ToArray());
+
+						if (!PainterIs(Painter.Drag))
+						{
+							var tip = string.Join("\n", unlocks.GetRange(i, unlocks.Count - i).Select(p => p.LabelCap).ToArray());
 							TooltipHandler.TipRegion( iconRect, tip );
 						}
-					} else if
-						(!draw && Mouse.IsOver(iconRect)
-						&& Find.WindowStack.FloatMenu == null) {
-						var floatMenu = MakeInfoMenuFromDefs(unlocks.Skip(i));
+					}
+					else if (!draw && Mouse.IsOver(iconRect) && Find.WindowStack.FloatMenu == null)
+					{
+						var floatMenu = MakeInfoMenuFromDefs(unlocks, i);
 						Find.WindowStack.Add(floatMenu);
 						Event.current.Use();
 					}
@@ -419,52 +476,65 @@ namespace ResearchPowl
 				}
 				var def = unlocks[i];
 
-				if (draw) {
-					def.DrawColouredIcon( iconRect );
-					if (! PainterIs(Painter.Drag)) {
-						TooltipHandler.TipRegion(
-							iconRect, () => UnlockItemTooltip(def),
-							def.GetHashCode() + Research.GetHashCode());
+				if (draw)
+				{
+					DrawColouredIcon(def, iconRect);
+					if (!PainterIs(Painter.Drag))
+					{
+						TooltipHandler.TipRegion(iconRect, () => UnlockItemTooltip(def), def.shortHash + Research.shortHash);
 					}
-				} else if (Mouse.IsOver(iconRect)) {
+				}
+				else if (Mouse.IsOver(iconRect))
+				{
 					Dialog_InfoCard.Hyperlink link = new Dialog_InfoCard.Hyperlink(def);
 					link.ActivateHyperlink();
 					Event.current.Use();
 					break;
 				}
 			}
+
+			void DrawColouredIcon(Def def, Rect canvas)
+			{
+				FastGUI.DrawTextureFast(canvas, def.IconTexture(), Assets.colorWhite);
+				GUI.color = Color.white;
+			}
 		}
 		void DrawNodeDetailMode(bool mouseOver)
 		{
-			Text.Anchor   = TextAnchor.UpperLeft;
+			Text.Anchor = TextAnchor.UpperLeft;
 			Text.WordWrap = true;
-			Text.Font     = _largeLabel ? GameFont.Tiny : GameFont.Small;
+			Text.Font = _largeLabel ? GameFont.Tiny : GameFont.Small;
 			Widgets.Label( LabelRect, Research.LabelCap );
 
-			FastGUI.DrawTextureFast(CostIconRect, !Research.IsFinished && !Available() ? Assets.Lock : Assets.ResearchIcon, Assets.colorWhite);
+			FastGUI.DrawTextureFast(CostIconRect, !Research.IsFinished && !_available ? Assets.Lock : Assets.ResearchIcon, Assets.colorWhite);
 
 			Color savedColor = GUI.color;
 			Color numberColor;
 			float numberToDraw;
-			if (ModSettings_ResearchPowl.alwaysDisplayProgress && ProgressWorthDisplaying() || SwitchToProgress()) {
-				if (Research.IsFinished) {
+			if (ModSettings_ResearchPowl.alwaysDisplayProgress && ProgressWorthDisplaying() || SwitchToProgress())
+			{
+				if (Research.IsFinished)
+				{
 					numberColor = Color.cyan;
 					numberToDraw = 0;
-				} else {
+				}
+				else
+				{
 					numberToDraw = Research.CostApparent - Research.ProgressApparent;
 					numberColor = Color.green;
 				}
-			} else {
+			}
+			else
+			{
 				numberToDraw = Research.CostApparent;
 				numberColor = savedColor;
 			}
-			if (IsUnmatchedInSearch() && (! Highlighted())) {
-				numberColor = Color.gray;
-			}
+			if (IsUnmatchedInSearch() && (!Highlighted())) numberColor = Color.gray;
+
 			GUI.color = numberColor;
 			Text.Anchor = TextAnchor.UpperRight;
 
-			Text.Font   = NumericalFont(numberToDraw);
+			Text.Font = NumericalFont(numberToDraw);
 			Widgets.Label(CostLabelRect, numberToDraw.ToStringByStyle(ToStringStyle.Integer));
 			GUI.color = savedColor;
 
@@ -497,15 +567,16 @@ namespace ResearchPowl
 		}
 		bool ShouldGreyOutText()
 		{
-			return !
-				(  (Research.IsFinished || Available())
-				&& (Highlighted() || !IsUnmatchedInSearch()));
+			return !( (Research.IsFinished || _available) && (Highlighted() || !IsUnmatchedInSearch()));
 		}
 		void DrawNode(bool detailedMode, bool mouseOver)
 		{
 			HandleTooltips();
 
-			DrawBackground(mouseOver);
+			//was DrawBackground(mouseOver);
+			if (mouseOver) FastGUI.DrawTextureFast(Rect, Assets.ButtonActive, Color);
+			else FastGUI.DrawTextureFast(Rect, Assets.Button, Color);
+
 			DrawProgressBar();
 
 			// draw the research label
@@ -531,28 +602,28 @@ namespace ResearchPowl
 		void HandleDragging(bool mouseOver)
 		{
 			var evt = Event.current;
-			if (! mouseOver || Event.current.shift || Event.current.alt) {
-				return;
-			}
-			if (evt.type == EventType.MouseDown && evt.button == 0 && Available()) {
+			if (! mouseOver || Event.current.shift || Event.current.alt) return;
+			if (evt.type == EventType.MouseDown && evt.button == 0 && _available)
+			{
 				MainTabWindow_ResearchTree.Instance.StartDragging(this, _currentPainter);
-				if (PainterIs(Painter.Queue)) {
-					Queue.NotifyNodeDraggedS();
-				}
+				if (PainterIs(Painter.Queue)) Queue.NotifyNodeDraggedS();
 				Highlight(Highlighting.Reason.Focused);
 				Event.current.Use();
-			} else if (evt.type == EventType.MouseUp && evt.button == 0 && PainterIs(Painter.Tree)) {
+			}
+			else if (evt.type == EventType.MouseUp && evt.button == 0 && PainterIs(Painter.Tree))
+			{
 				var tab = MainTabWindow_ResearchTree.Instance;
-				if (tab.draggedNode == this && tab.DraggingTime() < Constants.DraggingClickDelay) {
+				if (tab.draggedNode == this && tab.DraggingTime() < Constants.DraggingClickDelay)
+				{
 					LeftClick();
 					tab.StopDragging();
 					Event.current.Use();
 				}
 			}
 		}
-		private bool DetailMode()
+		bool DetailMode()
 		{
-			return PainterIs(Painter.Queue) || PainterIs(Painter.Drag) || MainTabWindow_ResearchTree.Instance.ZoomLevel < DetailedModeZoomLevelCutoff;
+			return PainterIs(Painter.Queue) || PainterIs(Painter.Drag) || MainTabWindow_ResearchTree.Instance._zoomLevel < DetailedModeZoomLevelCutoff;
 		}
 		/// <summary>
 		///     Draw the node, including interactions.
@@ -564,7 +635,7 @@ namespace ResearchPowl
 
 			if (Event.current.type == EventType.Repaint)
 			{
-				UpdateAvailable();
+				_available = GetAvailable();
 				DrawNode(DetailMode(), mouseOver);
 			}
 
@@ -580,18 +651,26 @@ namespace ResearchPowl
 			}
 		}
 		public bool LeftClick() {
-			if (Research.IsFinished || !Available()) return false;
+			if (Research.IsFinished || !_available) return false;
 
 			if (DebugSettings.godMode && Event.current.control)
 			{
-				Queue.FinishS(this);
+				Queue._instance.Finish(this);
 				Messages.Message(ResourceBank.String.FinishedResearch(Research.LabelCap), MessageTypeDefOf.SilentInput, false);
 				Queue.Notify_InstantFinished();
 			}
-			else if (!Queue.ContainsS(this))
+			else if (!Queue._instance._queue.Contains(this))
 			{
-				if (Event.current.shift) Queue.AppendS(this);
-				else if (Event.current.alt) Queue.PrependS(this);
+				if (Event.current.shift)
+				{
+					Queue._instance.Append(this);
+					Queue.NewUndoState();
+				}
+				else if (Event.current.alt)
+				{
+					Queue._instance.Prepend(this);
+            		Queue.NewUndoState();
+				}
 				else Queue.ReplaceS(this);
 			}
 			else Queue.RemoveS(this);
@@ -618,48 +697,44 @@ namespace ResearchPowl
 			List<ResearchNode> result = new List<ResearchNode>();
 			if (!Research.PrerequisitesCompleted)
 			{
-				foreach (var n in DirectPrerequisites().Where(n => ! n.Research.IsFinished))
-				{
-					n.MissingPrerequitesRec(result);
-				}
+				foreach (var n in DirectPrerequisites()) if (!n.Research.IsFinished) n.MissingPrerequitesRec(result);
 			}
 			return result;
 		}
 		public IEnumerable<ResearchNode> DirectPrerequisites()
 		{
-			foreach (var n in InEdges) yield return n.InResearch();
-		}
-		public IEnumerable<ResearchNode> DirectChildren()
-		{
-			foreach (var n in OutEdges) yield return n.OutResearch();
+			foreach (var n in _inEdges) yield return n.InResearch();
 		}
 		void MissingPrerequitesRec(List<ResearchNode> acc)
 		{
 			if (acc.Contains(this)) return;
 			if (!Research.PrerequisitesCompleted)
 			{
-				foreach (var n in DirectPrerequisites().Where(n => !n.Research.IsFinished)) n.MissingPrerequitesRec(acc);
+				foreach (var n in DirectPrerequisites()) if (!n.Research.IsFinished) n.MissingPrerequitesRec(acc);
 			}
 			acc.Add(this);
 		}
 		public bool GetAvailable()
 		{
 			return !Research.IsFinished && (DebugSettings.godMode || (
-				(Research.requiredResearchBuilding == null || Research.PlayerHasAnyAppropriateResearchBench) && 
+				((Research.requiredResearchBuilding == null) || Research.PlayerHasAnyAppropriateResearchBench) && 
 				Research.TechprintRequirementMet && 
 				Research.PlayerMechanitorRequirementMet && 
 				Research.StudiedThingsRequirementsMet && 
-				MainTabWindow_ResearchTree.AllowedTechlevel(Research.techLevel) && 
+				AllowedTechlevel(Research.techLevel) && 
 				CompatibilityHooks.PassCustomUnlockRequirements(Research)
 			));
+
+			// special rules for tech-level availability
+			bool AllowedTechlevel(TechLevel level)
+			{
+				if ((int)level > ModSettings_ResearchPowl.maxAllowedTechLvl) return false;
+				//Hard-coded mod hooks
+				if (Current.gameInt?.storyteller.def.defName == "VFEM_Maynard") return level >= TechLevel.Animal && level <= TechLevel.Medieval;
+				return true;
+			}
 		}
-		public bool Available() {
-			return _available;
-		}
-		public List<ThingDef> MissingFacilities()
-		{
-			return MissingFacilities( Research );
-		}
+		
 		/// <summary>
 		///     Creates text version of research description and additional unlocks/prereqs/etc sections.
 		/// </summary>

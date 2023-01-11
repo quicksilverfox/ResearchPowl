@@ -14,8 +14,10 @@ namespace ResearchPowl
 	{
 		internal static Vector2 _scrollPosition = Vector2.zero, _mousePosition = -Vector2.zero, absoluteMousePos;
 		public Vector2 draggedPosition;
-		bool _dragging, _viewRect_InnerDirty = true, _viewRectDirty = true, _searchActive;
-		float _zoomLevel = 1f, startDragging, lastSearchChangeTime = 0;
+		bool _dragging, _viewRect_InnerDirty = true, _viewRectDirty = true;
+		public bool _searchActive;
+		float startDragging, lastSearchChangeTime = 0;
+		public float _zoomLevel = 1f;
 		public static float SearchResponseDelay = 0.3f;
 		string _prevQuery = "", _curQuery = "";
 		Rect _treeRect, _baseViewRect, _baseViewRect_Inner, _viewRect, _viewRect_Inner, searchRect;
@@ -26,35 +28,28 @@ namespace ResearchPowl
 		public Painter draggingSource;
 
 		public Rect VisibleRect => new Rect(_scrollPosition.x, _scrollPosition.y, ViewRect_Inner().width, ViewRect_Inner().height );
-		public float ScaledMargin => Constants.Margin * ZoomLevel / Prefs.UIScale;
-
-		public bool SearchActive() { return _searchActive;}
-
 		public MainTabWindow_ResearchTree()
 		{
 			closeOnClickedOutside = false;
 			Instance              = this;
+			preventCameraMotion = true;
 		}
 		public static MainTabWindow_ResearchTree Instance { get; private set; }
-		public float ZoomLevel
+		public void SetZoomLevel(float value)
 		{
-			get => _zoomLevel;
-			set
-			{
-				_zoomLevel           = Mathf.Clamp( value, 1f, MaxZoomLevel() );
-				_viewRectDirty       = true;
-				_viewRect_InnerDirty = true;
-			}
+			_zoomLevel           = Mathf.Clamp( value, 1f, MaxZoomLevel() );
+			_viewRectDirty       = true;
+			_viewRect_InnerDirty = true;
 		}
 		public Rect ViewRect()
 		{
 			if ( _viewRectDirty )
 			{
 				_viewRect = new Rect(
-					_baseViewRect.xMin   * ZoomLevel,
-					_baseViewRect.yMin   * ZoomLevel,
-					_baseViewRect.width  * ZoomLevel,
-					_baseViewRect.height * ZoomLevel
+					_baseViewRect.xMin   * _zoomLevel,
+					_baseViewRect.yMin   * _zoomLevel,
+					_baseViewRect.width  * _zoomLevel,
+					_baseViewRect.height * _zoomLevel
 				);
 				_viewRectDirty = false;
 			}
@@ -65,7 +60,7 @@ namespace ResearchPowl
 		{
 			if ( _viewRect_InnerDirty )
 			{
-				_viewRect_Inner      = _viewRect.ContractedBy( Margin * ZoomLevel );
+				_viewRect_Inner      = _viewRect.ContractedBy( Margin * _zoomLevel );
 				_viewRect_InnerDirty = false;
 			}
 
@@ -85,14 +80,6 @@ namespace ResearchPowl
 			var width  = Tree.Size.x * ( NodeSize.x + NodeMargins.x );
 			var height = Tree.Size.z * ( NodeSize.y + NodeMargins.y );
 			_treeRect = new Rect( 0f, 0f, width, height );
-		}
-		// special rules for tech-level availability
-		public static bool AllowedTechlevel(TechLevel level)
-		{
-			if ((int)level > ModSettings_ResearchPowl.maxAllowedTechLvl) return false;
-			//Hard-coded mod hooks
-			if (Find.Storyteller.def.defName == "VFEM_Maynard") return level >= TechLevel.Animal && level <= TechLevel.Medieval;
-			return true;
 		}
 		internal float MaxZoomLevel()
 		{
@@ -126,70 +113,73 @@ namespace ResearchPowl
 			{
 				ResetSearch();
 				_scrollPosition = Vector2.zero;
-				ZoomLevel = 1f;
+				SetZoomLevel(1f);
 			}
 
 			//Clear node availability caches
 			ResearchNode.ClearCaches();
-			Queue.SanityCheckS();
+			Queue._instance.SanityCheck();
 
 			closeOnClickedOutside = _dragging = false;
 		}
 		public override void DoWindowContents( Rect canvas )
 		{
-			GUI.EndClip();
-			GUI.EndClip(); // some window black magic by fluffy
+			GUIClip.Internal_Pop();
+			GUIClip.Internal_Pop();
 
-			absoluteMousePos = Event.current.mousePosition;
+			var cEvent = Event.current;
+			var cEventType = cEvent.type;
+			absoluteMousePos = cEvent.mousePosition;
 			var topRect = new Rect(canvas.xMin + SideMargin, canvas.yMin + StandardMargin, canvas.width - StandardMargin, TopBarHeight );
 			DrawTopBar(topRect);
 
 			ApplyZoomLevel();
 
 			// draw background
-			//GUI.DrawTexture( ViewRect, Assets.SlightlyDarkBackground );
 			FastGUI.DrawTextureFast(ViewRect(), Assets.SlightlyDarkBackground, Assets.colorWhite);
 
 			// draw the actual tree
-			_scrollPosition = GUI.BeginScrollView( ViewRect(), _scrollPosition, TreeRect() );
-			GUI.BeginGroup(new Rect(ScaledMargin, ScaledMargin, TreeRect().width  - ScaledMargin * 2f, TreeRect().height - ScaledMargin * 2f));
+			var treeRect = TreeRect();
+			_scrollPosition = GUI.BeginScrollView( ViewRect(), _scrollPosition, treeRect );
+			var scaledMargin = Constants.Margin * _zoomLevel / Prefs.UIScale;
+			GUI.BeginGroup(new Rect(scaledMargin, scaledMargin, treeRect.width  - scaledMargin * 2f, treeRect.height - scaledMargin * 2f));
 
 			Tree.Draw( VisibleRect );
 			Queue.DrawLabels( VisibleRect );
 			
 			//Handle LeftoverNode Release
-			if (Event.current.type == EventType.MouseUp && Event.current.button == 0 && IsDraggingNode())
+			if (cEventType == EventType.MouseUp && cEvent.button == 0 && IsDraggingNode())
 			{
 				StopDragging();
-				Event.current.Use();
+				cEvent.Use();
 			}
 			
 			//Handle StopFixed Highlights
-			if (Event.current.type == EventType.MouseDown && (Event.current.button == 0 || Event.current.button == 1 && !Event.current.shift) && Tree.StopFixedHighlights())
+			if (cEventType == EventType.MouseDown && (cEvent.button == 0 || cEvent.button == 1 && !cEvent.shift) && Tree.StopFixedHighlights())
 			{
 				SoundDefOf.Click.PlayOneShotOnCamera();
 			}
 
 			//Handle unfocus
-			if (Event.current.type == EventType.MouseDown && !searchRect.Contains(absoluteMousePos))
+			if (cEventType == EventType.MouseDown && !searchRect.Contains(absoluteMousePos))
 			{
 				UI.UnfocusCurrentControl();
 			}
 			
 			//Handle Zoom, handle zoom only with shift
-			if (Event.current.isScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && Event.current.shift) || (!ModSettings_ResearchPowl.swapZoomMode && !Event.current.shift)))
+			if (cEventType == EventType.ScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && cEvent.shift) || (!ModSettings_ResearchPowl.swapZoomMode && !cEvent.shift)))
 			{
 				// absolute position of mouse on research tree
 				var absPos = Event.current.mousePosition;
 
 				// relative normalized position of mouse on visible tree
-				var relPos = ( Event.current.mousePosition - _scrollPosition ) / ZoomLevel;
+				var relPos = ( Event.current.mousePosition - _scrollPosition ) / _zoomLevel;
 
 				// update zoom level
-				ZoomLevel += Event.current.delta.y * ZoomStep * ZoomLevel * ModSettings_ResearchPowl.zoomingSpeedMultiplier;
+				SetZoomLevel(_zoomLevel + Event.current.delta.y * ZoomStep * _zoomLevel * ModSettings_ResearchPowl.zoomingSpeedMultiplier);
 
 				// we want to keep the _normalized_ relative position the same as before zooming
-				_scrollPosition = absPos - relPos * ZoomLevel;
+				_scrollPosition = absPos - relPos * _zoomLevel;
 				Event.current.Use();
 			}
 
@@ -202,29 +192,29 @@ namespace ResearchPowl
 			ApplyZoomLevel();
 
 			//Handle dragging, middle mouse or holding down shift for panning
-			if (Event.current.button == 2 || Event.current.shift && Event.current.button == 0)
+			if (cEvent.button == 2 || cEvent.shift && cEvent.button == 0)
 			{
-				if (Event.current.type == EventType.MouseDown)
+				if (cEventType == EventType.MouseDown)
 				{
 					_dragging = true;
-					_mousePosition = Event.current.mousePosition;
-					Event.current.Use();
+					_mousePosition = cEvent.mousePosition;
+					cEvent.Use();
 				}
-				if (Event.current.type == EventType.MouseUp)
+				if (cEventType == EventType.MouseUp)
 				{
 					_dragging = false;
 					_mousePosition = Vector2.zero;
 				}
-				if (Event.current.type == EventType.MouseDrag)
+				if (cEventType == EventType.MouseDrag)
 				{
-					var _currentMousePosition = Event.current.mousePosition;
+					var _currentMousePosition = cEvent.mousePosition;
 					_scrollPosition += _mousePosition - _currentMousePosition;
 					_mousePosition = _currentMousePosition;
-					Event.current.Use();
+					cEvent.Use();
 				}
 			}
 			// scroll wheel vertical, switch to horizontal with alt
-			if (Event.current.isScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && !Event.current.shift) || (!ModSettings_ResearchPowl.swapZoomMode && Event.current.shift)))
+			if (cEventType == EventType.ScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && !cEvent.shift) || (!ModSettings_ResearchPowl.swapZoomMode && cEvent.shift)))
 			{
 				float delta = Event.current.delta.y * 15 * ModSettings_ResearchPowl.scrollingSpeedMultiplier;
 				if (Event.current.alt) _scrollPosition.x += delta;
@@ -236,14 +226,16 @@ namespace ResearchPowl
 			//HandleDolly
 			var dollySpeed = 10f;
 			if (KeyBindingDefOf.MapDolly_Left.IsDown) _scrollPosition.x -= dollySpeed;
-			if (KeyBindingDefOf.MapDolly_Right.IsDown) _scrollPosition.x += dollySpeed;
+			else if (KeyBindingDefOf.MapDolly_Right.IsDown) _scrollPosition.x += dollySpeed;
 			if (KeyBindingDefOf.MapDolly_Up.IsDown) _scrollPosition.y -= dollySpeed;
-			if (KeyBindingDefOf.MapDolly_Down.IsDown) _scrollPosition.y += dollySpeed;
+			else if (KeyBindingDefOf.MapDolly_Down.IsDown) _scrollPosition.y += dollySpeed;
 
 			//Reset zoom level
 			UI.ApplyUIScale();
-			GUI.BeginClip( windowRect );
-			GUI.BeginClip( new Rect( 0f, 0f, UI.screenWidth, UI.screenHeight ) );
+			GUIClip.Internal_Push(windowRect, Vector2.zero, Vector2.zero, false);
+			//GUI.BeginClip( windowRect );
+			GUIClip.Internal_Push(new Rect( 0f, 0f, UI.screenWidth, UI.screenHeight ), Vector2.zero, Vector2.zero, false);
+			//GUI.BeginClip( new Rect( 0f, 0f, UI.screenWidth, UI.screenHeight ) );
 
 			//Cleanup
 			GUI.color   = Color.white;
@@ -252,7 +244,7 @@ namespace ResearchPowl
 		void ApplyZoomLevel()
 		{
 			originalMatrix = GUI.matrix;
-			GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Prefs.UIScale / ZoomLevel, Prefs.UIScale / ZoomLevel, 1f));
+			GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Prefs.UIScale / _zoomLevel, Prefs.UIScale / _zoomLevel, 1f));
 		}
 		public bool IsDraggingNode()
 		{
@@ -300,23 +292,16 @@ namespace ResearchPowl
 			Rect queueRect  = new Rect(canvas) { xMin = canvas.xMin + 200f, xMax = canvas.xMax - 130f };
 
 			FastGUI.DrawTextureFast(searchRect2, Assets.SlightlyDarkBackground, Assets.colorWhite);
-			DrawSearchBar(searchRect2.ContractedBy(Constants.Margin));
-			Queue.DrawS(queueRect, !_dragging);
-		}
-		bool CancelSearchButton(Rect canvas)
-		{
-			var iconRect = new Rect(canvas.xMax - Constants.Margin - 12f, 0f, 12f,12f ).CenteredOnYIn(canvas);
-			var texture = Assets.closeXSmall;
-			return Widgets.ButtonImage(iconRect, texture, false);
-		}
-		void DrawSearchBar(Rect canvas)
-		{
-			searchRect = new Rect(canvas.xMin, 0f, canvas.width, 30f).CenteredOnYIn(canvas);
-
-			if (CancelSearchButton(canvas)) ResetSearch();
+		
+			//Search bar
+			var searchCanvas = searchRect2.ContractedBy(Constants.Margin);
+			searchRect = new Rect(searchCanvas.xMin, 0f, searchCanvas.width, 30f).CenteredOnYIn(searchCanvas);
+			if (Widgets.ButtonImage(new Rect(searchCanvas.xMax - Constants.Margin - 12f, 0f, 12f,12f ).CenteredOnYIn(searchCanvas), Assets.closeXSmall, false)) ResetSearch();
 
 			UpdateTextField();
 			OnSearchFieldChanged();
+
+			Queue.DrawS(queueRect, !_dragging);
 		}
 		void UpdateTextField()
 		{

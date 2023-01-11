@@ -20,7 +20,7 @@ namespace ResearchPowl
 
         public override void SetInitialSizeAndPosition()
         {
-            var position                                                   = _position;
+            var position = _position;
             if ( position.x + InitialSize.x > UI.screenWidth ) position.x  = UI.screenWidth  - InitialSize.x;
             if ( position.y + InitialSize.y > UI.screenHeight ) position.y = UI.screenHeight - InitialSize.y;
             windowRect = new Rect( position.x, position.y, InitialSize.x, InitialSize.y );

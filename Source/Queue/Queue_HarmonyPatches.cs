@@ -7,34 +7,21 @@ using Verse;
 
 namespace ResearchPowl
 {
-    public class HarmonyPatches_Queue
+    [HarmonyPatch(typeof(ResearchManager), nameof(ResearchManager.FinishProject))]
+    public class DoCompletionDialog
     {
-        [HarmonyPatch( typeof( ResearchManager ), "ResearchPerformed", typeof( float ), typeof( Pawn ) )]
-        public class ResearchPerformed
+        // suppress vanilla completion dialog, we never want to show it.
+        static void Prefix(ref bool doCompletionDialog)
         {
-            // check if last active project was finished. If so, try start the next project.
-            // Thanks to NotFood for this nice simplification, I've adapted his/her code;
-            // https://github.com/notfood/RimWorld-ResearchPal/blob/master/Source/Injectors/ResearchManagerPatch.cs
-            private static void Prefix( ResearchManager __instance, ref ResearchProjectDef __state )
-            {
-                __state = __instance.currentProj;
-            }
+            doCompletionDialog = doCompletionDialog && ModSettings_ResearchPowl.useVanillaResearchFinishedMessage;
         }
 
-        [HarmonyPatch( typeof( ResearchManager ), "FinishProject" )]
-        public class DoCompletionDialog
+        static void Postfix(ResearchProjectDef proj)
         {
-            // suppress vanilla completion dialog, we never want to show it.
-            private static void Prefix( ref bool doCompletionDialog )
+            if (proj.IsFinished)
             {
-                doCompletionDialog = doCompletionDialog && ModSettings_ResearchPowl.useVanillaResearchFinishedMessage;
-            }
-
-            private static void Postfix(ResearchProjectDef proj) {
-                if (proj.IsFinished) {
-                    Log.Debug("Patch of FinishProject: {0} finished", proj.label);
-                    Queue.TryStartNext(proj);
-                }
+                Log.Debug("Patch of FinishProject: {0} finished", proj.label);
+                Queue.TryStartNext(proj);
             }
         }
     }

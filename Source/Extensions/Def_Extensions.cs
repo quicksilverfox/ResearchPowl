@@ -2,7 +2,6 @@
 // Copyright Karel Kroeze, 2018-2020
 
 using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -14,17 +13,9 @@ namespace ResearchPowl
         /// <summary>
         ///     hold a cached list of icons per def
         /// </summary>
-        private static readonly Dictionary<Def, Texture2D> _cachedDefIcons = new Dictionary<Def, Texture2D>();
+        static readonly Dictionary<Def, Texture2D> _cachedDefIcons = new Dictionary<Def, Texture2D>();
 
-        private static readonly Dictionary<Def, Color> _cachedIconColors = new Dictionary<Def, Color>();
-
-        public static void DrawColouredIcon( this Def def, Rect canvas )
-        {
-            //GUI.color = def.IconColor();
-            //GUI.DrawTexture( canvas, def.IconTexture(), ScaleMode.ScaleToFit );
-            FastGUI.DrawTextureFast(canvas, def.IconTexture(), Assets.colorWhite);
-            GUI.color = Color.white;
-        }
+        static readonly Dictionary<Def, Color> _cachedIconColors = new Dictionary<Def, Color>();
 
         /// <summary>
         ///     Gets an appropriate drawColor for this def.
@@ -35,8 +26,7 @@ namespace ResearchPowl
         public static Color IconColor( this Def def )
         {
             // garbage in, garbage out
-            if ( def == null )
-                return Color.cyan;
+            if ( def == null ) return Color.cyan;
 
             // check cache
             if ( _cachedIconColors.ContainsKey( def ) ) return _cachedIconColors[def];
@@ -48,17 +38,16 @@ namespace ResearchPowl
             var rdef = def as RecipeDef;
 
             // get product color for recipes
-            if ( rdef != null )
-                if ( !rdef.products.NullOrEmpty() )
-                {
-                    _cachedIconColors.Add( def, rdef.products.First().thingDef.IconColor() );
-                    return _cachedIconColors[def];
-                }
+            if (rdef != null && !rdef.products.NullOrEmpty())
+            {    
+                _cachedIconColors.Add(def, rdef.products[0].thingDef.IconColor());
+                return _cachedIconColors[def];
+            }
 
             // get color from final lifestage for pawns
             if ( pdef != null )
             {
-                _cachedIconColors.Add( def, pdef.lifeStages.Last().bodyGraphicData.color );
+                _cachedIconColors.Add(def, pdef.lifeStages[pdef.lifeStages.Count - 1].bodyGraphicData.color);
                 return _cachedIconColors[def];
             }
 
@@ -70,27 +59,21 @@ namespace ResearchPowl
             }
 
             // built def != listed def
-            if (
-                tdef                  != null &&
-                tdef.entityDefToBuild != null
-            )
+            if (tdef != null && tdef.entityDefToBuild != null)
             {
                 _cachedIconColors.Add( def, tdef.entityDefToBuild.IconColor() );
                 return _cachedIconColors[def];
             }
 
             // graphic.color set?
-            if ( bdef.graphic != null )
+            if (bdef.graphic != null)
             {
                 _cachedIconColors.Add( def, bdef.graphic.color );
                 return _cachedIconColors[def];
             }
 
             // stuff used?
-            if (
-                tdef != null &&
-                tdef.MadeFromStuff
-            )
+            if (tdef != null && tdef.MadeFromStuff)
             {
                 var stuff = GenStuff.DefaultStuffFor( tdef );
                 _cachedIconColors.Add( def, stuff.stuffProps.color );
@@ -124,12 +107,9 @@ namespace ResearchPowl
             var recipeDef    = def as RecipeDef;
 
             // recipes will be passed icon of first product, if defined.
-            if (
-                recipeDef != null &&
-                !recipeDef.products.NullOrEmpty()
-            )
+            if (recipeDef != null && !recipeDef.products.NullOrEmpty())
             {
-                _cachedDefIcons.Add( def, recipeDef.products.First().thingDef.IconTexture() );
+                _cachedDefIcons.Add( def, recipeDef.products[0].thingDef.IconTexture() );
                 return _cachedDefIcons[def];
             }
 
@@ -137,8 +117,7 @@ namespace ResearchPowl
             if ( pawnKindDef != null )
                 try
                 {
-                    _cachedDefIcons.Add(
-                        def, pawnKindDef.lifeStages.Last().bodyGraphicData.Graphic.MatSouth.mainTexture as Texture2D );
+                    _cachedDefIcons.Add(def, pawnKindDef.lifeStages[pawnKindDef.lifeStages.Count - 1].bodyGraphicData.Graphic.MatSouth.mainTexture as Texture2D );
                     return _cachedDefIcons[def];
                 }
                 catch
