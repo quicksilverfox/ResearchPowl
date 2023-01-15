@@ -54,5 +54,11 @@ namespace ResearchPowl
 				ColorUnmatched[techlevels[i]] = Color.HSVToRGB( 1f / n * i, .17f, .17f);
 			}
 		}
+
+		[DefOf]
+        public static class MainButtonDefOf
+        {
+            public static MainButtonDef ResearchOriginal;
+        }
 	}
 }

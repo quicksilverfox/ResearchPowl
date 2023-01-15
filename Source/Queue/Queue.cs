@@ -228,8 +228,7 @@ namespace ResearchPowl
             base.ExposeData();
 
             // store research defs as these are the defining elements
-            if ( Scribe.mode == LoadSaveMode.Saving )
-                _saveableQueue = new List<ResearchProjectDef>(_queue.Select( node => node.Research));
+            if ( Scribe.mode == LoadSaveMode.Saving ) _saveableQueue = new List<ResearchProjectDef>(_queue.Select( node => node.Research));
 
             Scribe_Collections.Look( ref _saveableQueue, "Queue", LookMode.Def );
 
@@ -239,20 +238,19 @@ namespace ResearchPowl
                 {
                     Tree.WaitForResearchNodes();
                 }
-                foreach (var research in _saveableQueue) {
+                foreach (var research in _saveableQueue)
+                {
                     // find a node that matches the research - or null if none found
                     var node = research.ResearchNode();
-
-                    if (node != null) {
-                        UnsafeAppend(node);
-                    }
+                    if (node != null) UnsafeAppend(node);
                 }
                 undoState.Clear();
                 NewUndoState();
                 UpdateCurrentResearch();
             }
         }
-        void DoMove(ResearchNode node, int from, int to) {
+        void DoMove(ResearchNode node, int from, int to)
+        {
             List<ResearchNode> movingNodes = new List<ResearchNode>();
             to = Math.Max(0, Math.Min(_queue.Count, to));
             if (to > from)

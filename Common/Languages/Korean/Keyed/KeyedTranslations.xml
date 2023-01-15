@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <LanguageData>
-
 	<ResearchPal.AllowsBuildingX>{0} 건설 사용 가능</ResearchPal.AllowsBuildingX>
 	<ResearchPal.AllowsCraftingX>{0} 레시피 사용 가능</ResearchPal.AllowsCraftingX>
 	<ResearchPal.AllowsSowingXinY>{0}을/를 {1}에 심기 가능</ResearchPal.AllowsSowingXinY>
@@ -9,7 +8,6 @@
 	<ResearchPal.LClickReplaceQueue>왼쪽 클릭으로 대기열을 변경합니다.</ResearchPal.LClickReplaceQueue>
 	<ResearchPal.LClickRemoveFromQueue>왼쪽 클릭으로 대기열에서 제거합니다.</ResearchPal.LClickRemoveFromQueue>
 	<ResearchPal.SLClickAddToQueue>Shift-왼쪽 클릭으로 대기열에 추가합니다.</ResearchPal.SLClickAddToQueue>
-	<!-- <ResearchPal.RClickForDetails>Right click for details</ResearchPal.RClickForDetails> -->
 	<ResearchPal.RClickInstaFinish>(디버그) 오른쪽 클릭으로 즉시 완료</ResearchPal.RClickInstaFinish>
 
 	<ResearchPal.Requires>요구 사항</ResearchPal.Requires>
@@ -27,5 +25,4 @@
 	<ResearchPal.PreparingTree.CrossingReduction>겹침 줄이기</ResearchPal.PreparingTree.CrossingReduction>
 	<ResearchPal.PreparingTree.Layout>레이아웃 다듬기</ResearchPal.PreparingTree.Layout>
 	<ResearchPal.PreparingTree.RestoreQueue>대기열 복원</ResearchPal.PreparingTree.RestoreQueue>
-
 </LanguageData>

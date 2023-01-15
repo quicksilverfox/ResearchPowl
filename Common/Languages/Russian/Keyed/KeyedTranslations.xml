@@ -8,7 +8,6 @@
 	<ResearchPal.LClickReplaceQueue>ЛКМ для замены в очереди</ResearchPal.LClickReplaceQueue>
 	<ResearchPal.LClickRemoveFromQueue>ЛКМ для удаления из очереди</ResearchPal.LClickRemoveFromQueue>
 	<ResearchPal.SLClickAddToQueue>Shift+ЛКМ для добавления в очередь</ResearchPal.SLClickAddToQueue>
-	<!-- <ResearchPal.RClickForDetails>ПКМ для отображения подробностей</ResearchPal.RClickForDetails> -->
 	<ResearchPal.RClickInstaFinish>(DEBUG) ПКМ для мгновенного изучения</ResearchPal.RClickInstaFinish>
 
 	<ResearchPal.Requires>Требует</ResearchPal.Requires>

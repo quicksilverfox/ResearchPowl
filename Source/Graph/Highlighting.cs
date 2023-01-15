@@ -114,24 +114,20 @@ namespace ResearchPowl
 		}
 		public static List<ResearchNode> RelatedNodes(ResearchNode node)
         {
-            var workingList = new List<ResearchNode>(RelatedPrerequisites(node));
-            workingList.AddRange(DirectChildren(node));
+            var workingList = RelatedPrerequisites(node);
+			foreach (var n in node._outEdges) workingList.Add(n.OutResearch());
             return workingList;
-
-            IEnumerable<ResearchNode> DirectChildren(ResearchNode node)
-            {
-                foreach (var n in node._outEdges) yield return n.OutResearch();
-            }
 		}
-		static IEnumerable<ResearchNode> RelatedPrerequisites(ResearchNode node)
+		static List<ResearchNode> RelatedPrerequisites(ResearchNode node)
         {
-            var workingList = new List<ResearchNode>(node.DirectPrerequisites());
-            workingList.AddRange(node.DirectPrerequisites());
-            foreach (var item in workingList)
+			
+            var list = new List<ResearchNode>(node.DirectPrerequisites());
+			var concatList = list.ToList();
+            foreach (var item in concatList)
             {
-                if (!item.Research.IsFinished) foreach (var item2 in RelatedPrerequisites(item)) yield return item2;
-                yield return item;
+                if (!item.Research.IsFinished) foreach (var item2 in RelatedPrerequisites(item)) list.Add(item2);
             }
+			return list;
 		}
 		public static RelatedNodeHighlightSet HoverOn(ResearchNode node)
         {
