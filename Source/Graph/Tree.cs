@@ -32,11 +32,10 @@ namespace ResearchPowl
 			if (_relevantTechLevels != null) return _relevantTechLevels;
 
 			_relevantTechLevels = new List<TechLevel>();
-			List<ResearchProjectDef> sortedDefs = new List<ResearchProjectDef>(DefDatabase<ResearchProjectDef>.AllDefsListForReading.OrderBy(x => x.techLevel));
+			var sortedDefs = DefDatabase<ResearchProjectDef>.AllDefsListForReading.OrderBy(x => x.techLevel).ToArray();
 			
-			var length = sortedDefs.Count;
 			TechLevel lastTechlevel = 0;
-			for (int i = 0; i < length; i++)
+			for (int i = 0; i < sortedDefs.Length; i++)
 			{
 				var def = sortedDefs[i];
 				if (def.techLevel != lastTechlevel) _relevantTechLevels.Add(def.techLevel);
@@ -89,11 +88,21 @@ namespace ResearchPowl
 			LegacyPreprocessing();
 			MainAlgorithm(_layers);
 			RemoveEmptyRows();
+			
+			//Determine tree size
+			var list = Nodes();
+			var length = list.Count;
+			float z = 0f, x = 0f;
+			for (int i = 0; i < length; i++)
+			{
+				var n = list[i];
+				if (n._pos.y > z) z = n._pos.y;
+				if (n._pos.x > x) x = n._pos.x;
+			}
+			Tree.Size.z = (int)(z + 0.01f) + 1;
+			Tree.Size.x = (int)x;
 
-			Tree.Size.z = (int) (Nodes().Max(n => n.Yf) + 0.01) + 1;
-			Tree.Size.x = Nodes().Max(n => n.X);
-
-			Log.Message("Research layout initialized", Tree.Size.x, Tree.Size.z);
+			//Log.Message("Research layout initialized", Tree.Size.x, Tree.Size.z);
 			Log.Debug("Layout Size: x = {0}, y = {1}", Tree.Size.x, Tree.Size.z);
 			Initialized = true;
 			Initializing = false;
@@ -104,32 +113,45 @@ namespace ResearchPowl
 			//Embedded methods
 			void RemoveEmptyRows()
 			{
-				var z = Nodes().Max(n => n.Yf);
-				var y = 1;
-				for (; y < z;)
+				//was var z = Nodes().Max(n => n.Yf);
+				float z = 0;
+				var list = Nodes();
+				var length = list.Count;
+				for (int i = 0; i < length; i++)
 				{
-					var row = Row( y );
-					if (row.NullOrEmpty())
+					var n = list[i]._pos.y;
+					if (n > z) z = n;
+				}
+
+				var y = 1;
+				while (y < z)
+				{
+					if (RowIsEmpty(y))
 					{
-						var ns = new List<Node>(Nodes().Where(n => n.Yf > y));
-						if (ns.Count == 0) {
-							break;
+						var edits = 0;
+						for (int i = 0; i < length; i++)
+						{
+							var node = list[i];
+							if (node._pos.y > y)
+							{
+								++edits;
+								node.Yf = node._pos.y - 1;
+							}
 						}
-						foreach (var n in ns) n.Yf = n.Yf - 1;
+						if (edits == 0) break;
 					}
 					else ++y;
 				}
 
-				List<Node> Row(int Y)
+				bool RowIsEmpty(int Y)
 				{
-					var length = Nodes().Count;
-					List<Node> workingList = new List<Node>();
+					var list = Nodes();
+					var length = list.Count;
 					for (int i = 0; i < length; i++)
 					{
-						var node = Nodes()[i];
-						if (node.Y == Y) workingList.Add(node);
+						if (list[i]._pos.y == Y) return false;
 					}
-					return workingList;
+					return true;
 				}
 			}
 			void LegacyPreprocessing()
@@ -203,29 +225,41 @@ namespace ResearchPowl
 					modsSplit.Add(layers);
 				}
 
-				var allLayers = new List<NodeLayers>(modsSplit.OrderBy(l => l.NodeCount()).SelectMany(ls => ls.SplitConnectiveComponents().OrderBy(l => l.NodeCount())));
+				var allLayers = modsSplit.OrderBy(l => l.NodeCount()).SelectMany(ls => ls.SplitConnectiveComponents().OrderBy(l => l.NodeCount())).ToArray();
 
 				//was OrganizeLayers()
-				foreach (var layer in allLayers)
+				for (int i = 0; i < allLayers.Length; i++)
 				{
-					layer.MinimizeCrossings();
+					var layer = allLayers[i];
+					layer.NLevelBCMethod(4, 3);
 					layer.ApplyGridCoordinates();
 					layer.ImproveNodePositionsInLayers();
 				}
 				
 				Log.Debug("PositionAllLayers: starting upper bound {0}", mainGraphUpperbound);
 				float[] topBounds = new float[_layers.Count];
-				var length = topBounds.Length;
-				for (int i = 0; i < length; ++i) topBounds[i] = mainGraphUpperbound;
-				foreach (var layer in allLayers)
+				for (int i = 0; i < topBounds.Length; ++i) topBounds[i] = mainGraphUpperbound;
+				
+				for (int j = 0; j < allLayers.Length; j++)
 				{
+					var layer = allLayers[j];
 					float dy = -99999;
-					var length2 = layer.LayerCount();
+					var length2 = layer._layers.Count;
 					for (int i = 0; i < length2; ++i) dy = Math.Max(dy, topBounds[i] - layer.TopPosition(i));
 					layer.MoveVertically(dy);
 
-					length2 = layer.LayerCount();
-					for (int i = 0; i < length2; ++i) topBounds[i] = Math.Max(topBounds[i], layer.BottomPosition(i) + 1);
+					length2 = layer._layers.Count;
+					for (int i = 0; i < length2; ++i)
+					{
+						//was Math.Max(topBounds[i], layer.BottomPosition(i) + 1);
+						var tmp = layer._layers[i];
+						float a = 1;
+            			if (tmp._nodes.Count == 0) a += -99999f;
+            			else a += tmp._nodes[tmp._nodes.Count - 1]._pos.y;
+						float b = topBounds[i];
+
+						topBounds[i] = a > b ? a : b;
+					}
 				}
 				mainGraphUpperbound = topBounds.Max();
 			}

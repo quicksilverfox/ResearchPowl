@@ -15,7 +15,7 @@ namespace ResearchPowl
         public List<Edge<Node, Node>> _inEdges = new List<Edge<Node, Node>>();
         protected bool _largeLabel, _rectsSet;
         public List<Edge<Node, Node>> _outEdges = new List<Edge<Node, Node>>();
-        protected Vector2 _pos = Vector2.zero;
+        public Vector2 _pos = Vector2.zero;
         protected Rect _queueRect, _rect, _labelRect, _costLabelRect, _costIconRect, _iconsRect, _lockRect;
         protected Vector2 _topLeft = Vector2.zero, _right = Vector2.zero, _left = Vector2.zero;
 
@@ -26,16 +26,22 @@ namespace ResearchPowl
             return workingList;
         }
 
-        public List<Node> OutNodes()
+        public Node[] OutNodes()
         {
-            var workingList = new List<Node>();
-            foreach (var item in _outEdges) workingList.Add(item._out);
+            var workingList = new Node[_outEdges.Count];
+            for (int i = 0; i < workingList.Length; i++)
+            {
+                workingList[i] = _outEdges[i]._out;
+            }
             return workingList;
         }
-        public List<Node> InNodes()
+        public Node[] InNodes()
         {
-            var workingList = new List<Node>();
-            foreach (var item in _inEdges) workingList.Add(item._in);
+            var workingList = new Node[_inEdges.Count];
+            for (int i = 0; i < workingList.Length; i++)
+            {
+                workingList[i] = _inEdges[i]._in;
+            }
             return workingList;
         }
 
@@ -219,8 +225,10 @@ namespace ResearchPowl
         public List<Node> MissingPrerequisiteNodes()
         {
             List<Node> results = new List<Node>();
-            foreach (var n in InNodes())
+            var list = InNodes();
+            for (int i = 0; i < list.Length; i++)
             {
+                var n = list[i];
                 if (n is ResearchNode rn)
                 {
                     if (! rn.Research.IsFinished) 
@@ -364,22 +372,15 @@ namespace ResearchPowl
 
         public int assignedPriority = int.MinValue;
 
-        public virtual int DefaultPriority() {
+        public virtual int DefaultPriority()
+        {
             return int.MaxValue;
         }
 
-        public int LayoutPriority() {
-            if (assignedPriority != int.MinValue) {
-                return assignedPriority;
-            }
+        public int LayoutPriority()
+        {
+            if (assignedPriority != int.MinValue) return assignedPriority;
             return DefaultPriority();
-        }
-
-        public virtual int LayoutUpperPriority() {
-            return int.MaxValue;
-        }
-        public virtual int LayoutLowerPriority() {
-            return int.MaxValue;
         }
 
         public int lx;

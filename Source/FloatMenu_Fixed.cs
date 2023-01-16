@@ -1,5 +1,4 @@
-﻿// FloatMenu_Fixed.cs
-// Copyright Karel Kroeze, 2018-2020
+﻿// Copyright Karel Kroeze, 2018-2020
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,13 +8,13 @@ namespace ResearchPowl
 {
     public class FloatMenu_Fixed : FloatMenu
     {
-        private readonly Vector2 _position;
+        readonly Vector2 _position;
 
         public FloatMenu_Fixed( List<FloatMenuOption> options, Vector2 position, bool focus = false ) : base( options )
         {
-            _position            = position;
+            _position = position;
             vanishIfMouseDistant = false;
-            focusWhenOpened      = focus;
+            focusWhenOpened = focus;
         }
 
         public override void SetInitialSizeAndPosition()

@@ -37,9 +37,8 @@ namespace ResearchPowl
         public List<ResearchNode> Parent()
         {
             List<ResearchNode> workingList = new List<ResearchNode>();
-            List<Node> list = new List<Node>(InNodes());
-            var length = list.Count;
-            for (int i = 0; i < length; i++)
+            var list = InNodes();
+            for (int i = 0; i < list.Length; i++)
             {
                 var node = list[i];
                 if (node is DummyNode dNode) workingList.AddRange(dNode.Parent());

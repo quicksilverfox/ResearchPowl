@@ -15,11 +15,13 @@ namespace ResearchPowl
             _layers = new List<NodeLayer>(layers.Select((layer, idx) => new NodeLayer(idx, layer, this)));
         }
 
-        public NodeLayers(List<List<Node>> layers) {
+        public NodeLayers(List<List<Node>> layers)
+        {
             InitializeWithLists(layers);
         }
 
-        private NodeLayers(List<Node> nodes) {
+        NodeLayers(List<Node> nodes)
+        {
             var layers = new List<List<Node>>();
             var length = _layers.Count;
             foreach (var node in nodes)
@@ -37,33 +39,24 @@ namespace ResearchPowl
 
         public int NodeCount() => _layers.Select(l => l._nodes.Count).Sum();
 
-        public NodeLayer Layer(int n) {
+        public NodeLayer Layer(int n)
+        {
             return _layers[n];
         }
+        void NLevelBCPhase1(int maxIter)
+        {
+            var layerCount = _layers.Count;
 
-        public int Crossings() {
-            int sum = 0;
-            for (int i = 0; i < LayerCount() - 1; ++i) {
-                sum += Layer(i).LowerCrossings();
-            }
-            return sum;
-        }
-
-        private void NLevelBCPhase1(int maxIter) {
-            var layerCount = LayerCount();
-            for (int n = 0; n < maxIter; ++n) {
-                for (int i = 1; i < layerCount; ++i) {
-                    _layers[i].SortByUpperBarycenter();
-                }
-                for (int i = layerCount - 2; i >= 0; --i) {
-                    _layers[i].SortByLowerBarycenter();
-                }
+            for (int n = 0; n < maxIter; ++n)
+            {
+                for (int i = 1; i < layerCount; ++i) _layers[i].SortByUpperBarycenter();
+                for (int i = layerCount - 2; i >= 0; --i) _layers[i].SortByLowerBarycenter();
             }
         }
-
-        private void NLevelBCMethod(int maxIter1, int maxIter2) {
+        public void NLevelBCMethod(int maxIter1, int maxIter2)
+        {
             NLevelBCPhase1(maxIter1);
-            var layerCount = LayerCount();
+            var layerCount = _layers.Count;
             for (int k = 0; k < maxIter2; ++k)
             {
                 for (int i = layerCount - 2; i >= 0; --i)
@@ -82,10 +75,11 @@ namespace ResearchPowl
                 }
             }
         }
-
-        private void BruteforceSwapping(int maxIter) {
+        void BruteforceSwapping(int maxIter)
+        {
             int layerCount = LayerCount();
-            for (int k = 0; k < maxIter; ++k) {
+            for (int k = 0; k < maxIter; ++k)
+            {
                 for (int i = 1; i < layerCount; ++i) _layers[i].UnsafeBruteforceSwapping();
                 for (int i = layerCount - 2; i >= 0; --i) _layers[i].UnsafeBruteforceSwapping();
             }
@@ -93,44 +87,32 @@ namespace ResearchPowl
             foreach (var layer in _layers) layer.RearrangeOrder();
         }
 
-        public void MinimizeCrossings()
-        {
-            NLevelBCMethod(4, 3);
-            BruteforceSwapping(3);
-        }
-
         public void ApplyGridCoordinates() {
             foreach (var layer in _layers) {
                 layer.ApplyGridCoordinates();
             }
         }
-        public void ImproveNodePositionsInLayers() {
-            foreach (var layer in _layers) layer.AssignPositionPriorities();
+        public void ImproveNodePositionsInLayers()
+        {
+            var length = _layers.Count;
 
-            var length = LayerCount();
-            for (int i = 1; i < length; ++i) {
-                _layers[i].ImprovePositionAccordingToUpper();
-            }
-            for (int i = length - 2; i >= 0; --i) {
-                _layers[i].ImprovePositionAccordingToLower();
-            }
-            for (int i = 1; i < length; ++i) {
-                _layers[i].ImprovePositionAccordingToUpper();
-            }
-            if (! ModSettings_ResearchPowl.alignToAncestors) {
-                for (int i = LayerCount() - 2; i >= 0; --i) {
-                    _layers[i].ImprovePositionAccordingToLower();
-                }
+            for (int i = 0; i < length; i++) _layers[i].AssignPositionPriorities();
+            
+            for (int i = 1; i < length; ++i) _layers[i].ImprovePositionAccordingToUpper();
+            
+            for (int i = length - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
+            
+            for (int i = 1; i < length; ++i) _layers[i].ImprovePositionAccordingToUpper();
+            
+            if (!ModSettings_ResearchPowl.alignToAncestors)
+            {
+                for (int i = _layers.Count - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
             }
             AlignSegments(3);
         }
-
         public void MoveVertically(float f)
         {
             foreach (var l in _layers) l.MoveVertically(f);
-        }
-        public float BottomPosition(int l) {
-            return _layers[l].BottomPosition();
         }
         public float TopPosition(int l) {
             return _layers[l].TopPosition();
@@ -151,103 +133,119 @@ namespace ResearchPowl
             }
             return result;
         }
-
-        private static void MergeDataFromTo(Node n, List<List<Node>> data) {
+        static void MergeDataFromTo(Node n, List<List<Node>> data)
+        {
             data[n.lx].Add(n);
         }
-
-        private static void MergeDataFromTo(IEnumerable<Node> ns, List<List<Node>> data) {
-            foreach (var n in ns) {
-                MergeDataFromTo(n, data);
-            }
+        static void MergeDataFromTo(IEnumerable<Node> ns, List<List<Node>> data)
+        {
+            foreach (var n in ns) MergeDataFromTo(n, data);
         }
-
-        private void DFSConnectiveComponents(
-            Node cur, List<List<Node>> data, HashSet<Node> visited) {
+        void DFSConnectiveComponents(Node cur, List<List<Node>> data, HashSet<Node> visited)
+        {
             if (cur == null) return;
             visited.Add(cur);
             data[cur.lx].Add(cur);
-            foreach (var n in cur.LocalInNodes()) {
-                if (! visited.Contains(n)) {
-                    DFSConnectiveComponents(n, data, visited);
-                }
+            var list = cur.LocalInNodes();
+            for (int i = 0; i < list.Length; i++)
+            {
+                var n = list[i];
+                if (! visited.Contains(n)) DFSConnectiveComponents(n, data, visited);
             }
-            foreach (var n in cur.LocalOutNodes()) {
-                if (! visited.Contains(n)) {
-                    DFSConnectiveComponents(n, data, visited);
-                }
+            list = cur.LocalOutNodes();
+            for (int i = 0; i < list.Length; i++)
+            {
+                var n = list[i];
+                if (! visited.Contains(n)) DFSConnectiveComponents(n, data, visited);
             }
         }
-
-        public List<NodeLayers> SplitConnectiveComponents() {
+        public IEnumerable<NodeLayers> SplitConnectiveComponents()
+        {
             HashSet<Node> visited = new HashSet<Node>();
-            List<NodeLayers> result = new List<NodeLayers>();
-            foreach (var node in AllNodes()) {
-                if (! visited.Contains(node)) {
+            foreach (var node in AllNodes())
+            {
+                if (!visited.Contains(node))
+                {
                     var data = EmptyNewLayers(LayerCount());
                     DFSConnectiveComponents(node, data, visited);
-                    result.Add(new NodeLayers(data));
+                    yield return new NodeLayers(data);
                 }
             }
-            return result;
         }
-
-        static void AlignNode(Node node) {
+        static void AlignNode(Node node)
+        {
             bool aligned = false;
-            do {
+            do
+            {
                 var segment = node.LocalSegment();
                 aligned = segment.Align();
-            } while (aligned);
+            }
+            while (aligned);
         }
-
-        public void AlignSegments(int maxIter)
+        void AlignSegments(int maxIter)
         {
             for (int n = 0; n < maxIter; ++n)
             {
+                var length = _layers.Count;
                 if (ModSettings_ResearchPowl.alignToAncestors)
                 {
-                    for (int i = 0; i < LayerCount(); ++i)
+                    for (int i = 0; i < length; ++i)
                     {
-                        foreach (var item in Layer(i)._nodes) AlignNode(item);
+                        var list = _layers[i]._nodes;
+                        var length2 = list.Count;
+                        for (int j = 0; j < length2; j++) AlignNode(list[j]);
                     }
                 }
                 else
                 {
-                    for (int i = LayerCount() - 1; i >= 0; --i)
+                    for (int i = length - 1; i >= 0; --i)
                     {
-                        foreach (var item in Layer(i)._nodes) AlignNode(item);
+                        var list = _layers[i]._nodes;
+                        var length2 = list.Count;
+                        for (int j = 0; j < length2; j++) AlignNode(list[j]);
                     }
                 }
             }
         }
-
-        static string GroupingByMods(Node node) {
-            if (node is ResearchNode)
+        static Regex regex = new Regex("^Vanilla (.*)Expanded( - .*)?$", RegexOptions.Compiled); //This should probably be moved somewhere
+        static string GroupingByMods(Node node)
+        {
+            if (node is ResearchNode n)
             {
-                var n = node as ResearchNode;
-                if (n.Research.modContentPack == null) Log.Debug("Research {0} does not belong to any mod?", n.Label);
-                var name = n.Research.modContentPack?.Name ?? "__Vanilla";
+                string name;
+                if (n.Research.modContentPack == null) 
+                {
+                    Log.Debug("Research {0} does not belong to any mod?", n.Label);
+                    name = "__Vanilla";
+                }
+                else name = n.Research.modContentPack.Name; 
                 //Is an official mod?
                 if (name == ModContentPack.LudeonPackageIdAuthor) return "__Vanilla";
                 //Is a VE mod?
-                else if ( (new Regex("^Vanilla (.*)Expanded( - .*)?$")).IsMatch(name) || (new Regex("VFE")).IsMatch(name)) return "__VanillaExpanded";
+                else if (regex.IsMatch(name) || name.Contains("VFE")) return "__VanillaExpanded";
                 return name;
             }
             else if (node is DummyNode) return GroupingByMods(node.OutNodes()[0]);
             return "";
-        }
-        
+        }      
         public List<NodeLayers> SplitLargeMods()
         {
             var result = new List<List<List<Node>>>();
             var vanilla = EmptyNewLayers(LayerCount());
             result.Add(vanilla);
-            var list = AllNodes().GroupBy(n => GroupingByMods(n)).ToList();
-            foreach (var group in list)
+            var list = AllNodes().GroupBy(n => GroupingByMods(n)).ToArray();
+            for (int i = 0; i < list.Length; i++)
             {
-                var ns = new List<Node>(group);
-                var techCount = ns.OfType<ResearchNode>().Count();
-                if (group.Key == "__Vanilla" || techCount < ModSettings_ResearchPowl.largeModTechCount)
+                var group = list[i];
+                var ns = group.ToArray();
+                var techCount = 0;
+                for (int j = 0; j < ns.Length; j++)
+                {
+                    var n1 = ns[j];
+                    if (n1 is ResearchNode) ++techCount;
+                }
+
+                if (techCount < ModSettings_ResearchPowl.largeModTechCount || group.Key == "__Vanilla")
                 {
                     MergeDataFromTo(ns, vanilla);
                 }
@@ -268,11 +266,15 @@ namespace ResearchPowl
         public int _layer;
         public NodeLayers _layers;
 
-        public NodeLayer(int layer, List<Node> nodes, NodeLayers layers) {
+        public NodeLayer(int layer, List<Node> nodes, NodeLayers layers)
+        {
             _layer = layer;
             _layers = layers;
             _nodes = nodes;
-            foreach (var n in _nodes) {
+            var length = _nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n = _nodes[i];
                 n.layer = this;
                 n.lx = layer;
             }
@@ -280,65 +282,47 @@ namespace ResearchPowl
         }
 
         public Node this[int i] {
-            get {
-                return _nodes[i];
-            }
+            get { return _nodes[i]; }
         }
 
-        public bool AdjustY() {
+        public bool AdjustY()
+        {
             bool changed = false;
             var length = _nodes.Count;
-            for (int i = 0; i < length; ++i) {
-                changed = changed || _nodes[i].ly != i;
-                _nodes[i].ly = i;
+            for (int i = 0; i < length; ++i)
+            {
+                var n = _nodes[i];
+                changed = changed || n.ly != i;
+                n.ly = i;
             }
             return changed;
         }
 
-        public bool SortBy(Func<Node, Node, int> f) {
-            _nodes.SortStable(f);
-            return AdjustY();
-        }
+        public void SortBy(Func<Node, Node, int> comparator)
+        {
+            //_nodes.SortStable(comparator);
 
-        public int LowerCrossings() {
-            if (IsBottomLayer()) return 0;
-            int sum = 0;
             var length = _nodes.Count;
-            for (int i = 0; i < length - 1; ++i)
-            {
-                var list = new List<Node>(_nodes[i].OutNodes().Where(n => n.layer == LowerLayer()));
-                for (int j = i + 1; j < length; ++j)
+            if (length > 0)
+			{                
+                List<Pair<Node, int>> list2 = new List<Pair<Node, int>>(length);
+                
+                for (int i = 0; i < length; i++) list2.Add( new Pair<Node, int>(_nodes[i], i) );
+
+                list2.Sort(delegate(Pair<Node, int> lhs, Pair<Node, int> rhs)
                 {
-                    var list2 = new List<Node>(_nodes[j].OutNodes().Where(n => n.layer == LowerLayer()));
-                    foreach (var ni in list)
-                    {
-                        foreach (var nj in list2) if (ni.ly > nj.ly) ++sum;
-                    }
-                }
+                    int num = comparator(lhs.first, rhs.first);
+                    if (num != 0) return num;
+                    return lhs.second.CompareTo(rhs.second);
+                });
+                _nodes.Clear();
+                for (int j = 0; j < length; j++) _nodes.Add(list2[j].first);
             }
-            return sum;
+            
+            AdjustY();
         }
 
-        public int UpperCrossings() {
-            if (IsTopLayer()) return 0;
-            int sum = 0;
-            var lenght = _nodes.Count;
-            for (int i = 0; i < lenght - 1; ++i)
-            {
-                var list = _nodes[i].InNodes().Where(n => n.layer == UpperLayer()).ToList();
-                for (int j = i + 1; j < lenght; ++j)
-                {
-                    var list2 = _nodes[j].InNodes().Where(n => n.layer == UpperLayer()).ToList();
-                    foreach (var ni in list)
-                    {
-                        foreach (var nj in list2) if (ni.ly > nj.ly) ++sum;
-                    }
-                }
-            }
-            return sum;
-        }
-
-        private void SwapNodeY(int i, int j)
+        void SwapNodeY(int i, int j)
         {
             int temp = _nodes[i].ly;
             _nodes[i].ly = _nodes[j].ly;
@@ -375,15 +359,25 @@ namespace ResearchPowl
             return _nodes.GetEnumerator();
         }
 
-        public bool SortByUpperBarycenter()
+        public void SortByUpperBarycenter()
         {
-            foreach (var n in _nodes) n.doubleCache = n.UpperBarycenter();
-            return SortBy((n1, n2) => n1.doubleCache.CompareTo(n2.doubleCache));
+            var length = _nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n = _nodes[i];
+                n.doubleCache = n.UpperBarycenter();
+            }
+            SortBy((n1, n2) => n1.doubleCache.CompareTo(n2.doubleCache));
         }
-        public bool SortByLowerBarycenter()
+        public void SortByLowerBarycenter()
         {
-            foreach (var n in _nodes) n.doubleCache = n.LowerBarycenter();
-            return SortBy((n1, n2) => n1.doubleCache.CompareTo(n2.doubleCache));
+            var length = _nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n = _nodes[i];
+                n.doubleCache = n.LowerBarycenter();
+            }
+            SortBy((n1, n2) => n1.doubleCache.CompareTo(n2.doubleCache));
         }
         void ReverseSegment(int i, int j) {
             for (--j; i < j; ++i, --j)
@@ -393,7 +387,6 @@ namespace ResearchPowl
                 _nodes[j] = temp;
             }
         }
-
         public bool ReverseLowerBarycenterTies()
         {
             var length = _nodes.Count;
@@ -401,13 +394,11 @@ namespace ResearchPowl
             {
                 var bi = _nodes[i].LowerBarycenter();
                 int j = i + 1;
-                //for (; j < length && MathUtil.FloatEqual(bi, _nodes[j].LowerBarycenter()); ++j) continue;
                 ReverseSegment(i, j);
                 i = j;
             }
             return AdjustY();
         }
-
         public bool ReverseUpperBarycenterTies()
         {
             var length = _nodes.Count;
@@ -415,16 +406,16 @@ namespace ResearchPowl
             {
                 var bi = _nodes[i].UpperBarycenter();
                 int j = i + 1;
-                //for (; j < length && MathUtil.FloatEqual(bi, _nodes[j].UpperBarycenter()); ++j) continue;
                 ReverseSegment(i, j);
                 i = j;
             }
             return AdjustY();
         }
-
-        public void ApplyGridCoordinates() {
+        public void ApplyGridCoordinates()
+        {
             var length = _nodes.Count;
-            for (int i = 0; i < length; ++i) {
+            for (int i = 0; i < length; ++i)
+            {
                 var n = _nodes[i];
                 n.X = _layer + 1;
                 n.Y = i + 1;
@@ -432,55 +423,51 @@ namespace ResearchPowl
         }
         public void AssignPositionPriorities()
         {
-            List<Node> ordering = new List<Node>(_nodes.OrderBy(n => n.DefaultPriority()));
-            var length = ordering.Count;
-            for (int i = 0; i < length; ++i) {
-                ordering[i].assignedPriority = i;
-            }
+            var ordering = _nodes.OrderBy(n => n.DefaultPriority()).ToArray();
+            for (int i = 0; i < ordering.Length; ++i) ordering[i].assignedPriority = i;
         }
         public void ImprovePositionAccordingToLower()
         {
-            var list = new List<Node>(_nodes.OrderByDescending(n => n.LayoutPriority()));
-            foreach (var n in list)
+            var list = _nodes.OrderByDescending(n => n.LayoutPriority()).ToArray();
+            for (int i = 0; i < list.Length; i++)
             {
+                var n = list[i];
                 float c = (float) Math.Round(n.LowerPositionBarycenter());
-                if (MathUtil.FloatEqual(c, n.Yf)) continue;
+                if (UnityEngine.Mathf.Approximately(c, n._pos.y)) continue;
                 
-                if (c < n.Yf) n.PushUpTo(c);
+                if (c < n._pos.y) n.PushUpTo(c);
                 else n.PushDownTo(c);
             }
         }
         public void ImprovePositionAccordingToUpper()
         {
-            var list = new List<Node>(_nodes.OrderByDescending(n => n.LayoutPriority()));
-            foreach (var n in list)
+            var list = _nodes.OrderByDescending(n => n.LayoutPriority()).ToArray();
+            for (int i = 0; i < list.Length; i++)
             {
+                var n = list[i];
                 float c = (float) Math.Round(n.UpperPositionBarycenter());
-                if (MathUtil.FloatEqual(c, n.Yf)) continue;
-                if (c < n.Yf) n.PushUpTo(c);
+                if (UnityEngine.Mathf.Approximately(c, n._pos.y)) continue;
+                if (c < n._pos.y) n.PushUpTo(c);
                 else n.PushDownTo(c);
             }
         }
         public float TopPosition()
         {
             if (_nodes.Count == 0) return 99999;
-            return _nodes[0].Yf;
-        }
-
-        public float BottomPosition()
-        {
-            if (_nodes.Count == 0) return -99999;
-            return _nodes[_nodes.Count - 1].Yf;
+            return _nodes[0]._pos.y;
         }
 
         public void MoveVertically(float f)
         {
-            foreach (var n in _nodes) n.Yf = n.Yf + f;
+            var length = _nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n = _nodes[i];
+                n.Yf = n._pos.y + f;
+            }
         }
 
-        public bool IsTopLayer() => _layer == 0;
-        public bool IsBottomLayer() => _layer >= _layers.LayerCount();
-        public NodeLayer UpperLayer() => IsTopLayer() ? null : _layers.Layer(_layer - 1);
+        public bool IsBottomLayer() => _layer >= _layers._layers.Count;
         public NodeLayer LowerLayer() => IsBottomLayer() ? null : _layers.Layer(_layer + 1);
 
     }
@@ -495,11 +482,6 @@ namespace ResearchPowl
             return x < 0 && y > 0 || x > 0 && y < 0;
         }
 
-        public static bool FloatEqual(double x, double y)
-        {
-            return Math.Abs(x - y) < 0.00001;
-        }
-
         public static bool Ascending(IEnumerable<double> xs)
         {
             return xs.Zip(xs.Skip(1), (a, b) => new {a, b}).All(p => p.a <= p.b);
@@ -509,30 +491,62 @@ namespace ResearchPowl
     static class NodeUtil {
         static float MinimumVerticalDistance = 1;
         
-        public static int LowerCrossings(this Node n1) {
+        public static int LowerCrossings(this Node n1)
+        {
             int sum = 0;
-            var list1 = new List<Node>(n1.layer._nodes.Where(n => n != n1));
+
             var list2 = n1.LocalOutNodes();
-            foreach (var n2 in list1)
+            //Make list1
+            var list1 = new Node[n1.layer._nodes.Count];
+            var length = n1.layer._nodes.Count;
+            for (int i = 0; i < length; i++)
             {
-                var list3 = n2.LocalOutNodes();
-                foreach (var m1 in list2)
+                var n2 = n1.layer._nodes[i];
+                if (n2 != n1)
                 {
-                    foreach (var m2 in list3) if (MathUtil.SignDiff(n1.ly - n2.ly, m1.ly - m2.ly)) ++sum;
+                    var list3 = n2.LocalOutNodes();
+
+                    for (int j = 0; j < list2.Length; j++)
+                    {
+                        var m1 = list2[j];
+                        for (int k = 0; k < list3.Length; k++)
+                        {
+                            var m2 = list3[k];
+                            var x = n1.ly - n2.ly;
+                            var y = m1.ly - m2.ly;
+                            if (x < 0 && y > 0 || x > 0 && y < 0) ++sum;
+                        }
+                    }
                 }
             }
             return sum;
         }
 
-        public static int UpperCrossings(this Node n1) {
+        public static int UpperCrossings(this Node n1)
+        {
             int sum = 0;
-            var list1 = new List<Node>(n1.layer._nodes.Where(n => n != n1));
+           
             var list2 = n1.LocalInNodes();
-            foreach (var n2 in list1) {
-                var list3 = n2.LocalInNodes();
-                foreach (var m1 in list2)
+            var length = n1.layer._nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n2 = n1.layer._nodes[i];
+                if (n2 != n1)
                 {
-                    foreach (var m2 in list3) if (MathUtil.SignDiff(n1.ly - n2.ly, m1.ly - m2.ly)) ++sum;
+                    var list3 = n2.LocalInNodes();
+
+                    for (int j = 0; j < list2.Length; j++)
+                    {
+                        var m1 = list2[j];
+                    
+                        for (int k = 0; k < list3.Length; k++)
+                        {
+                            var m2 = list3[k];
+                            var x = n1.ly - n2.ly;
+                            var y = m1.ly - m2.ly;
+                            if (x < 0 && y > 0 || x > 0 && y < 0) ++sum;
+                        }
+                    }
                 }
             }
             return sum;
@@ -540,9 +554,8 @@ namespace ResearchPowl
 
         public static int UpperEdgeLengthSquare(this Node node) {
             var tmp = node.LocalInNodes();
-            var length = tmp.Count;
             int sum = 0;
-            for (int i = 0; i < length; ++i)
+            for (int i = 0; i < tmp.Length; ++i)
             {
                 var tmp2 = tmp[i];
                 sum += (node.ly - tmp2.ly) * (node.ly - tmp2.ly);
@@ -552,9 +565,8 @@ namespace ResearchPowl
         public static int LowerEdgeLengthSquare(this Node node)
         {
             var tmp = node.LocalOutNodes();
-            var length = tmp.Count;
             int sum = 0;
-            for (int i = 0; i < length; ++i)
+            for (int i = 0; i < tmp.Length; ++i)
             {
                 var tmp2 = tmp[i];
                 sum += (node.ly - tmp2.ly) * (node.ly - tmp2.ly);
@@ -574,29 +586,53 @@ namespace ResearchPowl
 
         public static double LowerBarycenter(this Node node)
         {
-            List<Node> outs = node.LocalOutNodes();
-            if (outs.Count == 0) return node.ly;
-            return outs.Sum(n => n.ly) / (double) outs.Count;
+            var outs = node.LocalOutNodes();
+            if (outs.Length == 0) return node.ly;
+            
+            double sum = 0;
+            for (int i = 0; i < outs.Length; i++)
+            {
+                sum += outs[i].ly;
+            }
+            return sum / (double)outs.Length;
         }
         public static double UpperBarycenter(this Node node)
         {
-            List<Node> ins = node.LocalInNodes();
-            if (ins.Count == 0) return node.ly;
-            return ins.Sum(n => n.ly) / (double) ins.Count;
+            var ins = node.LocalInNodes();
+            if (ins.Length == 0) return node.ly;
+
+            double sum = 0;
+            for (int i = 0; i < ins.Length; i++)
+            {
+                sum += ins[i].ly;
+            }
+            return sum / (double)ins.Length;
         }
 
-        public static float LowerPositionBarycenter(this Node node)
+        public static double LowerPositionBarycenter(this Node node)
         {
-            List<Node> outs = node.LocalOutNodes();
-            if (outs.Count == 0) return node.Yf;
-            return outs.Sum(n => n.Yf) / outs.Count;
+            var outs = node.LocalOutNodes();
+            if (outs.Length == 0) return node._pos.y;
+
+            double sum = 0;
+            for (int i = 0; i < outs.Length; i++)
+            {
+                sum += outs[i]._pos.y;
+            }
+            return sum / (double)outs.Length;
         }
 
-        public static float UpperPositionBarycenter(this Node node)
+        public static double UpperPositionBarycenter(this Node node)
         {
-            List<Node> ins = node.LocalInNodes();
-            if (ins.Count == 0) return node.Yf;
-            return ins.Sum(n => n.Yf) / ins.Count;
+            var ins = node.LocalInNodes();
+            if (ins.Length == 0) return node.Yf;
+
+            double sum = 0;
+            for (int i = 0; i < ins.Length; i++)
+            {
+                sum += ins[i]._pos.y;
+            }
+            return sum / (double)ins.Length;
         }
 
         public static Node MovingUpperbound(this Node node)
@@ -638,40 +674,56 @@ namespace ResearchPowl
             }
         }
 
-        public static List<Node> LocalOutNodes(this Node node) {
+        public static Node[] LocalOutNodes(this Node node) {
             
-            var list = new List<Node>(node.OutNodes());
-            var length = list.Count;
-            var workingList = new List<Node>();
-            for (int i = 0; i < length; i++)
+            var list = node.OutNodes();
+            var workingList = new Node[list.Length];
+            int index = 0;
+            
+            for (int i = 0; i < list.Length; i++)
             {
                 var tmp = list[i];
-                if (tmp.layer == node.layer.LowerLayer()) workingList.Add(tmp);
+                if (tmp.layer == (node.layer._layer >= node.layer._layers._layers.Count ? null : node.layer._layers._layers[node.layer._layer + 1]))
+                {
+                    workingList[index++] = tmp;
+                }
+
             }
+            Array.Resize<Node>(ref workingList, index);
             return workingList;
         }
-        public static List<Node> LocalInNodes(this Node node)
+        
+        public static Node[] LocalInNodes(this Node node)
         {
-            var list = new List<Node>(node.OutNodes());
-            var length = list.Count;
-            var workingList = new List<Node>();
-            for (int i = 0; i < length; i++)
+            var list = node.InNodes();
+            var workingList = new Node[list.Length];
+            var index = 0;
+            for (int i = 0; i < list.Length; i++)
             {
                 var tmp = list[i];
-                if (tmp.layer == node.layer.UpperLayer()) workingList.Add(tmp);
+                if (tmp.layer == (node.layer._layer == 0 ? null : node.layer._layers._layers[node.layer._layer - 1])) //was UpperLayer()
+                {
+                    workingList[index++] = tmp;
+                }
             }
+            Array.Resize<Node>(ref workingList, index);
             return workingList;
         }
         public static NodeSegment LocalSegment(this Node node) {
-            List<Node> segment = new List<Node>();
-            segment.Add(node);
-            for (var outs = node.LocalOutNodes(); outs.Count == 1 && MathUtil.FloatEqual(outs[0].Yf, node.Yf); outs = outs[0].LocalOutNodes())
+            List<Node> segment = new List<Node>() {node};
+            for (var outs = node.LocalOutNodes(); outs.Length == 1;)
             {
-                segment.Add(outs[0]);
+                var n = outs[0];
+                if (!UnityEngine.Mathf.Approximately(n._pos.y, node._pos.y)) break;
+                segment.Add(n);
+                outs = n.LocalOutNodes();
             }
-            for (var ins = node.LocalInNodes(); ins.Count == 1 && MathUtil.FloatEqual(ins[0].Yf, node.Yf); ins = ins[0].LocalOutNodes())
+            for (var ins = node.LocalInNodes(); ins.Length == 1;)
             {
-                segment.Insert(0, ins[0]);
+                var n = ins[0];
+                if (!UnityEngine.Mathf.Approximately(n._pos.y, node._pos.y)) break;
+                segment.Insert(0, n);
+                ins = n.LocalOutNodes();
             }
             return new NodeSegment(segment);
         }
@@ -717,13 +769,13 @@ namespace ResearchPowl
         float? ForwardAlignTarget()
         {
             var outs = _nodes[_nodes.Count - 1].LocalOutNodes();
-            if (outs.Count == 0) return null;
+            if (outs.Length == 0) return null;
             return SelectAppropriateMovement(outs, _nodes[0].Yf);
         }
         float? BackwardAlignTarget()
         {
             var ins = _nodes[0].LocalInNodes();
-            if (ins.Count == 0) return null;
+            if (ins.Length == 0) return null;
             return SelectAppropriateMovement(ins, _nodes[0].Yf);
         }
         float DetermineMovement(float? attempt, out bool aligned)
@@ -769,7 +821,12 @@ namespace ResearchPowl
             bool aligned;
             float? left = BackwardAlignTarget(), right = ForwardAlignTarget();
             float movement = DetermineMovement(left, right, out aligned);
-            foreach (var n in _nodes) n.Yf = n.Yf + movement; //was MoveVertically(movement);
+            var length = _nodes.Count;
+            for (int i = 0; i < length; i++)
+            {
+                var n = _nodes[i];
+                n.Yf = n.Yf + movement; //was MoveVertically(movement);
+            }
             return aligned;
         }
     }
