@@ -24,11 +24,13 @@ namespace ResearchPowl
             new Harmony(this.Content.PackageIdPlayerFacing).PatchAll();
 			base.GetSettings<ModSettings_ResearchPowl>();
 
+            /*
             if (!ModSettings_ResearchPowl.delayLayoutGeneration)
             {
                 if (ModSettings_ResearchPowl.asyncLoadingOnStartup) LongEventHandler.QueueLongEvent(StartLoadingWorker, "ResearchPowl.BuildingResearchTreeAsync", false, null);
                 else LongEventHandler.QueueLongEvent(Tree.InitializeLayout, "ResearchPowl.BuildingResearchTree", false, null);
             }
+            */
 
             LongEventHandler.ExecuteWhenFinished(InitializeHelpSuport);
         }
@@ -57,7 +59,23 @@ namespace ResearchPowl
             if (Prefs.DevMode) listLeft.CheckboxLabeled(DontIgnoreHiddenPrerequisites, ref dontIgnoreHiddenPrerequisites, DontIgnoreHiddenPrerequisitesTip);
             listLeft.CheckboxLabeled(ShouldSeparateByTechLevels, ref shouldSeparateByTechLevels, ShouldSeparateByTechLevelsTip);
             listLeft.CheckboxLabeled(AlignCloserToAncestors, ref alignToAncestors, AlignCloserToAncestorsTip);
-            listLeft.CheckboxLabeled(PlaceModTechSeparately, ref placeModTechSeparately, PlaceModTechSeparatelyTip);
+
+            listLeft.Label("Group by...", -1f, null);
+            if (listLeft.RadioButton(PlaceNothingSeparately, !placeTabsSeparately && !placeModTechSeparately, 0f, PlaceSeparatelyTip, null))
+			{
+				placeModTechSeparately = placeTabsSeparately = false;
+			}
+			if (listLeft.RadioButton(PlaceTabsSeparately, placeTabsSeparately, 0f, null, null))
+			{
+				placeTabsSeparately = true;
+                placeModTechSeparately = false;
+			}
+            if (listLeft.RadioButton(PlaceModTechSeparately, placeModTechSeparately, 0f, null, null))
+			{
+				placeModTechSeparately = true;
+                placeTabsSeparately = false;
+			}
+
             if (placeModTechSeparately)
             {
                 listLeft.Label(MinimumSeparateModTech, -1, MinimumSeparateModTechTip);
@@ -69,8 +87,8 @@ namespace ResearchPowl
 
             listLeft.CheckboxLabeled(ShouldPauseOnOpen, ref shouldPause, ShouldPauseOnOpenTip);
             listLeft.CheckboxLabeled(ShouldResetOnOpen, ref shouldReset, ShouldResetOnOpenTip);
-            if (!asyncLoadingOnStartup || delayLayoutGeneration) listLeft.CheckboxLabeled(DelayLayoutGeneration, ref delayLayoutGeneration, DelayLayoutGenerationTip);
-            if (!delayLayoutGeneration) listLeft.CheckboxLabeled(AsyncLoadingOnStartup, ref asyncLoadingOnStartup, AsyncLoadingOnStartupTip);
+            //if (!asyncLoadingOnStartup || delayLayoutGeneration) listLeft.CheckboxLabeled(DelayLayoutGeneration, ref delayLayoutGeneration, DelayLayoutGenerationTip);
+            //if (!delayLayoutGeneration) listLeft.CheckboxLabeled(AsyncLoadingOnStartup, ref asyncLoadingOnStartup, AsyncLoadingOnStartupTip);
             listLeft.Gap();
 
             listLeft.CheckboxLabeled(ProgressTooltip, ref progressTooltip, ProgressTooltipTip);

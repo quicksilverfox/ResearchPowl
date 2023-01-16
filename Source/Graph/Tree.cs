@@ -63,8 +63,9 @@ namespace ResearchPowl
 		{
 			if (!Tree.Initialized)
 			{
-				if (ModSettings_ResearchPowl.delayLayoutGeneration) Tree.InitializeLayout();
-				else if (ModSettings_ResearchPowl.asyncLoadingOnStartup) while (!Tree.Initialized) continue;
+				Tree.InitializeLayout();
+				//if (ModSettings_ResearchPowl.delayLayoutGeneration) Tree.InitializeLayout();
+				//else if (ModSettings_ResearchPowl.asyncLoadingOnStartup) while (!Tree.Initialized) continue;
 			}
 		}
 		public static bool ResetLayout() {
@@ -216,16 +217,8 @@ namespace ResearchPowl
 			void MainAlgorithm(List<List<Node>> data)
 			{
 				NodeLayers layers = new NodeLayers(data);
-				List<NodeLayers> modsSplit = null;
-							
-				if (ModSettings_ResearchPowl.placeModTechSeparately) modsSplit = layers.SplitLargeMods();
-				else
-				{
-					modsSplit = new List<NodeLayers>();
-					modsSplit.Add(layers);
-				}
 
-				var allLayers = modsSplit.OrderBy(l => l.NodeCount()).SelectMany(ls => ls.SplitConnectiveComponents().OrderBy(l => l.NodeCount())).ToArray();
+				var allLayers = layers.SplitMods().OrderBy(l => l.NodeCount()).SelectMany(ls => ls.SplitConnectiveComponents().OrderBy(l => l.NodeCount())).ToArray();
 
 				//was OrganizeLayers()
 				for (int i = 0; i < allLayers.Length; i++)

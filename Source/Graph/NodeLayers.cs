@@ -14,12 +14,10 @@ namespace ResearchPowl
         {
             _layers = new List<NodeLayer>(layers.Select((layer, idx) => new NodeLayer(idx, layer, this)));
         }
-
         public NodeLayers(List<List<Node>> layers)
         {
             InitializeWithLists(layers);
         }
-
         NodeLayers(List<Node> nodes)
         {
             var layers = new List<List<Node>>();
@@ -34,11 +32,8 @@ namespace ResearchPowl
                 layers[nodeX - 1].Add(node);
             }
         }
-
         public int LayerCount() => _layers.Count;
-
         public int NodeCount() => _layers.Select(l => l._nodes.Count).Sum();
-
         public NodeLayer Layer(int n)
         {
             return _layers[n];
@@ -86,7 +81,6 @@ namespace ResearchPowl
 
             foreach (var layer in _layers) layer.RearrangeOrder();
         }
-
         public void ApplyGridCoordinates() {
             foreach (var layer in _layers) {
                 layer.ApplyGridCoordinates();
@@ -133,13 +127,13 @@ namespace ResearchPowl
             }
             return result;
         }
-        static void MergeDataFromTo(Node n, List<List<Node>> data)
+        static void MergeDataFromTo(Node[] ns, List<List<Node>> data)
         {
-            data[n.lx].Add(n);
-        }
-        static void MergeDataFromTo(IEnumerable<Node> ns, List<List<Node>> data)
-        {
-            foreach (var n in ns) MergeDataFromTo(n, data);
+            for (int i = 0; i < ns.Length; i++)
+            {
+                var n = ns[i];
+                data[n.lx].Add(n);
+            }
         }
         void DFSConnectiveComponents(Node cur, List<List<Node>> data, HashSet<Node> visited)
         {
@@ -227,16 +221,61 @@ namespace ResearchPowl
             }
             else if (node is DummyNode) return GroupingByMods(node.OutNodes()[0]);
             return "";
-        }      
-        public List<NodeLayers> SplitLargeMods()
+        }
+        static string GroupingByTabs(Node node)
         {
-            var result = new List<List<List<Node>>>();
-            var vanilla = EmptyNewLayers(LayerCount());
-            result.Add(vanilla);
-            var list = AllNodes().GroupBy(n => GroupingByMods(n)).ToArray();
-            for (int i = 0; i < list.Length; i++)
+            if (node is ResearchNode n) return n.Research.tab?.defName ?? "__Vanilla";
+            else if (node is DummyNode) return GroupingByTabs(node.OutNodes()[0]);
+            return "__Vanilla";
+        }      
+        public IEnumerable<NodeLayers> SplitMods()
+        {
+            if (!ModSettings_ResearchPowl.placeModTechSeparately && !ModSettings_ResearchPowl.placeTabsSeparately)
             {
-                var group = list[i];
+                yield return this;
+            }
+            else if (ModSettings_ResearchPowl.placeModTechSeparately)
+            {
+                foreach (var item in SplitLargeMods()) yield return item;
+            }
+            else
+            {
+                foreach (var item in SplitByTabs()) yield return item;
+            }
+        }
+        public IEnumerable<NodeLayers> SplitByTabs()
+        {
+            var vanilla = EmptyNewLayers(LayerCount());
+            var result = new List<List<List<Node>>>() {vanilla};
+            
+            foreach (var group in AllNodes().GroupBy(n => GroupingByTabs(n)))
+            {
+                if (group.Key == "__Vanilla")
+                {
+                    MergeDataFromTo(group.ToArray(), vanilla);
+                }
+                else
+                {
+                    var newTab = EmptyNewLayers(LayerCount());
+                    MergeDataFromTo(group.ToArray(), newTab);
+                    result.Add(newTab);
+                }
+            }
+            //Return results
+            var length = result.Count;
+            for (int i = 0; i < length; i++)
+            {
+                yield return new NodeLayers(result[i]);
+            }
+        }
+
+        public IEnumerable<NodeLayers> SplitLargeMods()
+        {
+            var vanilla = EmptyNewLayers(LayerCount());
+            var result = new List<List<List<Node>>>() {vanilla};
+            
+            foreach (var group in AllNodes().GroupBy(n => GroupingByMods(n)))
+            {
                 var ns = group.ToArray();
                 var techCount = 0;
                 for (int j = 0; j < ns.Length; j++)
@@ -256,7 +295,12 @@ namespace ResearchPowl
                     result.Add(newMod);
                 }
             }
-            return result.Select(d => new NodeLayers(d)).ToList();
+            //Return results
+            var length = result.Count;
+            for (int i = 0; i < length; i++)
+            {
+                yield return new NodeLayers(result[i]);
+            }
         }
     }
 

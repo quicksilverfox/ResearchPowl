@@ -57,8 +57,10 @@
 	<ResearchPal.MinimumSeparateModTech>Minimum projects per mod</ResearchPal.MinimumSeparateModTech>
 	<ResearchPal.MinimumSeparateModTechTip>If a mod adds more than this number of research projects, they will be grouped together in the tree.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.MinimumSeparateModTechTip>
 	
-	<ResearchPal.GroupModTechs>Group research from the same mod</ResearchPal.GroupModTechs>
-	<ResearchPal.GroupModTechsTip>Place researches from the same mod together ignoring heuristics.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.GroupModTechsTip>
+	<ResearchPal.GroupNothing>...nothing</ResearchPal.GroupNothing>
+	<ResearchPal.GroupTabs>...the same tab</ResearchPal.GroupTabs>
+	<ResearchPal.GroupModTechs>...the same mod</ResearchPal.GroupModTechs>
+	<ResearchPal.PlaceSeparatelyTip>Place research projects together ignoring heuristics.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.PlaceSeparatelyTip>
 	
 	<ResearchPal.SearchByDescription>Search by descriptions</ResearchPal.SearchByDescription>
 	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance).</ResearchPal.SearchByDescriptionTip>

@@ -234,10 +234,7 @@ namespace ResearchPowl
 
             if ( Scribe.mode == LoadSaveMode.PostLoadInit )
             {
-                if (ModSettings_ResearchPowl.asyncLoadingOnStartup)
-                {
-                    Tree.WaitForResearchNodes();
-                }
+                //if (ModSettings_ResearchPowl.asyncLoadingOnStartup) Tree.WaitForResearchNodes();
                 foreach (var research in _saveableQueue)
                 {
                     // find a node that matches the research - or null if none found
