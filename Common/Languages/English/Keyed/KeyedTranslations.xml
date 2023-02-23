@@ -42,8 +42,8 @@
 	<ResearchPal.ShowNotificationPopup>Show notification popup</ResearchPal.ShowNotificationPopup>
 	<ResearchPal.ShowNotificationPopupTip>Whenever you finish research, pause and show the default notification.</ResearchPal.ShowNotificationPopupTip>
 	
-	<ResearchPal.ShouldSeparateByTechLevels>Group research by tech level</ResearchPal.ShouldSeparateByTechLevels>
-	<ResearchPal.ShouldSeparateByTechLevelsTip>Divide the tree up into tech levels. Turn this off for a denser layout.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.ShouldSeparateByTechLevelsTip>
+	<ResearchPal.ShouldSeparateByTechLevels>Organize by tech level</ResearchPal.ShouldSeparateByTechLevels>
+	<ResearchPal.ShouldSeparateByTechLevelsTip>Divide the tree up into tech levels. Turn this off for a denser layout.</ResearchPal.ShouldSeparateByTechLevelsTip>
 	
 	<ResearchPal.ShouldPauseOnOpen>Pause on display</ResearchPal.ShouldPauseOnOpen>
 	<ResearchPal.ShouldPauseOnOpenTip>Pause the game when the research tab is displayed.</ResearchPal.ShouldPauseOnOpenTip>
@@ -52,15 +52,16 @@
 	<ResearchPal.ShouldResetOnOpenTip>Clear filtering and reset scroll position.</ResearchPal.ShouldResetOnOpenTip>
 	
 	<ResearchPal.AlignCloserToAncestors>Align closer to prerequisites</ResearchPal.AlignCloserToAncestors>
-	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.AlignCloserToAncestorsTip>
+	<ResearchPal.AlignCloserToAncestorsTip>Heuristically put research nodes closer to their prerequisites instead of children.</ResearchPal.AlignCloserToAncestorsTip>
 	
 	<ResearchPal.MinimumSeparateModTech>Minimum projects per mod</ResearchPal.MinimumSeparateModTech>
-	<ResearchPal.MinimumSeparateModTechTip>If a mod adds more than this number of research projects, they will be grouped together in the tree.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.MinimumSeparateModTechTip>
+	<ResearchPal.MinimumSeparateModTechTip>If a mod adds more than this number of research projects, they will be grouped together in the tree.</ResearchPal.MinimumSeparateModTechTip>
 	
+	<ResearchPal.GroupBy>Group by...</ResearchPal.GroupBy>
 	<ResearchPal.GroupNothing>...nothing</ResearchPal.GroupNothing>
 	<ResearchPal.GroupTabs>...the same tab</ResearchPal.GroupTabs>
 	<ResearchPal.GroupModTechs>...the same mod</ResearchPal.GroupModTechs>
-	<ResearchPal.PlaceSeparatelyTip>Place research projects together ignoring heuristics.\n\nClick "Regenerate Research Tree Layout" to apply.</ResearchPal.PlaceSeparatelyTip>
+	<ResearchPal.PlaceSeparatelyTip>Place research projects together ignoring heuristics.</ResearchPal.PlaceSeparatelyTip>
 	
 	<ResearchPal.SearchByDescription>Search by descriptions</ResearchPal.SearchByDescription>
 	<ResearchPal.SearchByDescriptionTip>Searches will match the keyword against descriptions of the researches (may worsen search performance).</ResearchPal.SearchByDescriptionTip>
@@ -107,7 +108,9 @@
 	<ResearchPal.ResearchFinished>Finished research: {0}</ResearchPal.ResearchFinished>
 	
 	<ResearchPal.MaxAllowedTechLvl>Max tech tier override: {0}</ResearchPal.MaxAllowedTechLvl>
-	<ResearchPal.MaxAllowedTechLvlTip>If you are using a mod that caps the research, and the cap is not working correctly, you can override it here manually.\n\nYou may need to regenerate the tech tree if you change this.</ResearchPal.MaxAllowedTechLvlTip>
+	<ResearchPal.MaxAllowedTechLvlTip>If you are using a mod that caps the research, and the cap is not working correctly, you can override it here manually.</ResearchPal.MaxAllowedTechLvlTip>
 	
-	<ResearchPal.DontShowUnallowedTech>Do not show unallowed tech</ResearchPal.DontShowUnallowedTech>
+	<ResearchPal.DontShowUnallowedTech>Do not show disallowed tech</ResearchPal.DontShowUnallowedTech>
+	<ResearchPal.ReadOnlyMode>Read only mode</ResearchPal.ReadOnlyMode>
+	<ResearchPal.ReadOnlyModeTip>When enabled, the tech tree may only be viewed as a reference, but not as an interface to start projects. This mode is meant to be used with mods that remove player agency, such as Random Research.</ResearchPal.ReadOnlyModeTip>
 </LanguageData>

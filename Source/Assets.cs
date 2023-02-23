@@ -30,7 +30,11 @@ namespace ResearchPowl
 		HoverPrimaryColor = new Color(0.6f, 0.55f, 0.9f),
 		FixedPrimaryColor = new Color(0.55f, 0.9f, 0.95f),
 		TechLevelColor = new Color( 1f, 1f, 1f, .2f ),
-		colorWhite = Color.white;
+		colorWhite = Color.white,
+		colorGrey = Color.grey,
+		colorCyan = Color.cyan,
+		colorGreen = Color.green,
+		darkGrey = new Color(0.3f, 0.3f, 0.3f, 0.8f);
 
 		public static Dictionary<TechLevel, Color>
 		ColorCompleted = new Dictionary<TechLevel, Color>(),

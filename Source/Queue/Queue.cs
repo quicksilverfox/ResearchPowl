@@ -10,6 +10,7 @@ using Verse;
 using System;
 using static ResearchPowl.Assets;
 using static ResearchPowl.Constants;
+using Settings = ResearchPowl.ModSettings_ResearchPowl;
 
 namespace ResearchPowl
 {
@@ -51,9 +52,9 @@ namespace ResearchPowl
             }
 
             // draw queue number
-            Text.Anchor = TextAnchor.MiddleCenter;
+            Text.anchorInt = TextAnchor.MiddleCenter;
             Widgets.Label(canvas, label.ToString());
-            Text.Anchor = TextAnchor.UpperLeft;
+            Text.anchorInt = TextAnchor.UpperLeft;
         }
         // Require the input to be topologically ordered
         void UnsafeConcat(IEnumerable<ResearchNode> nodes)
@@ -177,7 +178,7 @@ namespace ResearchPowl
         }
         public static String DebugQueueSerialize(IEnumerable<ResearchNode> nodes)
         {
-            if (ModSettings_ResearchPowl.verboseDebug) return string.Join(", ", nodes.Select(n => n.Research.label));
+            if (Settings.verboseDebug) return string.Join(", ", nodes.Select(n => n.Research.label));
             return "";
         }
         static public void NewUndoState()
@@ -204,7 +205,7 @@ namespace ResearchPowl
             if (finishedNode != current) return;
             var next = CurrentS()?.Research;
             Find.ResearchManager.currentProj = next;
-            if (! ModSettings_ResearchPowl.useVanillaResearchFinishedMessage)
+            if (! Settings.useVanillaResearchFinishedMessage)
             {
                 Log.Debug("Send completion letter for {0}, next is {1}", current.Research.label, next?.label ?? "NONE");
                 //was DoCompletionLetter()
@@ -234,7 +235,6 @@ namespace ResearchPowl
 
             if ( Scribe.mode == LoadSaveMode.PostLoadInit )
             {
-                //if (ModSettings_ResearchPowl.asyncLoadingOnStartup) Tree.WaitForResearchNodes();
                 foreach (var research in _saveableQueue)
                 {
                     // find a node that matches the research - or null if none found
@@ -351,22 +351,22 @@ namespace ResearchPowl
         {
             return MainTabWindow_ResearchTree.Instance.draggedNode;
         }
-        static List<ResearchNode> temporaryQueue = new List<ResearchNode>();
-        static public void DrawS(Rect baseCanvas, bool interactible) {
+        //static List<ResearchNode> workingList = new List<ResearchNode>();
+        static public void Draw(Rect baseCanvas, bool interactible) {
 
             //Draw background
-            GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
-            FastGUI.DrawTextureFast(baseCanvas, BaseContent.GreyTex, new Color(0.3f, 0.3f, 0.3f, 0.8f));
+            //GUI.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+            FastGUI.DrawTextureFast(baseCanvas, BaseContent.GreyTex, Assets.darkGrey);
 
             HandleUndo();
             var canvas = CanvasFromBaseCanvas(baseCanvas);
 
             if (_instance._queue.Count == 0)
             {
-                Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color   = Color.white;
+                Text.anchorInt = TextAnchor.MiddleCenter;
+                GUI.color   = Assets.colorWhite;
                 Widgets.Label( canvas, ResourceBank.String.NothingQueued );
-                Text.Anchor = TextAnchor.UpperLeft;
+                Text.anchorInt = TextAnchor.UpperLeft;
             }
 
             HandleReleaseOutside(canvas);
@@ -385,22 +385,20 @@ namespace ResearchPowl
             //Embedded methods
             void DrawNodes(Rect visibleRect)
             {
-                temporaryQueue.Clear();
-                // when handling event in nodes, the queue itself may change
-                // so using a temporary queue to avoid the unmatching DrawAt and SetRect
-                foreach (var node in _instance._queue) temporaryQueue.Add(node);
+                // when handling event in nodes, the queue itself may change so using a temporary queue to avoid the unmatching DrawAt and SetRect
+                var workingList = _instance._queue.ToArray();
 
-                var length = temporaryQueue.Count;
-                for (int i = 0; i < length; ++i)
+                for (int i = 0; i < workingList.Length; ++i)
                 {
-                    if (currentPositions[i] == -1) continue;
-                    temporaryQueue[i].DrawAt(new Vector2(currentPositions[i] * (Margin + NodeSize.x), 0), visibleRect, Painter.Queue, true);
+                    var node = workingList[i];
+                    var pos = currentPositions[i];
+                    if (pos != -1) node.DrawAt(new Vector2(pos * (Margin + NodeSize.x), 0), visibleRect, Painter.Queue, true);
+                    node.SetRects();
                 }
 
-                if (ModSettings_ResearchPowl.showIndexOnQueue) DrawLabels(visibleRect);
-                foreach (var node in temporaryQueue) node.SetRects();
+                if (Settings.showIndexOnQueue) DrawLabels(visibleRect);
 
-                if (temporaryQueue.Count != _instance._queue.Count) ResetNodePositions();
+                if (workingList.Length != _instance._queue.Count) ResetNodePositions();
             }
             void HandleDragReleaseInside(Rect visibleRect)
             {
@@ -507,7 +505,7 @@ namespace ResearchPowl
             {
                 //Get queue length and multiple by margins
                 var original = (DraggingNode() && !DraggingFromQueue()) ? _instance._queue.Count + 1 : _instance._queue.Count * (NodeSize.x + Margin) - Margin;
-                return ModSettings_ResearchPowl.showIndexOnQueue ? original + Constants.QueueLabelSize * 0.5f : original;
+                return Settings.showIndexOnQueue ? original + Constants.QueueLabelSize * 0.5f : original;
             }
             void HandleUndo()
             {

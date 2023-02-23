@@ -16,7 +16,8 @@ namespace ResearchPowl
         protected bool _largeLabel, _rectsSet;
         public List<Edge<Node, Node>> _outEdges = new List<Edge<Node, Node>>();
         public Vector2 _pos = Vector2.zero;
-        protected Rect _queueRect, _rect, _labelRect, _costLabelRect, _costIconRect, _iconsRect, _lockRect;
+        protected Rect _queueRect, _labelRect, _costLabelRect, _costIconRect, _iconsRect, _lockRect;
+        public Rect _rect;
         protected Vector2 _topLeft = Vector2.zero, _right = Vector2.zero, _left = Vector2.zero;
 
         public List<Node> Descendants()
@@ -67,7 +68,7 @@ namespace ResearchPowl
             }
         }
 
-        public virtual Color Color     => Color.white;
+        public virtual Color Color  => Assets.colorWhite;
         public virtual Color InEdgeColor(ResearchNode from)
         {
             return Color;
@@ -174,7 +175,6 @@ namespace ResearchPowl
 
                 // update caches
                 _rectsSet       = false;
-                // Tree.Size.x     = Tree.Nodes().Max( n => n.X );
                 Tree.OrderDirty = true;
             }
         }
@@ -254,8 +254,18 @@ namespace ResearchPowl
         {
             // calculate desired position
             var isRoot  = InNodes().NullOrEmpty();
-            var desired = isRoot ? 1 : InNodes().Max( n => n.X ) + 1;
-            var depth   = Mathf.Max( desired, min );
+            int desired = 1;
+            if (!isRoot)
+            {
+                var list = InNodes();
+                for (int i = 0; i < list.Length; i++)
+                {
+                    var n = list[i];
+                    if (n._pos.x > desired) desired = (int)n._pos.x;
+                }
+                ++desired;
+            }
+            var depth   = desired > min ? desired : min;
 
             // update
             X = depth;

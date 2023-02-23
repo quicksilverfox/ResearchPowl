@@ -7,6 +7,7 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 using static ResearchPowl.Constants;
+using Settings = ResearchPowl.ModSettings_ResearchPowl;
 
 namespace ResearchPowl
 {
@@ -108,8 +109,8 @@ namespace ResearchPowl
 			windowRect.width = UI.screenWidth;
 			windowRect.height = UI.screenHeight - MainButtonDef.ButtonHeight;
 
-			forcePause = ModSettings_ResearchPowl.shouldPause;
-			if (ModSettings_ResearchPowl.shouldReset)
+			forcePause = Settings.shouldPause;
+			if (Settings.shouldReset)
 			{
 				ResetSearch();
 				_scrollPosition = Vector2.zero;
@@ -167,7 +168,7 @@ namespace ResearchPowl
 			}
 			
 			//Handle Zoom, handle zoom only with shift
-			if (cEventType == EventType.ScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && cEvent.shift) || (!ModSettings_ResearchPowl.swapZoomMode && !cEvent.shift)))
+			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && cEvent.shift) || (!Settings.swapZoomMode && !cEvent.shift)))
 			{
 				// absolute position of mouse on research tree
 				var absPos = Event.current.mousePosition;
@@ -176,7 +177,7 @@ namespace ResearchPowl
 				var relPos = ( Event.current.mousePosition - _scrollPosition ) / _zoomLevel;
 
 				// update zoom level
-				SetZoomLevel(_zoomLevel + Event.current.delta.y * ZoomStep * _zoomLevel * ModSettings_ResearchPowl.zoomingSpeedMultiplier);
+				SetZoomLevel(_zoomLevel + Event.current.delta.y * ZoomStep * _zoomLevel * Settings.zoomingSpeedMultiplier);
 
 				// we want to keep the _normalized_ relative position the same as before zooming
 				_scrollPosition = absPos - relPos * _zoomLevel;
@@ -214,9 +215,9 @@ namespace ResearchPowl
 				}
 			}
 			// scroll wheel vertical, switch to horizontal with alt
-			if (cEventType == EventType.ScrollWheel && ((ModSettings_ResearchPowl.swapZoomMode && !cEvent.shift) || (!ModSettings_ResearchPowl.swapZoomMode && cEvent.shift)))
+			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && !cEvent.shift) || (!Settings.swapZoomMode && cEvent.shift)))
 			{
-				float delta = Event.current.delta.y * 15 * ModSettings_ResearchPowl.scrollingSpeedMultiplier;
+				float delta = Event.current.delta.y * 15 * Settings.scrollingSpeedMultiplier;
 				if (Event.current.alt) _scrollPosition.x += delta;
 				else _scrollPosition.y += delta;
 				
@@ -238,8 +239,8 @@ namespace ResearchPowl
 			//GUI.BeginClip( new Rect( 0f, 0f, UI.screenWidth, UI.screenHeight ) );
 
 			//Cleanup
-			GUI.color   = Color.white;
-			Text.Anchor = TextAnchor.UpperLeft;
+			GUI.color   = Assets.colorWhite;
+			Text.anchorInt = TextAnchor.UpperLeft;
 		}
 		void ApplyZoomLevel()
 		{
@@ -273,7 +274,7 @@ namespace ResearchPowl
 				Queue.NotifyNodeDraggedS();
 				evt.Use();
 			}
-			if (draggingSource == Painter.Tree && DraggingTime() > ModSettings_ResearchPowl.draggingDisplayDelay)
+			if (draggingSource == Painter.Tree && DraggingTime() > Settings.draggingDisplayDelay)
 			{
 				var pos = absoluteMousePos;
 				pos.x -= NodeSize.x * 0.5f;
@@ -286,6 +287,7 @@ namespace ResearchPowl
 		{
 			return !IsDraggingNode() ? 0 : Time.time - startDragging;
 		}
+		
 		void DrawTopBar(Rect canvas)
 		{
 			Rect searchRect2 = new Rect(canvas) { width = 200f };
@@ -296,12 +298,12 @@ namespace ResearchPowl
 			//Search bar
 			var searchCanvas = searchRect2.ContractedBy(Constants.Margin);
 			searchRect = new Rect(searchCanvas.xMin, 0f, searchCanvas.width, 30f).CenteredOnYIn(searchCanvas);
-			if (Widgets.ButtonImage(new Rect(searchCanvas.xMax - Constants.Margin - 12f, 0f, 12f,12f ).CenteredOnYIn(searchCanvas), Assets.closeXSmall, false)) ResetSearch();
+			if (Widgets.ButtonImage(new Rect(searchCanvas.xMax - Constants.Margin - 12f, 0f, 12f, 12f ).CenteredOnYIn(searchCanvas), Assets.closeXSmall, false)) ResetSearch();
 
 			UpdateTextField();
 			OnSearchFieldChanged();
 
-			Queue.DrawS(queueRect, !_dragging);
+			Queue.Draw(queueRect, !_dragging);
 		}
 		void UpdateTextField()
 		{

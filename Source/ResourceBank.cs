@@ -55,6 +55,7 @@ namespace ResearchPowl
 				SwapZoomMode = TL("SwapZoomMode"),
 				SwapZoomModeTip = TL("SwapZoomModeTip"),
 				DontIgnoreHiddenPrerequisites = TL("DontIgnoreHiddenPrerequisites"),
+				GroupBy = TL("GroupBy"),
 				DontIgnoreHiddenPrerequisitesTip = TL("DontIgnoreHiddenPrerequisitesTip"),
 				useVanillaResearchFinishedMessage = TL("ShowVanillaResearchFinishedMessage"),
 				useVanillaResearchFinishedMessageTip = TL("ShowVanillaResearchFinishedMessageTip"),

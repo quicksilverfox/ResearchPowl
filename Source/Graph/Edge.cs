@@ -16,7 +16,7 @@ namespace ResearchPowl
         {
             _in     = @in;
             _out    = @out;
-            IsDummy = _out is DummyNode;
+            isDummy = _out is DummyNode;
         }
         public T1 In
         {
@@ -24,7 +24,7 @@ namespace ResearchPowl
             set
             {
                 _in     = value;
-                IsDummy = _out is DummyNode;
+                isDummy = _out is DummyNode;
             }
         }
         public T2 Out
@@ -33,12 +33,12 @@ namespace ResearchPowl
             set
             {
                 _out    = value;
-                IsDummy = _out is DummyNode;
+                isDummy = _out is DummyNode;
             }
         }
 
         public int Span => _out.X - _in.X;
-        public bool  IsDummy { get; private set; }
+        public bool isDummy;
 
         public int DrawOrder()
         {
@@ -65,33 +65,21 @@ namespace ResearchPowl
             }
             return _outResearch;
         }
-        static bool RectVisible(Rect view, Rect test)
+       
+        public void DrawEnd(Rect visibleRect, Vector2 left, Vector2 right, Color color)
         {
-            return ! ( view.xMin > test.xMax
-                    || view.yMin > test.yMax
-                    || view.yMax < test.yMin
-                    || view.xMax < test.xMin);
-        }
-        public void Draw(Rect visibleRect)
-        {
-            GUI.color = Out.InEdgeColor(InResearch());
-            DrawLines(visibleRect);
-            GUI.color = Color.white;
-        }
-        public void DrawEnd(Rect visibleRect, Vector2 left, Vector2 right)
-        {
-            if (IsDummy)
+            if (isDummy)
             {
                 // or draw a line piece through the dummy
                 var through = new Rect(right.x, right.y - 2, NodeSize.x, 4f);
-                if (RectVisible(visibleRect, through)) FastGUI.DrawTextureFast(through, Assets.LineEW, GUI.color);
+                if (through.Overlaps(visibleRect)) FastGUI.DrawTextureFast(through, Assets.LineEW, color);
                 return;
             }
             // draw the end arrow (if not dummy)
             var end = new Rect(right.x - 16f, right.y - 8f, 16f, 16f);
-            if (RectVisible(visibleRect, end)) FastGUI.DrawTextureFast(end, Assets.LineEnd, GUI.color);
+            if (end.Overlaps(visibleRect)) FastGUI.DrawTextureFast(end, Assets.LineEnd, color);
         }
-        public void DrawComplicatedSegments(Rect visibleRect, Vector2 left, Vector2 right)
+        public void DrawComplicatedSegments(Rect visibleRect, Vector2 left, Vector2 right, Color color)
         {
             // draw three line pieces and two curves.
             // determine top and bottom y positions
@@ -101,55 +89,58 @@ namespace ResearchPowl
             var bottom = yMax - NodeMargins.x / 4f;
 
             // if too far off, just skip
-            if (!RectVisible(visibleRect, new Rect(left.x, yMin, right.x - left.x, yMax - yMin))) return;
+            if (!(new Rect(left.x, yMin, right.x - left.x, yMax - yMin).Overlaps(visibleRect))) return;
 
             // straight bits
             // left to curve
             var leftToCurve = new Rect(left.x, left.y - 2f, NodeMargins.x / 4f, 4f );
-            if (RectVisible(visibleRect, leftToCurve)) FastGUI.DrawTextureFast(leftToCurve, Assets.LineEW, GUI.color);
+            if (leftToCurve.Overlaps(visibleRect)) FastGUI.DrawTextureFast(leftToCurve, Assets.LineEW, color);
 
             // curve to curve
             var curveToCurve = new Rect( left.x + NodeMargins.x / 2f - 2f, top, 4f, bottom - top );
-            if (RectVisible(visibleRect, curveToCurve)) FastGUI.DrawTextureFast(curveToCurve, Assets.LineNS, GUI.color);
+            if (curveToCurve.Overlaps(visibleRect)) FastGUI.DrawTextureFast(curveToCurve, Assets.LineNS, color);
 
             // curve to right
-            var curveToRight = new Rect( left.x + NodeMargins.x / 4f * 3 + 1f, right.y - 2f, right.x - left.x - NodeMargins.x / 4f * 3, 4f );
-            if (RectVisible(visibleRect, curveToRight)) FastGUI.DrawTextureFast(curveToRight, Assets.LineEW, GUI.color);
+            var curveToRight = new Rect( left.x + NodeMargins.x / 4f * 3f + 1f, right.y - 2f, right.x - left.x - NodeMargins.x / 4f * 3f, 4f );
+            if (curveToRight.Overlaps(visibleRect)) FastGUI.DrawTextureFast(curveToRight, Assets.LineEW, color);
 
             // curve positions
             var curveLeft = new Rect(left.x + NodeMargins.x / 4f, left.y - NodeMargins.x / 4f, NodeMargins.x / 2f, NodeMargins.x / 2f );
             var curveRight = new Rect(left.x + NodeMargins.x / 4f + 1f, right.y - NodeMargins.x / 4f, NodeMargins.x / 2f, NodeMargins.x / 2f );
 
             // going down
-            if ( left.y < right.y )
+            if (left.y < right.y)
             {
-                if (RectVisible(visibleRect, curveLeft)) FastGUI.DrawTextureFastWithCoords(curveLeft, Assets.LineCircle, GUI.color, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
-                if (RectVisible(visibleRect, curveRight)) FastGUI.DrawTextureFastWithCoords(curveRight, Assets.LineCircle, GUI.color, new Rect(0f, 0f, 0.5f, 0.5f));
+                if (curveLeft.Overlaps(visibleRect)) FastGUI.DrawTextureFastWithCoords(curveLeft, Assets.LineCircle, color, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
+                if (curveRight.Overlaps(visibleRect)) FastGUI.DrawTextureFastWithCoords(curveRight, Assets.LineCircle, color, new Rect(0f, 0f, 0.5f, 0.5f));
                 // bottom right quadrant
                 // top left quadrant
             }
             else
             {
                 // going up
-                if (RectVisible(visibleRect, curveLeft)) FastGUI.DrawTextureFastWithCoords(curveLeft, Assets.LineCircle, GUI.color, new Rect(0.5f, 0f, 0.5f, 0.5f));
+                if (curveLeft.Overlaps(visibleRect)) FastGUI.DrawTextureFastWithCoords(curveLeft, Assets.LineCircle, color, new Rect(0.5f, 0f, 0.5f, 0.5f));
                 // top right quadrant
-                if (RectVisible(visibleRect, curveRight)) FastGUI.DrawTextureFastWithCoords(curveRight, Assets.LineCircle, GUI.color, new Rect(0f, 0.5f, 0.5f, 0.5f));
+                if (curveRight.Overlaps(visibleRect)) FastGUI.DrawTextureFastWithCoords(curveRight, Assets.LineCircle, color, new Rect(0f, 0.5f, 0.5f, 0.5f));
                 // bottom left quadrant
             }
         }
+        Color colorCache;
         public void DrawLines( Rect visibleRect )
         {
-            var left  = In.Right;
-            var right = Out.Left;
+            var left  = _in.Right;
+            var right = _out.Left;
+            if (ResearchNode.mouseOverDirty || ResearchNode.availableDirty) colorCache = Out.InEdgeColor(InResearch());;
+            var color = colorCache;
 
             // if left and right are on the same level, just draw a straight line.
-            if (Math.Abs( left.y - right.y ) < Epsilon)
+            if (left.y == right.y)
             {
                 var line = new Rect( left.x, left.y - 2f, right.x - left.x, 4f );
-                if (RectVisible(visibleRect, line)) FastGUI.DrawTextureFast(line, Assets.LineEW, GUI.color);
+                if (line.Overlaps(visibleRect)) FastGUI.DrawTextureFast(line, Assets.LineEW, color);
             }
-            else DrawComplicatedSegments(visibleRect, left, right);
-            DrawEnd(visibleRect, left, right);
+            else DrawComplicatedSegments(visibleRect, left, right, color);
+            DrawEnd(visibleRect, left, right, color);
         }
         public override string ToString()
         {

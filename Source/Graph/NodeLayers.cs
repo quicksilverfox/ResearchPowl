@@ -3,36 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using Verse;
 using System.Text.RegularExpressions;
+using Settings = ResearchPowl.ModSettings_ResearchPowl;
 
 namespace ResearchPowl
 {
     public class NodeLayers
     {
-        public List<NodeLayer> _layers;
+        public NodeLayer[] _layers;
 
-        void InitializeWithLists(List<List<Node>> layers)
-        {
-            _layers = new List<NodeLayer>(layers.Select((layer, idx) => new NodeLayer(idx, layer, this)));
-        }
         public NodeLayers(List<List<Node>> layers)
         {
-            InitializeWithLists(layers);
+            _layers = layers.Select((layer, idx) => new NodeLayer(idx, layer, this)).ToArray();
         }
-        NodeLayers(List<Node> nodes)
-        {
-            var layers = new List<List<Node>>();
-            var length = _layers.Count;
-            foreach (var node in nodes)
-            {
-                var nodeX = node.X;
-                if (nodeX > length)
-                {
-                    for (int i = length; i < nodeX; ++i) layers.Add(new List<Node>());
-                }
-                layers[nodeX - 1].Add(node);
-            }
-        }
-        public int LayerCount() => _layers.Count;
+        //public int LayerCount() => _layers.Count;
         public int NodeCount() => _layers.Select(l => l._nodes.Count).Sum();
         public NodeLayer Layer(int n)
         {
@@ -40,7 +23,7 @@ namespace ResearchPowl
         }
         void NLevelBCPhase1(int maxIter)
         {
-            var layerCount = _layers.Count;
+            var layerCount = _layers.Length;
 
             for (int n = 0; n < maxIter; ++n)
             {
@@ -51,7 +34,7 @@ namespace ResearchPowl
         public void NLevelBCMethod(int maxIter1, int maxIter2)
         {
             NLevelBCPhase1(maxIter1);
-            var layerCount = _layers.Count;
+            var layerCount = _layers.Length;
             for (int k = 0; k < maxIter2; ++k)
             {
                 for (int i = layerCount - 2; i >= 0; --i)
@@ -72,11 +55,10 @@ namespace ResearchPowl
         }
         void BruteforceSwapping(int maxIter)
         {
-            int layerCount = LayerCount();
             for (int k = 0; k < maxIter; ++k)
             {
-                for (int i = 1; i < layerCount; ++i) _layers[i].UnsafeBruteforceSwapping();
-                for (int i = layerCount - 2; i >= 0; --i) _layers[i].UnsafeBruteforceSwapping();
+                for (int i = 1; i < _layers.Length; ++i) _layers[i].UnsafeBruteforceSwapping();
+                for (int i = _layers.Length - 2; i >= 0; --i) _layers[i].UnsafeBruteforceSwapping();
             }
 
             foreach (var layer in _layers) layer.RearrangeOrder();
@@ -88,19 +70,17 @@ namespace ResearchPowl
         }
         public void ImproveNodePositionsInLayers()
         {
-            var length = _layers.Count;
-
-            for (int i = 0; i < length; i++) _layers[i].AssignPositionPriorities();
+            for (int i = 0; i < _layers.Length; i++) _layers[i].AssignPositionPriorities();
             
-            for (int i = 1; i < length; ++i) _layers[i].ImprovePositionAccordingToUpper();
+            for (int i = 1; i < _layers.Length; ++i) _layers[i].ImprovePositionAccordingToUpper();
             
-            for (int i = length - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
+            for (int i = _layers.Length - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
             
-            for (int i = 1; i < length; ++i) _layers[i].ImprovePositionAccordingToUpper();
+            for (int i = 1; i < _layers.Length; ++i) _layers[i].ImprovePositionAccordingToUpper();
             
-            if (!ModSettings_ResearchPowl.alignToAncestors)
+            if (!Settings.alignToAncestors)
             {
-                for (int i = _layers.Count - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
+                for (int i = _layers.Length - 2; i >= 0; --i) _layers[i].ImprovePositionAccordingToLower();
             }
             AlignSegments(3);
         }
@@ -160,7 +140,7 @@ namespace ResearchPowl
             {
                 if (!visited.Contains(node))
                 {
-                    var data = EmptyNewLayers(LayerCount());
+                    var data = EmptyNewLayers(_layers.Length);
                     DFSConnectiveComponents(node, data, visited);
                     yield return new NodeLayers(data);
                 }
@@ -180,10 +160,9 @@ namespace ResearchPowl
         {
             for (int n = 0; n < maxIter; ++n)
             {
-                var length = _layers.Count;
-                if (ModSettings_ResearchPowl.alignToAncestors)
+                if (Settings.alignToAncestors)
                 {
-                    for (int i = 0; i < length; ++i)
+                    for (int i = 0; i < _layers.Length; ++i)
                     {
                         var list = _layers[i]._nodes;
                         var length2 = list.Count;
@@ -192,7 +171,7 @@ namespace ResearchPowl
                 }
                 else
                 {
-                    for (int i = length - 1; i >= 0; --i)
+                    for (int i = _layers.Length - 1; i >= 0; --i)
                     {
                         var list = _layers[i]._nodes;
                         var length2 = list.Count;
@@ -230,11 +209,11 @@ namespace ResearchPowl
         }      
         public IEnumerable<NodeLayers> SplitMods()
         {
-            if (!ModSettings_ResearchPowl.placeModTechSeparately && !ModSettings_ResearchPowl.placeTabsSeparately)
+            if (!Settings.placeModTechSeparately && !Settings.placeTabsSeparately)
             {
                 yield return this;
             }
-            else if (ModSettings_ResearchPowl.placeModTechSeparately)
+            else if (Settings.placeModTechSeparately)
             {
                 foreach (var item in SplitLargeMods()) yield return item;
             }
@@ -245,7 +224,7 @@ namespace ResearchPowl
         }
         public IEnumerable<NodeLayers> SplitByTabs()
         {
-            var vanilla = EmptyNewLayers(LayerCount());
+            var vanilla = EmptyNewLayers(_layers.Length);
             var result = new List<List<List<Node>>>() {vanilla};
             
             foreach (var group in AllNodes().GroupBy(n => GroupingByTabs(n)))
@@ -256,7 +235,7 @@ namespace ResearchPowl
                 }
                 else
                 {
-                    var newTab = EmptyNewLayers(LayerCount());
+                    var newTab = EmptyNewLayers(_layers.Length);
                     MergeDataFromTo(group.ToArray(), newTab);
                     result.Add(newTab);
                 }
@@ -268,10 +247,9 @@ namespace ResearchPowl
                 yield return new NodeLayers(result[i]);
             }
         }
-
         public IEnumerable<NodeLayers> SplitLargeMods()
         {
-            var vanilla = EmptyNewLayers(LayerCount());
+            var vanilla = EmptyNewLayers(_layers.Length);
             var result = new List<List<List<Node>>>() {vanilla};
             
             foreach (var group in AllNodes().GroupBy(n => GroupingByMods(n)))
@@ -284,13 +262,13 @@ namespace ResearchPowl
                     if (n1 is ResearchNode) ++techCount;
                 }
 
-                if (techCount < ModSettings_ResearchPowl.largeModTechCount || group.Key == "__Vanilla")
+                if (techCount < Settings.largeModTechCount || group.Key == "__Vanilla")
                 {
                     MergeDataFromTo(ns, vanilla);
                 }
                 else
                 {
-                    var newMod = EmptyNewLayers(LayerCount());
+                    var newMod = EmptyNewLayers(_layers.Length);
                     MergeDataFromTo(ns, newMod);
                     result.Add(newMod);
                 }
@@ -511,7 +489,7 @@ namespace ResearchPowl
             }
         }
 
-        public bool IsBottomLayer() => _layer >= _layers._layers.Count;
+        public bool IsBottomLayer() => _layer >= _layers._layers.Length;
         public NodeLayer LowerLayer() => IsBottomLayer() ? null : _layers.Layer(_layer + 1);
 
     }
@@ -727,7 +705,7 @@ namespace ResearchPowl
             for (int i = 0; i < list.Length; i++)
             {
                 var tmp = list[i];
-                if (tmp.layer == (node.layer._layer >= node.layer._layers._layers.Count ? null : node.layer._layers._layers[node.layer._layer + 1]))
+                if (tmp.layer == (node.layer._layer >= node.layer._layers._layers.Length ? null : node.layer._layers._layers[node.layer._layer + 1]))
                 {
                     workingList[index++] = tmp;
                 }

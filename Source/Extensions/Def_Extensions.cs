@@ -54,7 +54,7 @@ namespace ResearchPowl
             if ( bdef == null )
             {
                 // if we reach this point, def.IconTexture() would return null. Just store and return white to make sure we don't get weird errors down the line.
-                _cachedIconColors.Add( def, Color.white );
+                _cachedIconColors.Add( def, Assets.colorWhite );
                 return _cachedIconColors[def];
             }
 
@@ -81,7 +81,7 @@ namespace ResearchPowl
             }
 
             // all else failed.
-            _cachedIconColors.Add( def, Color.white );
+            _cachedIconColors.Add( def, Assets.colorWhite );
             return _cachedIconColors[def];
         }
 

@@ -8,6 +8,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using static ResearchPowl.Constants;
+using Settings = ResearchPowl.ModSettings_ResearchPowl;
 
 namespace ResearchPowl
 {
@@ -15,7 +16,7 @@ namespace ResearchPowl
 	{
 		public static volatile bool Initialized, Initializing;
 		public static IntVec2 Size = IntVec2.Zero;
-		public static bool _shouldSeparateByTechLevels, DisplayProgressState, OrderDirty;
+		public static bool DisplayProgressState, OrderDirty;
 		static List<Node> _nodes, _singletons;
 		static List<Edge<Node, Node>> _edges;
 		static List<TechLevel> _relevantTechLevels;
@@ -64,8 +65,6 @@ namespace ResearchPowl
 			if (!Tree.Initialized)
 			{
 				Tree.InitializeLayout();
-				//if (ModSettings_ResearchPowl.delayLayoutGeneration) Tree.InitializeLayout();
-				//else if (ModSettings_ResearchPowl.asyncLoadingOnStartup) while (!Tree.Initialized) continue;
 			}
 		}
 		public static bool ResetLayout() {
@@ -164,7 +163,7 @@ namespace ResearchPowl
 
 				List<Node> ProcessSingletons(List<List<Node>> layers)
 				{
-					if (_shouldSeparateByTechLevels) return new List<Node>();
+					if (Settings.shouldSeparateByTechLevels) return new List<Node>();
 					List<ResearchNode> singletons = new List<ResearchNode>();
 
 					var length = layers[0].Count;
@@ -237,11 +236,11 @@ namespace ResearchPowl
 				{
 					var layer = allLayers[j];
 					float dy = -99999;
-					var length2 = layer._layers.Count;
+					var length2 = layer._layers.Length;
 					for (int i = 0; i < length2; ++i) dy = Math.Max(dy, topBounds[i] - layer.TopPosition(i));
 					layer.MoveVertically(dy);
 
-					length2 = layer._layers.Count;
+					length2 = layer._layers.Length;
 					for (int i = 0; i < length2; ++i)
 					{
 						//was Math.Max(topBounds[i], layer.BottomPosition(i) + 1);
@@ -330,7 +329,7 @@ namespace ResearchPowl
 			{
 				var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
 
-				if (ModSettings_ResearchPowl.dontIgnoreHiddenPrerequisites && !prerequisitesFixed)
+				if (Settings.dontIgnoreHiddenPrerequisites && !prerequisitesFixed)
 				{
 					foreach (var n in projects) FixPrerequisites(n);
 					prerequisitesFixed = true;
@@ -342,11 +341,11 @@ namespace ResearchPowl
 				// find locked nodes (nodes that have a hidden node as a prerequisite)
 				var locked = projects.Where( p => p.Ancestors().Intersect( hidden ).Any() );
 
-				if (ModSettings_ResearchPowl.dontShowUnallowedTech)
+				if (Settings.dontShowUnallowedTech)
 				{
 					foreach (var n in projects)
 					{
-						if ((int)n.techLevel > ModSettings_ResearchPowl.maxAllowedTechLvl) hidden.Add(n);
+						if ((int)n.techLevel > Settings.maxAllowedTechLvl) hidden.Add(n);
 					}
 				}
 
@@ -391,36 +390,34 @@ namespace ResearchPowl
 			}
 			void HorizontalPositions(List<ResearchNode> nodes)
 			{
-				_shouldSeparateByTechLevels = ModSettings_ResearchPowl.shouldSeparateByTechLevels;
-
-				if (_shouldSeparateByTechLevels)
+				if (Settings.shouldSeparateByTechLevels)
 				{
 					_techLevelBounds = new Dictionary<TechLevel, IntRange>();
 					float leftBound = 1;
 					foreach (var group in nodes.GroupBy(n => n.Research.techLevel).OrderBy(g => g.Key))
 					{
-						var updateOrder = FilteredTopoSort(group, n => n.Research.techLevel == group.Key);
-						float newLeftBound  = leftBound;
-						foreach (var node in updateOrder) newLeftBound = Math.Max(newLeftBound, node.SetDepth((int)leftBound));
+						float newLeftBound = leftBound;
+						foreach (var node in FilteredTopoSort(group, n => n.Research.techLevel == group.Key)) newLeftBound = Math.Max(newLeftBound, node.SetDepth((int)leftBound));
 
 						_techLevelBounds[group.Key] = new IntRange((int)leftBound - 1, (int)newLeftBound);
 						leftBound = newLeftBound + 1;
 					}
 				}
-				else
-				{
-					var updateOrder = FilteredTopoSort(nodes, n => true);
-					foreach (var node in updateOrder) node.SetDepth(1);
-				}
+				else foreach (var node in FilteredTopoSort(nodes, n => true)) node.SetDepth(1);
 
-				List<ResearchNode> FilteredTopoSort(IEnumerable<ResearchNode> nodes, Func<ResearchNode, bool> p)
+				IEnumerable<ResearchNode> FilteredTopoSort(IEnumerable<ResearchNode> nodes, Func<ResearchNode, bool> p)
 				{
 					List<ResearchNode> result = new List<ResearchNode>();
 					HashSet<ResearchNode> visited = new HashSet<ResearchNode>();
 					foreach (var node in nodes)
 					{
-						if (node.OutNodes().OfType<ResearchNode>().Any(p)) continue;
+						var list = node.OutNodes();
+						for (int i = 0; i < list.Length; i++)
+						{
+							if (list[i] is ResearchNode researchNode && p(researchNode)) goto skipNode;
+						}
 						FilteredTopoSortRec(node, p, result, visited);
+						skipNode: continue;
 					}
 					return result;
 				}
@@ -482,10 +479,17 @@ namespace ResearchPowl
 				if (!Event.current.shift) StopFixedHighlights();
 				fixedHighlightSets.Add(hl);
 			}
-		}		
+		}
+		static int ticker = 1;
 		public static void Draw(Rect visibleRect)
 		{
-			if (_shouldSeparateByTechLevels)
+			if (--ticker == 0)
+			{
+				ResearchNode.availableDirty = true;
+				ticker = 60;
+			}
+			else ResearchNode.availableDirty = false;
+			if (Settings.shouldSeparateByTechLevels)
 			{
 				List<TechLevel> list3 = new List<TechLevel>(RelevantTechLevels());
 				var tmp = list3.Count;
@@ -495,12 +499,7 @@ namespace ResearchPowl
 				}
 			}
 
-			var list = new List<Edge<Node, Node>>(_edges?.OrderBy( e => e.DrawOrder()));
-			var length = list.Count;
-			for (int i = 0; i < length; i++)
-			{
-				list[i].Draw(visibleRect);
-			}
+			foreach (var item in _edges?.OrderBy( e => e.DrawOrder())) item.DrawLines(visibleRect);
 
 			//was TryModifySharedState()
 			if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) DisplayProgressState = true;
@@ -510,13 +509,13 @@ namespace ResearchPowl
 			var mousePos = evt.mousePosition;
 
 			//Compile list of drawn nodes
-			List<ResearchNode> list2 = new List<ResearchNode>(ResearchNodes());
+			List<ResearchNode> list = ResearchNodes();
 			bool hoverHighlight = ContinueHoverHighlight(mousePos);
-			length = list2.Count;
+			var length = list.Count;
 			for (int i = 0; i < length; i++)
 			{
-				var node = list2[i];
-				if (node.IsVisible(visibleRect))
+				var node = list[i];
+				if (node.Rect.Overlaps(visibleRect))
 				{
 					if (!hoverHighlight && node.MouseOver(mousePos))
 					{
@@ -542,7 +541,7 @@ namespace ResearchPowl
 
 			void DrawTechLevel(TechLevel techlevel, Rect visibleRect)
 			{
-				if (ModSettings_ResearchPowl.dontShowUnallowedTech && (int)techlevel > ModSettings_ResearchPowl.maxAllowedTechLvl) return;
+				if (Settings.dontShowUnallowedTech && (int)techlevel > Settings.maxAllowedTechLvl) return;
 
 				// determine positions
 				if (_techLevelBounds == null || !_techLevelBounds.TryGetValue(techlevel, out IntRange bounds)) return;
@@ -550,7 +549,7 @@ namespace ResearchPowl
 				var xMax = ( NodeSize.x + NodeMargins.x ) * bounds.max - NodeMargins.x / 2f;
 
 				GUI.color   = Assets.TechLevelColor;
-				Text.Anchor = TextAnchor.MiddleCenter;
+				Text.anchorInt = TextAnchor.MiddleCenter;
 
 				// lower bound
 				if ( bounds.min > 0 && xMin > visibleRect.xMin && xMin < visibleRect.xMax )
@@ -581,8 +580,8 @@ namespace ResearchPowl
 					VerticalLabel( labelRect, techlevel.ToStringHuman() );
 				}
 
-				GUI.color = Color.white;
-				Text.Anchor = TextAnchor.UpperLeft;
+				GUI.color = Assets.colorWhite;
+				Text.anchorInt = TextAnchor.UpperLeft;
 
 				void VerticalLabel(Rect rect, string text)
 				{
