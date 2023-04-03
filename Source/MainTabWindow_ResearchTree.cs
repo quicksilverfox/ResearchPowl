@@ -168,7 +168,7 @@ namespace ResearchPowl
 			}
 			
 			//Handle Zoom, handle zoom only with shift
-			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && cEvent.shift) || (!Settings.swapZoomMode && !cEvent.shift)))
+			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && cEvent.shift) || (!Settings.swapZoomMode && !cEvent.shift && !cEvent.alt)) && !topRect.Contains(UI.MousePositionOnUIInverted))
 			{
 				// absolute position of mouse on research tree
 				var absPos = Event.current.mousePosition;
@@ -215,7 +215,7 @@ namespace ResearchPowl
 				}
 			}
 			// scroll wheel vertical, switch to horizontal with alt
-			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && !cEvent.shift) || (!Settings.swapZoomMode && cEvent.shift)))
+			if (cEventType == EventType.ScrollWheel && ((Settings.swapZoomMode && !cEvent.shift) || (!Settings.swapZoomMode && (cEvent.shift || cEvent.alt))) && !topRect.Contains(UI.MousePositionOnUIInverted))
 			{
 				float delta = Event.current.delta.y * 15 * Settings.scrollingSpeedMultiplier;
 				if (Event.current.alt) _scrollPosition.x += delta;
@@ -287,7 +287,6 @@ namespace ResearchPowl
 		{
 			return !IsDraggingNode() ? 0 : Time.time - startDragging;
 		}
-		
 		void DrawTopBar(Rect canvas)
 		{
 			Rect searchRect2 = new Rect(canvas) { width = 200f };

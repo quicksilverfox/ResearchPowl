@@ -149,15 +149,14 @@ namespace ResearchPowl
 		}
 		public override Color InEdgeColor(ResearchNode from)
 		{
-			if (HighlightInEdge(from)) return Assets.NormalHighlightColor;
+			Color color;
+			if (HighlightInEdge(from)) color = Assets.NormalHighlightColor;
+			else if (MainTabWindow_ResearchTree.Instance._searchActive) Assets.ColorUnmatched.TryGetValue(Research.techLevel, out color);
+			else if (Research.IsFinished) Assets.ColorEdgeCompleted.TryGetValue(Research.techLevel, out color);
+			else if (_available) Assets.ColorAvailable.TryGetValue(Research.techLevel, out color);
+			else Assets.ColorUnavailable.TryGetValue(Research.techLevel, out color);
 
-			if (MainTabWindow_ResearchTree.Instance._searchActive) return Assets.ColorUnmatched[Research.techLevel];
-
-			if (Research.IsFinished) return Assets.ColorEdgeCompleted[Research.techLevel];
-
-			if (_available) return Assets.ColorAvailable[Research.techLevel];
-
-			return Assets.ColorUnavailable[Research.techLevel];
+			return color;
 		}
 		public List<ResearchNode> Children()
 		{

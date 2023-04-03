@@ -108,7 +108,7 @@ namespace ResearchPowl
 			Initializing = false;
 			timer.Stop();
 			var timeTaken = timer.Elapsed;
-			if (Prefs.DevMode) Log.Message("[ResearchPowl] Processed in " + timeTaken.ToString(@"ss\.fffff"));
+			if (Prefs.DevMode) Log.Message("Processed in " + timeTaken.ToString(@"ss\.fffff"));
 
 			//Embedded methods
 			void RemoveEmptyRows()
