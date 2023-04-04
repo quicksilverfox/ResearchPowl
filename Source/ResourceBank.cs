@@ -70,7 +70,8 @@ namespace ResearchPowl
 				ShiftForShortcutManual = TL("ShortcutManual"),
 				TechLevelOfResearch = TL("TechLevel"),
 				NoResearchFound = TL("NoResearchFound"),
-				NothingQueued = TL("NothingQueued");
+				NothingQueued = TL("NothingQueued"),
+				AllPacks = TL("AllPacks");
 		}
 	}
 }

@@ -14,7 +14,9 @@ namespace ResearchPowl
 			SmallQueueLabelSize = 20f,
 			AbsoluteMaxZoomLevel = 3f,
             ZoomStep = .05f,
-			DraggingClickDelay = 0.25f;
+			DraggingClickDelay = 0.25f,
+			Faded = 0.025f,
+			LessFaded = 0.17f;
 		
         public static readonly Vector2 IconSize = new Vector2(18f, 18f), 
 			NodeMargins = new Vector2(50f, 10f),

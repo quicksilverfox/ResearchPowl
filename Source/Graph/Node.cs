@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Verse;
 using static ResearchPowl.Constants;
@@ -83,20 +82,6 @@ namespace ResearchPowl
             }
         }
 
-        public Rect LabelRect
-        {
-            get
-            {
-                if ( !_rectsSet )
-                    SetRects();
-
-                return _labelRect;
-            }
-        }
-
-        /// <summary>
-        ///     Middle of left node edge
-        /// </summary>
         public Vector2 Left
         {
             get
@@ -108,9 +93,6 @@ namespace ResearchPowl
             }
         }
 
-        /// <summary>
-        ///     Tag UI Rect
-        /// </summary>
         public Rect QueueRect
         {
             get
@@ -122,20 +104,6 @@ namespace ResearchPowl
             }
         }
 
-        public Rect LockRect
-        {
-            get
-            {
-                if ( !_rectsSet )
-                    SetRects();
-
-                return _lockRect;
-            }
-        }
-
-        /// <summary>
-        ///     Static UI rect for this node
-        /// </summary>
         public Rect Rect
         {
             get
@@ -145,9 +113,6 @@ namespace ResearchPowl
             }
         }
 
-        /// <summary>
-        ///     Middle of right node edge
-        /// </summary>
         public Vector2 Right
         {
             get
@@ -158,8 +123,6 @@ namespace ResearchPowl
                 return _right;
             }
         }
-
-        public Vector2 Center => ( Left + Right ) / 2f;
 
         public virtual int X
         {
@@ -205,13 +168,9 @@ namespace ResearchPowl
             get => _pos.y;
             set
             {
-                if ( Math.Abs( _pos.y - value ) < Epsilon )
-                    return;
+                if (Math.Abs( _pos.y - value) < Epsilon ) return;
 
                 _pos.y = value;
-
-                // update caches
-                // Tree.Size.z     = Tree.Nodes.Max( n => n.Y ) + 1;
                 Tree.OrderDirty = true;
             }
         }
@@ -340,32 +299,6 @@ namespace ResearchPowl
             _rectsSet = true;
         }
 
-        public static GameFont ChooseFont(
-            string s, Rect rect, GameFont largest,
-            bool wordWrap = false, GameFont smallest = GameFont.Tiny) {
-            if (largest == GameFont.Tiny)
-                return largest;
-            var savedFont = Text.Font;
-            var savedTextWrap = Text.WordWrap;
-            GameFont result;
-            Text.WordWrap = wordWrap;
-            for (; largest > smallest; --largest) {
-                Text.Font = largest;
-                if (Text.CalcHeight(s, rect.width) <= rect.height) {
-                    break;
-                }
-            }
-            result = largest;
-
-            Text.Font = savedFont;
-            Text.WordWrap = savedTextWrap;
-            return result;
-        }
-
-        public static GameFont SmallOrTiny(string s, Rect rect) {
-            return ChooseFont(s, rect, GameFont.Small);
-        }
-
         public virtual bool IsVisible( Rect visibleRect )
         {
             var nodeRect = Rect;
@@ -399,12 +332,5 @@ namespace ResearchPowl
         public NodeLayer layer;
 
         public double doubleCache;
-        public int intCache1;
-        public int intCache2;
-
-        public virtual int CompareTieBreaker(Node that) {
-            return 0;
-        }
     }
-
 }

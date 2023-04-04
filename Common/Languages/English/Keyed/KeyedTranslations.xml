@@ -113,4 +113,6 @@
 	<ResearchPal.DontShowUnallowedTech>Do not show disallowed tech</ResearchPal.DontShowUnallowedTech>
 	<ResearchPal.ReadOnlyMode>Read only mode</ResearchPal.ReadOnlyMode>
 	<ResearchPal.ReadOnlyModeTip>When enabled, the tech tree may only be viewed as a reference, but not as an interface to start projects. This mode is meant to be used with mods that remove player agency, such as Random Research.</ResearchPal.ReadOnlyModeTip>
+
+	<ResearchPal.AllPacks>All content packs</ResearchPal.AllPacks>
 </LanguageData>

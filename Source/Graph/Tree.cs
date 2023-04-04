@@ -24,6 +24,7 @@ namespace ResearchPowl
 		static bool prerequisitesFixed;
 		static List<List<Node>> _layers;
 		static List<ResearchNode> _researchNodes;
+		public static HashSet<ushort> filteredOut = new HashSet<ushort>();
 		static float mainGraphUpperbound = 1;
 		static RelatedNodeHighlightSet hoverHighlightSet;
 		static List<RelatedNodeHighlightSet> fixedHighlightSets = new List<RelatedNodeHighlightSet>();
@@ -268,9 +269,8 @@ namespace ResearchPowl
 		}
 		static void InitializeNodesStructures()
 		{
-			var nodes = PopulateNodes();
+			PopulateNodes(out List<ResearchNode> nodes, out List<Node> allNodes);
 			Log.Debug("{0} valid nodes found in def database", nodes.Count);
-			var allNodes = new List<Node>(nodes.OfType<Node>());
 			CheckPrerequisites(nodes);
 			var edges = CreateEdges(nodes);
 			Log.Debug("{0} edges created", edges.Count);
@@ -288,21 +288,13 @@ namespace ResearchPowl
 			{
 				var nodesQueue = new Queue<ResearchNode>(nodes);
 				// remove redundant prerequisites
-				while ( nodesQueue.Count > 0 )
+				while (nodesQueue.Count > 0)
 				{
 					var node = nodesQueue.Dequeue();
-					if ( node.Research.prerequisites.NullOrEmpty() )
-						continue;
+					if (node.Research.prerequisites.NullOrEmpty()) continue;
 
-					var ancestors = node.Research.prerequisites?.SelectMany( r => r.Ancestors() ).ToList();
-					var redundant = ancestors.Intersect( node.Research.prerequisites );
-					if ( redundant.Any() )
-					{
-						Log.Debug( "\tRedundant prerequisites for {0}: {1}", node.Research.LabelCap,
-									string.Join( ", ", redundant.Select( r => r.LabelCap ).ToArray() ) );
-						foreach ( var redundantPrerequisite in redundant )
-							node.Research.prerequisites.Remove( redundantPrerequisite );
-					}
+					var ancestors = node.Research.prerequisites?.SelectMany(r => r.Ancestors()).ToList();
+					foreach ( var redundantPrerequisite in ancestors.Intersect( node.Research.prerequisites )) node.Research.prerequisites.Remove(redundantPrerequisite);
 				}
 
 				// fix bad techlevels
@@ -325,38 +317,72 @@ namespace ResearchPowl
 						}
 				}
 			}
-			List<ResearchNode> PopulateNodes()
+			void PopulateNodes(out List<ResearchNode> nodes, out List<Node> allNodes)
 			{
 				var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
 
 				if (Settings.dontIgnoreHiddenPrerequisites && !prerequisitesFixed)
 				{
-					foreach (var n in projects) FixPrerequisites(n);
+					for (int i = projects.Count; i-- > 0;) FixPrerequisites(projects[i]);
 					prerequisitesFixed = true;
 				}
 
-				// find hidden nodes (nodes that have themselves as a prerequisite)
-				var hidden = projects.Where( p => p.prerequisites?.Contains( p ) ?? false ).ToList();
-
-				// find locked nodes (nodes that have a hidden node as a prerequisite)
-				var locked = projects.Where( p => p.Ancestors().Intersect( hidden ).Any() );
-
-				if (Settings.dontShowUnallowedTech)
+				// Find hidden nodes (nodes that have themselves as a prerequisite)
+				HashSet<ResearchProjectDef> hidden = new HashSet<ResearchProjectDef>();
+				for (int i = projects.Count; i-- > 0;)
 				{
-					foreach (var n in projects)
-					{
-						if ((int)n.techLevel > Settings.maxAllowedTechLvl) hidden.Add(n);
-					}
+					var project = projects[i];
+					if ((project.prerequisites != null && project.prerequisites.Contains(project)) || 
+						(Settings.dontShowUnallowedTech && (int)project.techLevel > Settings.maxAllowedTechLvl)) hidden.Add(project);
 				}
 
-				// populate all nodes
-				var nodes = new List<ResearchNode>(DefDatabase<ResearchProjectDef>
-					.AllDefsListForReading
-					.Except( hidden )
-					.Except( locked )
-					.Select(def => new ResearchNode( def )));
-				return nodes;
+				// Find locked nodes (nodes that have a hidden node as a prerequisite)
+				var locked = projects.Where( p => p.Ancestors().Intersect( hidden ).Any() ).ToHashSet();
 
+				// Populate all nodes
+				filteredOut = new HashSet<ushort>();
+				HashSet<ResearchProjectDef> workingList = new HashSet<ResearchProjectDef>();
+				allNodes = new List<Node>();
+				var filteredMod = MainTabWindow_ResearchTree.filteredMod;
+				bool usingFilter = filteredMod != ResourceBank.String.AllPacks;
+
+				for (int i = projects.Count; i-- > 0;)
+				{
+					var project = projects[i];
+					if (hidden.Contains(project) || locked.Contains(project)) continue;
+
+					if (usingFilter)
+					{
+						if (filteredMod != project.modContentPack.Name) continue;
+						var tmp = AllAncestors(project).ToHashSet();
+						filteredOut.AddRange(tmp.Where(x => x.modContentPack.Name != filteredMod).Select(x => x.index));
+						workingList.AddRange(tmp);
+					}
+
+					workingList.Add(project);
+				}
+
+				nodes = new List<ResearchNode>();
+				//Add prereqs
+				foreach (var item in workingList)
+				{
+					var newNode = new ResearchNode(item);
+					nodes.Add(newNode);
+					allNodes.Add(newNode as Node);
+				}
+
+				IEnumerable<ResearchProjectDef> AllAncestors(ResearchProjectDef project)
+				{
+					foreach (var prerequisite in project.Ancestors())
+					{
+						foreach (var sub in AllAncestors(prerequisite))
+						{
+							yield return sub;
+						}
+						yield return prerequisite;
+					}
+				}
+				
 				void FixPrerequisites(ResearchProjectDef d)
 				{
 					if (d.prerequisites == null) d.prerequisites = d.hiddenPrerequisites;
@@ -491,11 +517,10 @@ namespace ResearchPowl
 			else ResearchNode.availableDirty = false;
 			if (Settings.shouldSeparateByTechLevels)
 			{
-				List<TechLevel> list3 = new List<TechLevel>(RelevantTechLevels());
-				var tmp = list3.Count;
-				for (int i = 0; i < tmp; i++)
+				List<TechLevel> relevantTechLevels = new List<TechLevel>(RelevantTechLevels());
+				for (int i = relevantTechLevels.Count; i-- > 0;)
 				{
-					DrawTechLevel(list3[i], visibleRect);
+					DrawTechLevel(relevantTechLevels[i], visibleRect);
 				}
 			}
 
@@ -511,8 +536,7 @@ namespace ResearchPowl
 			//Compile list of drawn nodes
 			List<ResearchNode> list = ResearchNodes();
 			bool hoverHighlight = ContinueHoverHighlight(mousePos);
-			var length = list.Count;
-			for (int i = 0; i < length; i++)
+			for (int i = list.Count; i-- > 0;)
 			{
 				var node = list[i];
 				if (node.Rect.Overlaps(visibleRect))

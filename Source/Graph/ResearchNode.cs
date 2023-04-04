@@ -121,17 +121,25 @@ namespace ResearchPowl
 				bool highlighted = Highlighted();
 				
 				//Is it already researched and not being searched for?
-				if (Research.IsFinished && (!isUnmatchedInSearch || highlighted)) return Assets.ColorCompleted[Research.techLevel];
+				Color color;
+				if (Research.IsFinished && (!isUnmatchedInSearch || highlighted)) Assets.ColorCompleted.TryGetValue(Research.techLevel, out color);
 				//Is it being highlighted?
-				if (highlighted) return HighlightColor();
+				else if (highlighted) color = HighlightColor();
 				//Is not what we're searching for?
-				if (isUnmatchedInSearch) return Assets.ColorUnmatched[Research.techLevel];
+				else if (isUnmatchedInSearch) Assets.ColorUnmatched.TryGetValue(Research.techLevel, out color);
 				//Is it available for research?
-				if (_available) return Assets.ColorCompleted[Research.techLevel];
+				else if (_available) Assets.ColorCompleted.TryGetValue(Research.techLevel, out color);
 				//Otherwise assume unavailable
-				return Assets.ColorUnavailable[Research.techLevel];
+				else Assets.ColorUnavailable.TryGetValue(Research.techLevel, out color);
+
+				return GetFadedColor(color);
 			}
 		}
+		public Color GetFadedColor(Color color, bool text = false)
+        {
+            if (Tree.filteredOut.Contains(Research.index) && !Highlighted()) color.a = text ? Constants.LessFaded : Constants.Faded;
+            return color;
+        }
 		public bool IsUnmatchedInSearch()
 		{
 			return MainTabWindow_ResearchTree.Instance._searchActive && !isMatched;
@@ -200,23 +208,28 @@ namespace ResearchPowl
 			if ( _missingFacilitiesCache.TryGetValue( research, out string[] missing ) ) return missing;
 
 			// get list of all researches required before this
-			var thisAndPrerequisites = new List<ResearchProjectDef>();
-			foreach (var item in research.Ancestors()) if (item.IsFinished) thisAndPrerequisites.Add(item);
-			thisAndPrerequisites.Add(research);
+			var thisAndPrerequisites = new List<ResearchProjectDef>() {research};
+			var ancestors = research.Ancestors();
+			for (int i = ancestors.Count; i-- > 0;)
+			{
+				var ancestor = ancestors[i];
+				if (ancestor.IsFinished) thisAndPrerequisites.Add(ancestor);
+			}
 
 			// get list of all available research benches
 			List<Building_ResearchBench> availableBenches = new List<Building_ResearchBench>();
 			List<ThingDef> otherBenches = new List<ThingDef>();
 			List<ThingDef> availableBenchDefs = new List<ThingDef>();
-			foreach (var map in Find.Maps)
+			var maps = Find.Maps;
+			for (int j = maps.Count; j-- > 0;)
 			{
-				var length = map.listerBuildings.allBuildingsColonist.Count;
-				for (int i = 0; i < length; i++)
+				var allBuildingsColonist = maps[j].listerBuildings.allBuildingsColonist;
+				for (int i = allBuildingsColonist.Count; i-- > 0;)
 				{
-					var building = map.listerBuildings.allBuildingsColonist[i];
-					if (building.def.thingClass == typeof(Building_ResearchBench))
+					var building = allBuildingsColonist[i];
+					if (building is Building_ResearchBench building_ResearchBench)
 					{
-						availableBenches.Add(building as Building_ResearchBench);
+						availableBenches.Add(building_ResearchBench);
 						if (!availableBenchDefs.Contains(building.def)) availableBenchDefs.Add(building.def);
 					}
 					else if (!otherBenches.Contains(building.def)) otherBenches.Add(building.def);
@@ -279,7 +292,7 @@ namespace ResearchPowl
 
 				//was DrawProgressBarImpl(progressBarRect);
 				progressBarRect.xMin += Research.ProgressPercent * progressBarRect.width;
-				FastGUI.DrawTextureFast(progressBarRect, BaseContent.WhiteTex, Assets.ColorAvailable[Research.techLevel]);
+				FastGUI.DrawTextureFast(progressBarRect, BaseContent.WhiteTex, this.GetFadedColor(Assets.ColorAvailable.TryGetValue(Research.techLevel)));
 			}
 		}
 		
@@ -456,7 +469,7 @@ namespace ResearchPowl
 
 					if (draw)
 					{
-						FastGUI.DrawTextureFast(iconRect, Assets.MoreIcon, Assets.colorWhite);
+						FastGUI.DrawTextureFast(iconRect, Assets.MoreIcon, this.GetFadedColor(Assets.colorWhite));
 
 						if (!PainterIs(Painter.Drag))
 						{
@@ -493,7 +506,7 @@ namespace ResearchPowl
 
 			void DrawColouredIcon(Def def, Rect canvas)
 			{
-				FastGUI.DrawTextureFast(canvas, def.IconTexture(), Assets.colorWhite);
+				FastGUI.DrawTextureFast(canvas, def.IconTexture(), GetFadedColor(Assets.colorWhite));
 				GUI.color = Assets.colorWhite;
 			}
 		}
@@ -502,9 +515,9 @@ namespace ResearchPowl
 			Text.anchorInt = TextAnchor.UpperLeft;
 			Text.wordWrapInt = true;
 			Text.Font = _largeLabel ? GameFont.Tiny : GameFont.Small;
-			Widgets.Label(_labelRect, Research.LabelCap);
+			
 
-			FastGUI.DrawTextureFast(CostIconRect, !Research.IsFinished && !_available ? Assets.Lock : Assets.ResearchIcon, Assets.colorWhite);
+			FastGUI.DrawTextureFast(CostIconRect, !Research.IsFinished && !_available ? Assets.Lock : Assets.ResearchIcon, GetFadedColor(Assets.colorWhite));
 
 			Color numberColor;
 			float numberToDraw;
@@ -528,7 +541,9 @@ namespace ResearchPowl
 			}
 			if (IsUnmatchedInSearch() && (!Highlighted())) numberColor = Assets.colorGrey;
 
+			numberColor = GetFadedColor(numberColor, true);
 			GUI.color = numberColor;
+			Widgets.Label(_labelRect, Research.LabelCap);
 			Text.anchorInt = TextAnchor.UpperRight;
 
 			Text.Font = NumericalFont(numberToDraw);
@@ -575,8 +590,8 @@ namespace ResearchPowl
 			if (ShouldGreyOutText()) color = Assets.colorGrey;
 			else color = Assets.colorWhite;
 
-			if (detailedMode) DrawNodeDetailMode(mouseOver, color);
-			else DrawNodeZoomedOut(mouseOver, color);
+			if (detailedMode) DrawNodeDetailMode(mouseOver, GetFadedColor(color));
+			else DrawNodeZoomedOut(mouseOver, GetFadedColor(color, true));
 
 			Text.WordWrap = true;
 		}

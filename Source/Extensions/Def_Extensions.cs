@@ -10,137 +10,116 @@ namespace ResearchPowl
 {
     public static class Def_Extensions
     {
-        /// <summary>
-        ///     hold a cached list of icons per def
-        /// </summary>
-        static readonly Dictionary<Def, Texture2D> _cachedDefIcons = new Dictionary<Def, Texture2D>();
+        static readonly Dictionary<int, Texture2D> _cachedDefIcons = new Dictionary<int, Texture2D>();
+        static readonly Dictionary<int, Color> _cachedIconColors = new Dictionary<int, Color>();
 
-        static readonly Dictionary<Def, Color> _cachedIconColors = new Dictionary<Def, Color>();
-
-        /// <summary>
-        ///     Gets an appropriate drawColor for this def.
-        ///     Will use a default stuff or DrawColor, if defined.
-        /// </summary>
-        /// <param name="def"></param>
-        /// <returns></returns>
         public static Color IconColor( this Def def )
         {
             // garbage in, garbage out
             if ( def == null ) return Color.cyan;
+            var index = def.index;
 
             // check cache
-            if ( _cachedIconColors.ContainsKey( def ) ) return _cachedIconColors[def];
-
-            // otherwise try to determine icon
-            var bdef = def as BuildableDef;
-            var tdef = def as ThingDef;
-            var pdef = def as PawnKindDef;
-            var rdef = def as RecipeDef;
+            if (_cachedIconColors.TryGetValue(index, out Color color)) return color;
 
             // get product color for recipes
-            if (rdef != null && !rdef.products.NullOrEmpty())
+            else if (def is RecipeDef rdef && !rdef.products.NullOrEmpty())
             {    
-                _cachedIconColors.Add(def, rdef.products[0].thingDef.IconColor());
-                return _cachedIconColors[def];
+                color = rdef.products[0].thingDef.IconColor();
+                _cachedIconColors.Add(index, color);
             }
 
             // get color from final lifestage for pawns
-            if ( pdef != null )
+            else if (def is PawnKindDef pdef)
             {
-                _cachedIconColors.Add(def, pdef.lifeStages[pdef.lifeStages.Count - 1].bodyGraphicData.color);
-                return _cachedIconColors[def];
+                color = pdef.lifeStages[pdef.lifeStages.Count - 1].bodyGraphicData.color;
+                _cachedIconColors.Add(index, color);
             }
 
-            if ( bdef == null )
+            else if (def is not BuildableDef)
             {
                 // if we reach this point, def.IconTexture() would return null. Just store and return white to make sure we don't get weird errors down the line.
-                _cachedIconColors.Add( def, Assets.colorWhite );
-                return _cachedIconColors[def];
+                color = Assets.colorWhite;
+                _cachedIconColors.Add(index, color);
             }
 
             // built def != listed def
-            if (tdef != null && tdef.entityDefToBuild != null)
+            else if (def is ThingDef tdef && tdef.entityDefToBuild != null)
             {
-                _cachedIconColors.Add( def, tdef.entityDefToBuild.IconColor() );
-                return _cachedIconColors[def];
+                color = tdef.entityDefToBuild.IconColor();
+                _cachedIconColors.Add(index, color);
             }
 
             // graphic.color set?
-            if (bdef.graphic != null)
+            else if (def is BuildableDef bdef)
             {
-                _cachedIconColors.Add( def, bdef.graphic.color );
-                return _cachedIconColors[def];
+                color = bdef.graphic.color;
+                _cachedIconColors.Add(index, color);
             }
 
             // stuff used?
-            if (tdef != null && tdef.MadeFromStuff)
+            else if (def is ThingDef tDefStuff && tDefStuff.MadeFromStuff)
             {
-                var stuff = GenStuff.DefaultStuffFor( tdef );
-                _cachedIconColors.Add( def, stuff.stuffProps.color );
-                return _cachedIconColors[def];
+                color = GenStuff.DefaultStuffFor(tDefStuff).stuffProps.color;
+                _cachedIconColors.Add(index, color);
             }
 
             // all else failed.
-            _cachedIconColors.Add( def, Assets.colorWhite );
-            return _cachedIconColors[def];
+            else
+            {
+                color = Assets.colorWhite;
+                _cachedIconColors.Add(index, color);
+            }
+
+            return color;
         }
 
-        /// <summary>
-        ///     Get a texture for the def, where defined.
-        /// </summary>
-        /// <param name="def"></param>
-        /// <returns></returns>
-        public static Texture2D IconTexture( this Def def )
+        public static Texture2D IconTexture(this Def def)
         {
             // garbage in, garbage out
-            if ( def == null )
-                return null;
+            if (def == null ) return null;
+
+            var index = def.index;
 
             // check cache
-            if ( _cachedDefIcons.ContainsKey( def ) )
-                return _cachedDefIcons[def];
-
-            // otherwise try to determine icon
-            var buildableDef = def as BuildableDef;
-            var thingDef     = def as ThingDef;
-            var pawnKindDef  = def as PawnKindDef;
-            var recipeDef    = def as RecipeDef;
+            if (_cachedDefIcons.TryGetValue(index, out Texture2D texture2D)) return texture2D;
 
             // recipes will be passed icon of first product, if defined.
-            if (recipeDef != null && !recipeDef.products.NullOrEmpty())
+            else if (def is RecipeDef recipeDef && !recipeDef.products.NullOrEmpty())
             {
-                _cachedDefIcons.Add( def, recipeDef.products[0].thingDef.IconTexture() );
-                return _cachedDefIcons[def];
-            }
-
-            // animals need special treatment ( this will still only work for animals, pawns are a whole different can o' worms ).
-            if ( pawnKindDef != null )
                 try
                 {
-                    _cachedDefIcons.Add(def, pawnKindDef.lifeStages[pawnKindDef.lifeStages.Count - 1].bodyGraphicData.Graphic.MatSouth.mainTexture as Texture2D );
-                    return _cachedDefIcons[def];
+                    texture2D = recipeDef.products[0].thingDef.IconTexture();
                 }
-                catch
+                catch { texture2D = null; }
+                _cachedDefIcons.Add(index, texture2D);
+            }
+            else if (def is PawnKindDef pawnKindDef)
+                try
                 {
-                    // ignored
+                    texture2D = pawnKindDef.lifeStages[pawnKindDef.lifeStages.Count - 1].bodyGraphicData.Graphic.MatSouth.mainTexture as Texture2D;
+                    _cachedDefIcons.Add(index, texture2D);
                 }
+                catch { texture2D = null; }
 
-            if ( buildableDef != null )
+            else if (def is BuildableDef buildableDef)
             {
                 // if def built != def listed.
-                if ( thingDef?.entityDefToBuild != null )
+                if (def is ThingDef thingDef && thingDef.entityDefToBuild != null )
                 {
-                    _cachedDefIcons.Add( def, thingDef.entityDefToBuild.IconTexture() );
-                    return _cachedDefIcons[def];
+                    texture2D = thingDef.entityDefToBuild.IconTexture();
                 }
+                else texture2D = buildableDef.uiIcon;
 
-                _cachedDefIcons.Add( def, buildableDef.uiIcon );
-                return buildableDef.uiIcon;
+                _cachedDefIcons.Add(index, texture2D);
             }
-
-            // nothing stuck
-            _cachedDefIcons.Add( def, null );
-            return null;
+            else 
+            {
+                texture2D = null;
+                _cachedDefIcons.Add(index, null);
+            }
+            
+            return texture2D;
         }
     }
 }

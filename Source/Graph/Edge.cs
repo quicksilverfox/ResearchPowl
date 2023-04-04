@@ -133,6 +133,8 @@ namespace ResearchPowl
             if (ResearchNode.mouseOverDirty || ResearchNode.availableDirty) colorCache = Out.InEdgeColor(InResearch());;
             var color = colorCache;
 
+            if ((Tree.filteredOut.Contains(_inResearch?.Research.index ?? 0) || Tree.filteredOut.Contains(_outResearch?.Research.index ?? 0)) && (!_inResearch?.Highlighted() ?? false)) color.a = Faded;
+
             // if left and right are on the same level, just draw a straight line.
             if (left.y == right.y)
             {

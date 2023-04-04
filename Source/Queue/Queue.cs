@@ -27,17 +27,16 @@ namespace ResearchPowl
 
         public static void DrawLabels( Rect visibleRect )
         {
-            var i = 1;
-            foreach ( var node in _instance._queue )
+            var list = _instance._queue;
+            for (int j = list.Count, i = 1; j-- > 0; i++)
             {
-                if ( node.IsVisible( visibleRect ) )
+                var node = list[j];
+                if (node.IsVisible(visibleRect))
                 {
-                    var main       = ColorCompleted[node.Research.techLevel];
-                    var background = i > 1 ? ColorUnavailable[node.Research.techLevel] : main;
-                    DrawLabel( node.QueueRect, main, background, i );
+                    ColorCompleted.TryGetValue(node.Research.techLevel, out Color main);
+                    var background = i > 1 ? ColorUnavailable.TryGetValue(node.Research.techLevel) : main;
+                    DrawLabel(node.QueueRect, main, background, i);
                 }
-
-                i++;
             }
         }
         public static void DrawLabel( Rect canvas, Color main, Color background, int label )
@@ -46,10 +45,7 @@ namespace ResearchPowl
             FastGUI.DrawTextureFast(canvas, CircleFill, main);
 
             // if this is not first in line, grey out centre of tag
-            if (background != main)
-            {
-                FastGUI.DrawTextureFast(canvas.ContractedBy(2f), CircleFill, background);
-            }
+            if (background != main) FastGUI.DrawTextureFast(canvas.ContractedBy(2f), CircleFill, background);
 
             // draw queue number
             Text.anchorInt = TextAnchor.MiddleCenter;

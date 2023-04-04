@@ -86,7 +86,7 @@ namespace ResearchPowl
 		{
 			// get the minimum zoom level at which the entire tree fits onto the screen, or a static maximum zoom level.
 			var fitZoomLevel = Mathf.Max( TreeRect().width  / _baseViewRect_Inner.width, TreeRect().height / _baseViewRect_Inner.height );
-			return Mathf.Min(fitZoomLevel, AbsoluteMaxZoomLevel);
+			return Mathf.Clamp(fitZoomLevel, 1f, AbsoluteMaxZoomLevel);
 		}
 		public override void PreOpen()
 		{
@@ -289,7 +289,7 @@ namespace ResearchPowl
 		}
 		void DrawTopBar(Rect canvas)
 		{
-			Rect searchRect2 = new Rect(canvas) { width = 200f };
+			Rect searchRect2 = new Rect(canvas) { width = 200f, y = canvas.yMin - 20f };
 			Rect queueRect  = new Rect(canvas) { xMin = canvas.xMin + 200f, xMax = canvas.xMax - 130f };
 
 			FastGUI.DrawTextureFast(searchRect2, Assets.SlightlyDarkBackground, Assets.colorWhite);
@@ -299,11 +299,65 @@ namespace ResearchPowl
 			searchRect = new Rect(searchCanvas.xMin, 0f, searchCanvas.width, 30f).CenteredOnYIn(searchCanvas);
 			if (Widgets.ButtonImage(new Rect(searchCanvas.xMax - Constants.Margin - 12f, 0f, 12f, 12f ).CenteredOnYIn(searchCanvas), Assets.closeXSmall, false)) ResetSearch();
 
+			DrawModFilter(new Rect(searchRect.x, searchRect.y + 35f, searchRect.width, searchRect.height));
 			UpdateTextField();
 			OnSearchFieldChanged();
 
 			Queue.Draw(queueRect, !_dragging);
 		}
+		public static string filteredMod = ResourceBank.String.AllPacks;
+		void DrawModFilter(Rect rect)
+		{
+			var beforeFont = Text.Font;
+			Text.Font = GameFont.Tiny;
+			if (Widgets.ButtonText(rect, filteredMod))
+			{
+				try
+				{
+					List<FloatMenuOption> buttonMenu = new List<FloatMenuOption>(MenuOfPacks());
+					if (buttonMenu.Count != 0)
+					{
+						Find.WindowStack.Add(new FloatMenu(buttonMenu));
+					}
+				}
+				catch (System.Exception ex) { Log.Message("[Research Powl] Error creating content pack drop-down menu.\n" + ex); }
+			}
+			Text.Font = beforeFont;
+		}
+		static List<FloatMenuOption> cachedModMenu;
+		List<FloatMenuOption> MenuOfPacks()
+		{
+			if (cachedModMenu != null) return cachedModMenu;
+			cachedModMenu = new List<FloatMenuOption>();
+
+			var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
+			HashSet<string> modsWithResearch = new HashSet<string>();
+
+			for (int i = projects.Count; i-- > 0;) modsWithResearch.Add(projects[i].modContentPack.Name);
+
+			foreach (var mod in LoadedModManager.RunningModsListForReading)
+			{
+				string label = mod.Name;
+				if (!modsWithResearch.Contains(label)) continue;
+				cachedModMenu.Add(new FloatMenuOption(label, delegate()
+					{
+						ApplyModFilter(label);
+					}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
+			}
+			cachedModMenu.SortBy(x => x.labelInt);
+			cachedModMenu.Insert(0, new FloatMenuOption(ResourceBank.String.AllPacks, delegate()
+				{
+					ApplyModFilter(ResourceBank.String.AllPacks);
+				}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
+			return cachedModMenu;
+		}
+
+		void ApplyModFilter(string modName)
+		{
+			filteredMod = modName;
+			Tree.ResetLayout();
+		}
+
 		void UpdateTextField()
 		{
 			var curQuery = Widgets.TextField(searchRect, _curQuery);

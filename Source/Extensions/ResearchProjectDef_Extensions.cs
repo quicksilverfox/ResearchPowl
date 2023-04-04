@@ -9,14 +9,20 @@ namespace ResearchPowl
 {
     public static class ResearchProjectDef_Extensions
     {
-        public static List<ResearchProjectDef> Ancestors( this ResearchProjectDef research )
+        public static List<ResearchProjectDef> Ancestors(this ResearchProjectDef research)
         {
             // keep a list of prerequites
             var prerequisites = new List<ResearchProjectDef>();
             if ( research.prerequisites.NullOrEmpty() ) return prerequisites;
 
             // keep a stack of prerequisites that should be checked
-            var stack = new Stack<ResearchProjectDef>(research.prerequisites.Where(parent => parent != research));
+            var stack = new Stack<ResearchProjectDef>();
+            var list = research.prerequisites;
+            for (int i = list.Count; i-- > 0;)
+            {
+                var def = list[i];
+                if (def != research) stack.Push(def);
+            }
 
             // keep on checking everything on the stack until there is nothing left
             while (stack.Count > 0)
@@ -28,10 +34,11 @@ namespace ResearchPowl
                 // add prerequitsite's prereqs to the stack
                 if (!parent.prerequisites.NullOrEmpty())
                 {
-                    foreach ( var grandparent in parent.prerequisites )
+                    for (int i = list.Count; i-- > 0;)
                     {
+                        var grandparent = list[i];
                         // but only if not a prerequisite of itself, and not a cyclic prerequisite
-                        if (grandparent != parent && !prerequisites.Contains(grandparent)) stack.Push( grandparent );
+                        if (grandparent != parent && !prerequisites.Contains(grandparent)) stack.Push(grandparent);
                     }
                 }
             }
