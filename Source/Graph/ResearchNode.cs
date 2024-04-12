@@ -335,11 +335,12 @@ namespace ResearchPowl
 			{
 				TooltipHandler.TipRegion(_rect, "MissingRequiredMechanitor".Translate());
 			}
-			if (!Research.StudiedThingsRequirementsMet)
+
+			if (!Research.AnalyzedThingsRequirementsMet)
 			{
-				var length = Research.requiredStudied.Count;
+				var length = Research.requiredAnalyzed.Count;
 				var workingList = new string[length];
-				for (int i = 0; i < length; i++) workingList[i] = ("NotStudied".Translate(Research.requiredStudied[i].LabelCap));
+				for (int i = 0; i < length; i++) workingList[i] = ("NotStudied".Translate(Research.requiredAnalyzed[i].LabelCap));
 				
 				TooltipHandler.TipRegion(_rect, workingList.ToLineList("", false));
 			}
@@ -742,7 +743,7 @@ namespace ResearchPowl
 				(Research.requiredResearchBuilding == null || Research.PlayerHasAnyAppropriateResearchBench) && 
 				Research.TechprintRequirementMet && 
 				Research.PlayerMechanitorRequirementMet && 
-				Research.StudiedThingsRequirementsMet && 
+				Research.AnalyzedThingsRequirementsMet && 
 				AllowedTechlevel(Research.techLevel) && 
 				CompatibilityHooks.PassCustomUnlockRequirements(Research)
 			));

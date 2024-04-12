@@ -319,7 +319,8 @@ namespace ResearchPowl
 			}
 			void PopulateNodes(out List<ResearchNode> nodes, out List<Node> allNodes)
 			{
-				var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
+				List<ResearchProjectDef> projects = new();
+				projects.AddRange(DefDatabase<ResearchProjectDef>.AllDefsListForReading.Where(def => def.knowledgeCategory == null));
 
 				if (Settings.dontIgnoreHiddenPrerequisites && !prerequisitesFixed)
 				{

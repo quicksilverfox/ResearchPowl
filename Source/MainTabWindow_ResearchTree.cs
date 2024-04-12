@@ -293,7 +293,7 @@ namespace ResearchPowl
 			Rect queueRect  = new Rect(canvas) { xMin = canvas.xMin + 200f, xMax = canvas.xMax - 130f };
 
 			FastGUI.DrawTextureFast(searchRect2, Assets.SlightlyDarkBackground, Assets.colorWhite);
-		
+
 			//Search bar
 			var searchCanvas = searchRect2.ContractedBy(Constants.Margin);
 			searchRect = new Rect(searchCanvas.xMin, 0f, searchCanvas.width, 30f).CenteredOnYIn(searchCanvas);
@@ -337,6 +337,9 @@ namespace ResearchPowl
 
 			foreach (var mod in LoadedModManager.RunningModsListForReading)
 			{
+				if (mod.PackageId.Equals(ModContentPack.AnomalyModPackageId)) // Anomaly has custom mechanics so it instead redirects to vanilla research menu
+					continue;
+
 				string label = mod.Name;
 				if (!modsWithResearch.Contains(label)) continue;
 				cachedModMenu.Add(new FloatMenuOption(label, delegate()
@@ -349,6 +352,18 @@ namespace ResearchPowl
 				{
 					ApplyModFilter(ResourceBank.String.AllPacks);
 				}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
+
+
+			if (ModLister.AnomalyInstalled)
+			{
+				cachedModMenu.Insert(1, new FloatMenuOption("Anomaly", delegate ()
+				{
+					Find.MainTabsRoot.ToggleTab(Assets.MainButtonDefOf.ResearchOriginal);
+					((MainTabWindow_Research)Assets.MainButtonDefOf.ResearchOriginal.TabWindow).CurTab =
+						ResearchTabDefOf.Anomaly;
+				}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
+			}
+
 			return cachedModMenu;
 		}
 
