@@ -333,11 +333,31 @@ namespace ResearchPowl
 			var projects = DefDatabase<ResearchProjectDef>.AllDefsListForReading;
 			HashSet<string> modsWithResearch = new HashSet<string>();
 
-			for (int i = projects.Count; i-- > 0;) modsWithResearch.Add(projects[i].modContentPack.Name);
+			for (int i = projects.Count; i-- > 0;)
+			{
+				if(projects[i] == null)
+                {
+					Log.Debug("AllDefsListForReading has a null entry.");
+					continue;
+				}
+				if (projects[i].modContentPack == null)
+				{
+					Log.Debug("ResearchProjectDef " + projects[i].defName + " has null modContentPack.");
+					continue;
+				}
+
+				modsWithResearch.Add(projects[i].modContentPack.Name);
+			}
 
 			foreach (var mod in LoadedModManager.RunningModsListForReading)
 			{
-				if (mod.PackageId.Equals(ModContentPack.AnomalyModPackageId)) // Anomaly has custom mechanics so it instead redirects to vanilla research menu
+				if (mod == null)
+				{
+					Log.Debug("RunningModsListForReading has a null entry.");
+					continue;
+				}
+
+				if (ModContentPack.AnomalyModPackageId.Equals(mod.PackageId)) // Anomaly has custom mechanics so it instead redirects to vanilla research menu
 					continue;
 
 				string label = mod.Name;
@@ -352,8 +372,7 @@ namespace ResearchPowl
 				{
 					ApplyModFilter(ResourceBank.String.AllPacks);
 				}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
-
-
+			
 			if (ModLister.AnomalyInstalled)
 			{
 				cachedModMenu.Insert(1, new FloatMenuOption("Anomaly", delegate ()
@@ -363,7 +382,7 @@ namespace ResearchPowl
 						ResearchTabDefOf.Anomaly;
 				}, MenuOptionPriority.Default, null, null, 0f, null, null, true, 0));
 			}
-
+			
 			return cachedModMenu;
 		}
 
