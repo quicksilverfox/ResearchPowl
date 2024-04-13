@@ -345,6 +345,33 @@ namespace ResearchPowl
 				TooltipHandler.TipRegion(_rect, workingList.ToLineList("", false));
 			}
 
+			if (ModCompatibility.UsingVanillaVehiclesExpanded)
+			{
+				var valueArray = new object[] { Research, null };
+				if ((bool)ModCompatibility.IsDisabledMethod.Invoke(null, valueArray))
+				{
+					var wreck = (ThingDef)valueArray[1];
+					if (wreck != null)
+					{
+						TooltipHandler.TipRegion(_rect, "VVE_WreckNotRestored".Translate(wreck.LabelCap));
+					}
+				}
+			}
+
+			if (ModCompatibility.UsingVanillaExpanded)
+			{
+				var boolResult = (bool)ModCompatibility.TechLevelAllowedMethod.Invoke(null, new object[] { Research.techLevel });
+				if (!boolResult)
+				{
+					TooltipHandler.TipRegion(_rect, "ResearchPal.StorytellerDoesNotAllow".Translate());
+				}
+			}
+
+			if (ModCompatibility.UsingRimedieval && !ModCompatibility.AllowedResearchDefs.Contains(Research))
+			{
+				TooltipHandler.TipRegion(_rect, "ResearchPal.RimedievalDoesNotAllow".Translate());
+			}
+
 			TooltipHandler.TipRegion(_rect, GetResearchTooltipString, Research.shortHash);
 
 			if (Settings.progressTooltip && ProgressWorthDisplaying() && !Research.IsFinished)
@@ -738,6 +765,29 @@ namespace ResearchPowl
 		}
 		public bool GetAvailable()
 		{
+			if (ModCompatibility.UsingVanillaVehiclesExpanded)
+			{
+				var valueArray = new object[] { Research, null };
+				if ((bool)ModCompatibility.IsDisabledMethod.Invoke(null, valueArray))
+				{
+					var wreck = (ThingDef)valueArray[1];
+					if (wreck != null)
+						return false; // wreck not studied
+				}
+			}
+
+			if (ModCompatibility.UsingVanillaExpanded)
+			{
+				var boolResult = (bool)ModCompatibility.TechLevelAllowedMethod.Invoke(null, new object[] { Research.techLevel });
+				if (!boolResult)
+					return false; // Storyteller does not allow
+			}
+
+			if (ModCompatibility.UsingRimedieval && !ModCompatibility.AllowedResearchDefs.Contains(Research))
+			{
+				return false; // Rimedieval does not allow
+			}
+
 			var prerec = MissingPrerequisites();
 
 			foreach (var n in prerec) if (!n.Research.IsFinished && !n.GetAvailable()) return false;
