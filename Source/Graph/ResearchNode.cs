@@ -738,6 +738,10 @@ namespace ResearchPowl
 		}
 		public bool GetAvailable()
 		{
+			var prerec = MissingPrerequisites();
+
+			foreach (var n in prerec) if (!n.Research.IsFinished && !n.GetAvailable()) return false;
+
 			return !Research.IsFinished && (DebugSettings.godMode || (
 				!Settings.readOnlyMode &&
 				(Research.requiredResearchBuilding == null || Research.PlayerHasAnyAppropriateResearchBench) && 
